@@ -13,7 +13,7 @@ const usage = `Usage: sei [options] [setup]
 
 sei is a terminal skill-folder manager, currently in development.
 Load strict JSON configuration and browse configured folders read-only.
-Setup and mutations are not implemented yet.
+First-run setup is available; mutations are not implemented yet.
 Global options must precede the optional setup subcommand.
 
 Options:
@@ -99,11 +99,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintf(stderr, "sei: %s\n", displayText(err.Error()))
 		return 1
 	}
-	if missing {
-		_, _ = fmt.Fprintf(stderr, "sei: configuration %q is missing; first-run setup is not implemented yet\n", path)
-		return 1
+	var resolved config
+	if !missing {
+		resolved, err = resolveConfigPaths(cfg, project)
 	}
-	resolved, err := resolveConfigPaths(cfg, project)
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "sei: config %q: %s\n", path, displayText(err.Error()))
 		return 1
@@ -117,6 +116,21 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if !inputOK || !outputOK || !term.IsTerminal(input.Fd()) || !term.IsTerminal(output.Fd()) {
 		_, _ = fmt.Fprintln(stderr, "sei: interactive mode requires terminal stdin and stdout; use --help or --version")
 		return 1
+	}
+	if missing {
+		final, setupErr := runLifecycle(newSetupModel(project, path), stdin, stdout)
+		if setupErr == nil {
+			result := final.(setupModel)
+			setupErr = result.fatal
+			if setupErr == nil && (!result.saved || result.pendingQuit) {
+				return 0
+			}
+			resolved = result.resolved
+		}
+		if setupErr != nil {
+			_, _ = fmt.Fprintf(stderr, "sei: setup: %s\n", displayText(setupErr.Error()))
+			return 1
+		}
 	}
 	if _, err := runLifecycle(newBrowseModel(resolved), stdin, stdout); err != nil {
 		_, _ = fmt.Fprintf(stderr, "sei: terminal: %s\n", displayText(err.Error()))

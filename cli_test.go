@@ -79,7 +79,7 @@ func TestCLIConfig(t *testing.T) {
 				if kind == "missing parent" {
 					path = filepath.Join(root, "absent", "config.json")
 				}
-				want, setupAllowed = "first-run setup is not implemented", true
+				want, setupAllowed = "requires terminal stdin and stdout", true
 			case "malformed":
 				writeTestFile(t, path, `{"Library":null}`)
 				want = "parse config"
@@ -139,7 +139,7 @@ func TestCLIConfig(t *testing.T) {
 				diagnostic := want
 				if explicit {
 					args = append(args, "setup")
-					if kind == "valid" || kind == "valid symlink" {
+					if kind == "valid" || kind == "valid symlink" || setupAllowed {
 						diagnostic = "setup is not implemented"
 					}
 				}

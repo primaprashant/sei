@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase C implemented; macOS CI exposed PTY harness defects, fixes awaiting native rerun. Phase D not started.
+**Status:** Phase D in progress (Task 10 complete). Phase C macOS harness fixes await native rerun.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -338,11 +338,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** A fresh user can select a library, review the default three agents, save configuration, and enter the real browser without hand-editing JSON.
 
 **Acceptance criteria:**
-- [ ] Start setup only when config does not exist; initially select Claude Code, Codex, and OpenCode with the documented editable paths. Collect a library, validate paths/roots, and preview resolved destinations and shortcuts.
-- [ ] Show permanent deletion/replacement warnings and the exact shared-discovery disclaimer. Create missing config parents only when saving, then save pretty JSON with the safe temp-file/rename mechanism; configuring/viewing destinations never creates them.
-- [ ] Cancellation leaves config bytes and skill folders unchanged with exit `0`; successful first-run save opens the TUI. All I/O during interactive setup follows the same responsive model/command ownership rule.
+- [x] Start setup only when config does not exist; initially select Claude Code, Codex, and OpenCode with the documented editable paths. Collect a library, validate paths/roots, and preview resolved destinations and shortcuts.
+- [x] Show permanent deletion/replacement warnings and the exact shared-discovery disclaimer. Create missing config parents only when saving, then save pretty JSON with the safe temp-file/rename mechanism; configuring/viewing destinations never creates them.
+- [x] Cancellation leaves config bytes and skill folders unchanged with exit `0`; successful first-run save opens the TUI. All I/O during interactive setup follows the same responsive model/command ownership rule.
 
 **Verification:** `go test -count=1 -run 'Test(FirstRunSetup|SaveConfig)' .`; manually complete and cancel setup with isolated native-location config paths, then restart to verify persistence.
+
+**Verified (2026-09-06):** Linux tests/lint/build and isolated PTY cancel/save/restart pass; native macOS/manual review pending.
 
 **Dependencies:** Tasks 7, 8, and 9; configuration-write policy gate below.
 

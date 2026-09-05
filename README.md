@@ -9,10 +9,9 @@ contract and [the implementation plan](implementation-plan.md) for progress.
 
 The executable supports strict JSON configuration, `--config`, `--project`,
 `--help`, `--version`, and an asynchronous read-only configured folder browser
-(quit with `q` or Ctrl+C). Setup and skill mutations are not
-implemented. Missing configuration
-and the recognized `setup` command report that setup is unavailable (status `1`);
-malformed or unreadable configuration fails without starting setup or writing files.
+(quit with `q` or Ctrl+C). Missing configuration opens editable first-run setup;
+explicit reconfiguration and skill mutations are not implemented yet.
+Malformed or unreadable configuration fails without starting setup or writing files.
 There is no published installer or usable release. Unknown flags, commands, and
 unexpected positional arguments return status `2`. After configuration validation,
 interactive startup requires terminal stdin and stdout and otherwise returns `1`.
