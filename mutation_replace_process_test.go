@@ -28,7 +28,15 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 	}
 	for _, scope := range []string{"local", "global"} {
 		t.Run(scope, func(t *testing.T) {
-			root := t.TempDir()
+			// Exercise launch-directory aliases on Linux too, as with macOS /var.
+			physicalRoot, err := filepath.EvalSymlinks(t.TempDir())
+			if err != nil {
+				t.Fatal(err)
+			}
+			root := filepath.Join(t.TempDir(), "project-link")
+			if err := os.Symlink(physicalRoot, root); err != nil {
+				t.Fatal(err)
+			}
 			cfg := config{Library: filepath.Join(root, "library")}
 			source := filepath.Join(cfg.Library, "replace-me")
 			browseMkdir(t, filepath.Join(source, "nested", "empty"))
@@ -60,6 +68,18 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 			path := filepath.Join(root, "config.json")
 			if err := saveConfig(cfg, root, path, false); err != nil {
 				t.Fatal(err)
+			}
+			// The child uses os.Getwd for local destinations; configured global
+			// and library spellings are deliberately not canonicalized.
+			runtimeConfig, err := resolveConfigPaths(cfg, physicalRoot)
+			if err != nil {
+				t.Fatal(err)
+			}
+			resultPath := func(i int) string {
+				if scope == "global" {
+					return runtimeConfig.Agents[i].Global
+				}
+				return runtimeConfig.Agents[i].Local
 			}
 			unchanged[cfg.Library] = removeSnapshot(t, cfg.Library)
 			unchanged[path] = removeSnapshot(t, path)
@@ -173,7 +193,7 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 							}
 							send(string(key) + "?")
 							awaitHelp("Focused: Library", "Selected name: replace-me",
-								fmt.Sprintf(`Result: Add \"replace-me\" to Agent%d / %s (%s): complete`, i+1, scopeLabel, filepath.Dir(targets[i])))
+								fmt.Sprintf(`Result: Add \"replace-me\" to Agent%d / %s (%s): complete`, i+1, scopeLabel, resultPath(i)))
 							assertCopy(t, targets[i])
 							assertUnchanged(t)
 							send("?")
@@ -197,7 +217,7 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 						if !restart && i < 2 {
 							send("X?")
 							awaitHelp("Selected name: survivor",
-								fmt.Sprintf(`Result: Remove \"replace-me\" from Agent%d / %s (%s): complete`, i+1, scopeLabel, filepath.Dir(targets[i])))
+								fmt.Sprintf(`Result: Remove \"replace-me\" from Agent%d / %s (%s): complete`, i+1, scopeLabel, resultPath(i)))
 							setupAbsent(t, targets[i])
 							assertUnchanged(t)
 							send("?")

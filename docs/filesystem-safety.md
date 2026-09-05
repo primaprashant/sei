@@ -126,3 +126,12 @@ Phase E Linux tests/race, injected failures, active-config protection, umask tes
 and PTY add/remove/replace/restart pass. Both macOS test binaries cross-build;
 native Phase E/case-volume execution is pending. Earlier native CI validates only
 Tasks 8-12. No push was performed during Phase E.
+
+CI run `33999023333` passed both Linux jobs but failed both Macs in test fixtures:
+APFS rejected invalid-UTF-8 names (`EILSEQ`), and `/var` versus `/private/var` aliases
+prevented a change hook and PTY expectation from matching. Raw-name subcases now
+probe filesystem support; ordinary copy/removal and binary-content tests never skip
+for this capability. Hook expectations use physical paths, while PTY expectations
+distinguish the child's physical cwd from unchanged configured global spellings.
+Explicit symlink fixtures reproduce alias coverage on Linux. Production safety
+checks are unchanged; local full/race/repeated tests pass, native rerun pending.

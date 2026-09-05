@@ -64,8 +64,22 @@ func assertRemoveSnapshot(t *testing.T, path string, want map[string]removeSnaps
 	}
 }
 
+func requireInvalidUTF8Names(t *testing.T, dir string) {
+	t.Helper()
+	path := filepath.Join(dir, "raw\xff")
+	if err := os.Mkdir(path, 0o700); err != nil {
+		if errors.Is(err, unix.EILSEQ) {
+			t.Skipf("filesystem rejects invalid UTF-8 names: %v", err)
+		}
+		t.Fatal(err)
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRemoveSkill(t *testing.T) {
-	for _, name := range []string{"skill", ".hidden", "with spaces", "raw\xff", "back\\slash"} {
+	for _, name := range []string{"skill", ".hidden", "with spaces", "back\\slash"} {
 		t.Run("success/"+name, func(t *testing.T) {
 			cfg := rootFixture(t)
 			for _, destination := range []panelID{1, 2} {
@@ -92,6 +106,32 @@ func TestRemoveSkill(t *testing.T) {
 			}
 		})
 	}
+	t.Run("raw root", func(t *testing.T) {
+		cfg := rootFixture(t)
+		requireInvalidUTF8Names(t, cfg.Library)
+		name := "raw\xff"
+		browseMkdir(t, cfg.Library+"/"+name)
+		writeTestFile(t, cfg.Library+"/"+name+"/source", "source")
+		library := removeSnapshot(t, cfg.Library)
+		for _, base := range []string{cfg.Agents[0].Global, cfg.Agents[0].Local} {
+			requireInvalidUTF8Names(t, base)
+		}
+		for i, base := range []string{cfg.Agents[0].Global, cfg.Agents[0].Local} {
+			browseMkdir(t, base+"/"+name+"/nested/empty")
+			writeTestFile(t, base+"/"+name+"/nested/.dot", "destination")
+			browseMkdir(t, base+"/other")
+			writeTestFile(t, base+"/other/keep", "other")
+			other := removeSnapshot(t, base+"/other")
+			if err := removeSkill(cfg, panelID(i+1), name); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := os.Lstat(base + "/" + name); !errors.Is(err, os.ErrNotExist) {
+				t.Fatalf("target remains: %v", err)
+			}
+			assertRemoveSnapshot(t, cfg.Library, library)
+			assertRemoveSnapshot(t, base+"/other", other)
+		}
+	})
 	t.Run("preflight", func(t *testing.T) {
 		for _, kind := range []string{"top file", "top link", "nested link", "dangling link", "FIFO", "library link", "home link", "project link"} {
 			t.Run(kind, func(t *testing.T) {

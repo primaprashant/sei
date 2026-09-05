@@ -7,13 +7,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
 	"golang.org/x/sys/unix"
 )
 
 func TestAddSkill(t *testing.T) {
-	for _, name := range []string{"skill", ".hidden", "with spaces", "raw\xff", "back\\slash"} {
+	for _, name := range []string{"skill", ".hidden", "with spaces", "back\\slash"} {
 		for _, destination := range []panelID{1, 2} {
 			t.Run(name+strconv.Itoa(int(destination)), func(t *testing.T) {
 				cfg := rootFixture(t)
@@ -22,7 +23,7 @@ func TestAddSkill(t *testing.T) {
 					base = cfg.Agents[0].Local
 				}
 				browseMkdir(t, cfg.Library+"/"+name+"/nested/empty")
-				contents := map[string]string{"SKILL.md": "not parsed\x00\xff\r\n", "nested/.dot": "dot", "nested/back\\slash": "raw", "nested/raw\xfe": "raw filename", ".exec": "#!/bin/sh\n", "empty": ""}
+				contents := map[string]string{"SKILL.md": "not parsed\x00\xff\r\n", "nested/.dot": "dot", "nested/back\\slash": "raw", ".exec": "#!/bin/sh\n", "empty": ""}
 				for path, data := range contents {
 					writeTestFile(t, cfg.Library+"/"+name+"/"+path, data)
 				}
@@ -61,6 +62,38 @@ func TestAddSkill(t *testing.T) {
 				}
 				assertRemoveSnapshot(t, cfg.Library, library)
 				assertRemoveSnapshot(t, base+"/other", other)
+			})
+		}
+	}
+	for _, kind := range []string{"raw root", "raw nested"} {
+		for _, destination := range []panelID{1, 2} {
+			t.Run(kind+strconv.Itoa(int(destination)), func(t *testing.T) {
+				cfg := rootFixture(t)
+				base := cfg.Agents[0].Global
+				if destination == 2 {
+					base = cfg.Agents[0].Local
+				}
+				requireInvalidUTF8Names(t, cfg.Library)
+				requireInvalidUTF8Names(t, base)
+				name, path := "skill", "nested/file"
+				if kind == "raw root" {
+					name = "raw\xff"
+				} else {
+					path = "nested/raw\xfe"
+				}
+				browseMkdir(t, cfg.Library+"/"+name+"/nested")
+				writeTestFile(t, cfg.Library+"/"+name+"/"+path, "not parsed\x00\xff\r\n")
+				library := removeSnapshot(t, cfg.Library)
+				for range 2 {
+					if err := addSkill(cfg, destination, name); err != nil {
+						t.Fatal(err)
+					}
+					got, err := os.ReadFile(base + "/" + name + "/" + path)
+					if err != nil || string(got) != "not parsed\x00\xff\r\n" {
+						t.Fatalf("copy %q: %q, %v", path, got, err)
+					}
+					assertRemoveSnapshot(t, cfg.Library, library)
+				}
 			})
 		}
 	}
@@ -344,13 +377,24 @@ func TestAddSkillStreaming(t *testing.T) {
 }
 
 func TestAddSkillObservedChanges(t *testing.T) {
-	for _, kind := range []string{"source file", "source child", "source link", "source root", "destination root", "destination child", "protected retarget", "created component", "created target"} {
+	for _, kind := range []string{"source file", "source child", "source link", "source root", "destination root", "destination child", "protected retarget", "created component", "created component alias", "created target"} {
 		t.Run(kind, func(t *testing.T) {
 			cfg := rootFixture(t)
 			base := cfg.Agents[0].Global
+			physicalBase, err := filepath.EvalSymlinks(base)
+			if err != nil {
+				t.Fatal(err)
+			}
 			browseMkdir(t, cfg.Library+"/skill/nested")
 			writeTestFile(t, cfg.Library+"/skill/nested/file", "original")
-			if kind == "created component" {
+			createdComponent := strings.HasPrefix(kind, "created component")
+			if kind == "created component alias" {
+				cfg.Agents[0].Global = base + "-alias"
+				if err := os.Symlink(base, cfg.Agents[0].Global); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if createdComponent {
 				cfg.Agents[0].Global += "/new/deep"
 			}
 			if kind == "protected retarget" {
@@ -362,12 +406,12 @@ func TestAddSkillObservedChanges(t *testing.T) {
 			}
 			changed := false
 			var before map[string]removeSnapshotEntry
-			err := addSkillWithOps(cfg, 1, "skill", copySkillOps{before: func(path string) {
-				if changed || (kind == "created component" && path != base+"/new/deep") || (kind == "created target" && path != "skill/nested") {
+			err = addSkillWithOps(cfg, 1, "skill", copySkillOps{before: func(path string) {
+				if changed || (createdComponent && path != physicalBase+"/new/deep") || (kind == "created target" && path != "skill/nested") {
 					return
 				}
 				// The initial whole-root hook precedes creation of new/deep.
-				if kind == "created component" {
+				if createdComponent {
 					if _, err := os.Stat(base + "/new"); errors.Is(err, os.ErrNotExist) {
 						return
 					}
@@ -407,7 +451,7 @@ func TestAddSkillObservedChanges(t *testing.T) {
 						t.Fatal(err)
 					}
 					link(cfg.Library+"/skill/nested", cfg.Home)
-				case "created component":
+				case "created component", "created component alias":
 					rename(base+"/new", base+"/saved")
 					link(cfg.Library, base+"/new")
 				case "created target":
