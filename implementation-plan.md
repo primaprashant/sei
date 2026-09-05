@@ -4,9 +4,9 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Approved by the owner with the release-version policy below. Implementation has not started. No application implementation, repository creation, configuration changes, commits, or publishing have been performed by writing this plan. All task checkboxes describe future work.
+**Status:** Phase A complete; later phases not started.
 
-**Starting point:** An existing local Git repository containing the docs (vision, PRD, and implementation plan); no application module, CI, or Git remote.
+**Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
 ## Decisions
 
@@ -143,9 +143,9 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Make the existing local repository ready to become the MIT-licensed `primaprashant/sei` project without disturbing its history or local agent setup.
 
 **Acceptance criteria:**
-- [ ] Confirm GitHub repository existence/ownership with `gh`; record `github.com/primaprashant/sei`, copyright attribution, and owner-approved initial tags. Create a remote repository or configure `origin` only during authorized implementation, without overwriting an existing remote.
-- [ ] Add MIT `LICENSE`, a short README with scope and implementation status, and ignores for `.bin/`, `bin/`, `dist/`, coverage output, retaining `/.opencode/`.
-- [ ] Record that public pushing, credentials, branch protection, and releasing require explicit authorization; do not invent already-working install instructions.
+- [x] Confirm GitHub repository existence/ownership with `gh`; record `github.com/primaprashant/sei`, copyright attribution, and owner-approved initial tags. Create a remote repository or configure `origin` only during authorized implementation, without overwriting an existing remote.
+- [x] Add MIT `LICENSE`, a short README with scope and implementation status, and ignores for `.bin/`, `bin/`, `dist/`, coverage output, retaining `/.opencode/`.
+- [x] Record that public pushing, credentials, branch protection, and releasing require explicit authorization; do not invent already-working install instructions.
 
 **Verification:** Inspect `git status --short`, `git diff --check`, `git remote -v`, and `gh repo view primaprashant/sei`; verify the license and ignore behavior. No application tests exist yet.
 
@@ -160,9 +160,9 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Initialize the real Go module and produce the smallest working CLI and disposable terminal shell, proving the pinned Charm v2 stack builds before feature work.
 
 **Acceptance criteria:**
-- [ ] Initialize with `go mod init github.com/primaprashant/sei`; verify/pin the PRD toolchain and Charm versions, commit module sums when committing is authorized, and document any approved patch adjustment.
-- [ ] `--help` and `--version` work without a terminal/config; unsupported arguments return syntax status `2`. A minimal interactive screen can render and quit without filesystem mutations; non-TTY startup fails clearly.
-- [ ] Use current Charm imports, `tea.KeyPressMsg`, and `tea.View`; introduce the selected dependencies through actual screen/help use rather than unused imports.
+- [x] Initialize with `go mod init github.com/primaprashant/sei`; verify/pin the PRD toolchain and Charm versions, commit module sums when committing is authorized, and document any approved patch adjustment.
+- [x] `--help` and `--version` work without a terminal/config; unsupported arguments return syntax status `2`. A minimal interactive screen can render and quit without filesystem mutations; non-TTY startup fails clearly.
+- [x] Use current Charm imports, `tea.KeyPressMsg`, and `tea.View`; introduce the selected dependencies through actual screen/help use rather than unused imports.
 
 **Verification:** `go test -count=1 ./...`, `go build -o ./bin/sei .`, `./bin/sei --help`, `./bin/sei --version`; manual terminal enter/quit and piped-start rejection. Use a temporary version such as `dev`, not a fake release.
 
@@ -177,9 +177,9 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Establish editor-independent formatting and the small PRD lint ruleset before implementation grows.
 
 **Acceptance criteria:**
-- [ ] Create the PRD's v2 `.golangci.yml` with only the five selected linters and `goimports`; include tests and avoid broad suppressions.
-- [ ] Add EditorConfig for LF, final newlines, and Go tabs, with no arbitrary line-length limit; document optional editor format/import organization on save.
-- [ ] Document pinned tool installation, integrity/review expectations, exact `GOTOOLCHAIN`, root-level developer commands, and disposable-data precautions.
+- [x] Create the PRD's v2 `.golangci.yml` with only the five selected linters and `goimports`; include tests and avoid broad suppressions.
+- [x] Add EditorConfig for LF, final newlines, and Go tabs, with no arbitrary line-length limit; document optional editor format/import organization on save.
+- [x] Document pinned tool installation, integrity/review expectations, exact `GOTOOLCHAIN`, root-level developer commands, and disposable-data precautions.
 
 **Verification:** Run formatter/config verification, lint, `go vet ./...`, tests, and build. Confirm generated tooling and binaries remain ignored.
 
@@ -191,9 +191,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Checkpoint A: Tasks 1-3
 
-- [ ] A fresh local checkout builds and displays help/version using the documented commands.
-- [ ] Formatting, lint, tests, and build pass; no generated binary or local agent config is tracked.
-- [ ] Owner approves the repository/license/tag decisions before public repository changes proceed.
+- [x] A fresh local checkout builds and displays help/version using the documented commands.
+- [x] Formatting, lint, tests, and build pass; no generated binary or local agent config is tracked.
+- [x] Owner approves the repository/license/tag decisions before public repository changes proceed.
+
+**Verified (2026-09-05):** Fresh-checkout build/help/version, local checks, Linux race and PTY smoke tests. Tooling details are in README; cross-platform lifecycle verification remains Task 9.
 
 ### Phase B: Inspect A Real Library
 
