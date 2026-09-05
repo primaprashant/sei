@@ -8,10 +8,13 @@ contract and [the implementation plan](implementation-plan.md) for progress.
 ## Status
 
 The executable supports strict JSON configuration, `--config`, `--project`,
-`--help`, `--version`, and an asynchronous read-only configured folder browser
+`--help`, `--version`, and an asynchronous configured folder browser
 (quit with `q` or Ctrl+C). Missing configuration opens editable first-run setup;
 `sei setup` reconfigures ordered agents, confirms config replacement, and saves/exits.
-Skill mutations are not implemented yet.
+Uppercase `X` permanently removes the selected destination skill, without
+confirmation, trash, backup, or undo. Add/copy is not implemented yet. During work,
+navigation remains available; extra mutations are ignored, refresh is coalesced,
+and quit waits for completion. Failures remain visible and listings refresh.
 Malformed or unreadable configuration fails without starting setup or writing files.
 There is no published installer or usable release. Unknown flags, commands, and
 unexpected positional arguments return status `2`. After configuration validation,

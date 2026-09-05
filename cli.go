@@ -12,8 +12,8 @@ import (
 const usage = `Usage: sei [options] [setup]
 
 sei is a terminal skill-folder manager, currently in development.
-Load strict JSON configuration and browse configured folders read-only.
-First-run and explicit setup are available; mutations are not implemented yet.
+Load strict JSON configuration and manage configured folders.
+First-run/explicit setup and permanent removal are available; add is not implemented yet.
 Global options must precede the optional setup subcommand.
 
 Options:
@@ -34,7 +34,8 @@ g stays pending until a key: invalid continuations are consumed; Esc cancels/clo
 q or Ctrl+C always quit; recognized paste is ignored. Selections are per panel;
 refresh preserves raw names, otherwise clamps the old index.
 Add mappings by slot: a b c d e f h i o local, A B C D E F H I O global
-(library only, disabled). X remove (destination only, disabled); x does nothing.
+(library only, disabled). X permanently removes (destination only); x does nothing.
+Removal has no confirmation, trash, backup, or undo. Quit waits for active work.
 Layout is provisional; no minimum terminal size has been approved.
 `
 
@@ -135,8 +136,13 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			return 1
 		}
 	}
-	if _, err := runLifecycle(newBrowseModel(resolved), stdin, stdout); err != nil {
+	final, err := runLifecycle(newBrowseModel(resolved), stdin, stdout)
+	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "sei: terminal: %s\n", displayText(err.Error()))
+		return 1
+	}
+	if result, ok := final.(browseModel); ok && result.exitError != nil {
+		_, _ = fmt.Fprintf(stderr, "sei: %s\n", displayText(result.exitError.Error()))
 		return 1
 	}
 	return 0

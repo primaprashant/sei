@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase D implemented; four-platform CI passes. Phase E in progress; owner manual reviews remain pending.
+**Status:** Phase E in progress (Task 13 complete locally). Phase D four-platform CI passes; new native/manual checks pending.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -407,11 +407,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Deliver the first complete mutation path: focus a destination, press uppercase `X`, safely preflight/delete one ordinary directory, and see the resulting listing.
 
 **Acceptance criteria:**
-- [ ] Connect captured selection through root/name/type validation, full target-tree no-link/special-file preflight, postorder rooted removal, and destination refresh. Removing a skill absent from the library works; lowercase `x`, library focus, empty lists, and blocked entries never delete.
-- [ ] No confirmation, trash, Git check, root deletion, or library write occurs. Preserve existing content on predictable preflight rejection; report stale/disappeared selections without substituting another row.
-- [ ] Run one mutation asynchronously, keep navigation responsive, reject busy/help mutation input, and wait on quit from the first enabled mutation. Success selects the following row or preceding last row; failure remains visible and refreshes actual partial state.
+- [x] Connect captured selection through root/name/type validation, full target-tree no-link/special-file preflight, postorder rooted removal, and destination refresh. Removing a skill absent from the library works; lowercase `x`, library focus, empty lists, and blocked entries never delete.
+- [x] No confirmation, trash, Git check, root deletion, or library write occurs. Preserve existing content on predictable preflight rejection; report stale/disappeared selections without substituting another row.
+- [x] Run one mutation asynchronously, keep navigation responsive, reject busy/help mutation input, and wait on quit from the first enabled mutation. Success selects the following row or preceding last row; failure remains visible and refreshes actual partial state.
 
 **Verification:** `go test -count=1 -run 'Test(RemoveSkill|RemoveFlow|MutationGuard)' .`, race check, and a disposable real remove/restart flow. Test target-internal symlink/special-file rejection and byte-for-byte unchanged library.
+
+**Verified (2026-09-06):** Linux full tests/race/lint/build and disposable PTY remove/restart pass; add disabled. New native/manual checks pending.
 
 **Dependencies:** Tasks 8, 9, and 12.
 

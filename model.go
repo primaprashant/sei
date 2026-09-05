@@ -1,6 +1,10 @@
 package main
 
-import tea "charm.land/bubbletea/v2"
+import (
+	"fmt"
+
+	tea "charm.land/bubbletea/v2"
+)
 
 type browsePanel struct {
 	label, path   string
@@ -25,6 +29,27 @@ type browseModel struct {
 	pendingGlobal    bool
 	showHelp         bool
 	helpOffset       int
+	nextOperation    uint64
+	active           *mutationRequest
+	pendingQuit      bool
+	status           string
+	exitError        error
+}
+
+type mutationRequest struct {
+	id                uint64
+	destination       panelID
+	name, label, path string
+	selected          int
+}
+
+func (r mutationRequest) target() string {
+	return fmt.Sprintf("Remove %q from %s (%s)", r.name, r.label, r.path)
+}
+
+type mutationResult struct {
+	id  uint64
+	err error
 }
 
 type startBrowseMsg struct{}
@@ -54,9 +79,16 @@ func (browseModel) Init() tea.Cmd {
 func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case exitRequestMsg:
-		// Future mutations must defer this quit until their completion message.
+		if m.active != nil {
+			m.pendingQuit = true
+			return m, nil
+		}
 		return m, tea.Quit
 	case startBrowseMsg:
+		// Completion always refreshes all panels, coalescing refresh during work.
+		if m.active != nil || m.pendingQuit {
+			return m, nil
+		}
 		m.safetyGeneration++
 		cfg, generation := m.config, m.safetyGeneration
 		m.panels = append([]browsePanel(nil), m.panels...)
@@ -70,6 +102,27 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		commands = append(commands, func() tea.Msg { return rootSafetyMsg{generation, resolveRoots(cfg)} })
 		return m, tea.Batch(commands...)
+	case mutationResult:
+		if m.active == nil || msg.id != m.active.id {
+			return m, nil
+		}
+		r := *m.active
+		m.active = nil
+		m.status = r.target() + ": complete"
+		if msg.err != nil {
+			m.status = r.target() + ": " + msg.err.Error()
+		} else {
+			m.panels = append([]browsePanel(nil), m.panels...)
+			p := &m.panels[r.destination]
+			p.selectedName, p.selected = "", r.selected
+		}
+		if m.pendingQuit {
+			if msg.err != nil {
+				m.exitError = fmt.Errorf("%s: %w", r.target(), msg.err)
+			}
+			return m, tea.Quit
+		}
+		return m.Update(startBrowseMsg{})
 	case rootSafetyMsg:
 		if msg.generation != m.safetyGeneration || len(msg.safety.blocked) != len(m.panels) {
 			return m, nil
@@ -121,6 +174,9 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.showHelp, m.pendingGlobal = false, false
 			return m, nil
 		}
+		if m.pendingQuit {
+			return m, nil
+		}
 		if m.pendingGlobal {
 			m.pendingGlobal = false
 			if len(input) == 1 && input[0] >= '1' && int(input[0]-'0') <= m.agents {
@@ -130,6 +186,31 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil // Invalid continuations are consumed, never replayed.
 		}
 		switch input {
+		case "X":
+			if m.active != nil || m.showHelp || m.focused == 0 || m.width <= 0 || m.height <= 0 {
+				return m, nil
+			}
+			p := m.panels[m.focused]
+			if p.loading || p.err != nil || p.missing || p.selectedName == "" || p.selected < 0 || p.selected >= len(p.entries) {
+				return m, nil
+			}
+			if p.entries[p.selected].blocked || p.entries[p.selected].name != p.selectedName {
+				return m, nil
+			}
+			if !p.safetyChecked || p.safetyErr != nil {
+				m.status = "Remove blocked: root safety is unchecked or unsafe; ? for details"
+				return m, nil
+			}
+			m.nextOperation++
+			r := mutationRequest{m.nextOperation, panelID(m.focused), p.selectedName, p.label, p.path, p.selected}
+			m.active, m.status = &r, r.target()+": working"
+			m.safetyGeneration++
+			m.panels = append([]browsePanel(nil), m.panels...)
+			for i := range m.panels {
+				m.panels[i].generation++
+			}
+			cfg := m.config
+			return m, func() tea.Msg { return mutationResult{r.id, removeSkill(cfg, r.destination, r.name)} }
 		case "g":
 			m.pendingGlobal = true
 		case "?":

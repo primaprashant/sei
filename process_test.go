@@ -307,7 +307,7 @@ func TestPTYLifecycle(t *testing.T) {
 			}()
 			var screen strings.Builder
 			if interactive {
-				for !strings.Contains(screen.String(), "Read-only configured folders") {
+				for !strings.Contains(screen.String(), "Configured folders") {
 					select {
 					case chunk, ok := <-chunks:
 						if !ok {

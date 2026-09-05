@@ -244,7 +244,7 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 		}
 	}
 	if restart {
-		await("Read-only configured folders")
+		await("Configured folders")
 		send("q")
 	} else {
 		await("Enter preview")
@@ -307,7 +307,7 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 						}
 					}
 				} else if scenario != "save-failure" {
-					await("Read-only configured folders")
+					await("Configured folders")
 					send("q")
 				}
 			}
@@ -363,7 +363,7 @@ waiting:
 			t.Errorf("missing terminal restoration %q", pair)
 		}
 	}
-	if scenario != "complete-restart" && strings.Contains(screen.String(), "Read-only configured folders") {
+	if scenario != "complete-restart" && strings.Contains(screen.String(), "Configured folders") {
 		t.Fatal("cancel entered browse")
 	}
 	return screen.String()

@@ -258,7 +258,7 @@ func TestBrowseKeys(t *testing.T) {
 		}
 	}
 	v := m.View()
-	if !v.AltScreen || !strings.Contains(v.Content, "Read-only configured folders") || !strings.Contains(v.Content, "quit") {
+	if !v.AltScreen || !strings.Contains(v.Content, "Configured folders") || !strings.Contains(v.Content, "quit") {
 		t.Fatalf("unexpected browser view: %+v", v)
 	}
 }

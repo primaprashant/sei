@@ -24,7 +24,7 @@ func panelView(p browsePanel, library bool, width, height int) string {
 	} else if p.safetyErr != nil {
 		lines = append(lines, "Root safety: blocked (? reason)")
 	} else {
-		lines = append(lines, "Root relations checked; actions disabled")
+		lines = append(lines, "Root relations checked")
 	}
 	switch {
 	case p.loading:
@@ -110,11 +110,16 @@ func (m browseModel) View() tea.View {
 	left := panelView(m.labeledPanel(0), true, leftWidth, lipgloss.Height(right))
 	h := help.New()
 	keys := h.ShortHelpView([]key.Binding{key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q / ctrl+c", "quit"))})
-	v := tea.NewView("sei | Read-only configured folders\n" +
+	status := m.status
+	if m.pendingQuit {
+		status += " | Exit requested; waiting for work"
+	}
+	v := tea.NewView("sei | Configured folders\n" +
 		lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right) +
 		"\n" + ansi.Truncate("Focused: "+displayText(m.panels[m.focused].label)+" | Selected: "+displayText(m.panels[m.focused].selectedName), m.width, "~") +
 		"\n0 library | 1-9 local | g 1-9 global | up/down | r refresh | ? full targets/help" + m.sequenceHint() +
-		"\nAdd/remove disabled; exact add mappings in headers and ? help. " + keys)
+		"\nX permanently removes selected destination skill; add disabled. " + keys +
+		"\n" + ansi.Truncate(displayText(status), m.width, "~"))
 	v.AltScreen = true
 	return v
 }
@@ -152,7 +157,7 @@ func (m browseModel) helpHeight() int { return max(1, m.height-1) }
 
 func (m browseModel) helpLines() []string {
 	p := m.panels[m.focused]
-	text := "sei | Read-only help\nFocused: " + displayText(p.label) + "\nRoot path: " + displayText(p.path) +
+	text := "sei | Help\nFocused: " + displayText(p.label) + "\nRoot path: " + displayText(p.path) +
 		"\nSelected name: " + displayText(p.selectedName)
 	if p.selectedName == "" {
 		text += "(none)"
@@ -165,12 +170,18 @@ func (m browseModel) helpLines() []string {
 	} else if p.safetyErr != nil {
 		text += "\nRoot safety blocked: " + displayText(p.safetyErr.Error())
 	} else {
-		text += "\nRoot relations checked; each future mutation must revalidate. Actions disabled."
+		text += "\nRoot relations checked; every mutation revalidates."
 	}
 	text += "\n0 library; 1-9 local; g then 1-9 global. Unconfigured slots do nothing.\nUp/Down clamp selection; in help scroll. r refreshes listings, not config.\ng has no timeout; invalid continuation is consumed. Esc cancels/closes; q/Ctrl+C quit. Paste ignored.\nAdd from library only (disabled):"
 	for i := range m.agents {
 		text += fmt.Sprintf("\n%c: %s; %c: %s", addKeys[i], displayText(m.panels[1+m.agents+i].label), strings.ToUpper(string(addKeys[i]))[0], displayText(m.panels[1+i].label))
 	}
-	text += "\nX: remove from destination only (disabled); x does nothing.\nOther agents may also load skills from these folders. sei shows configured folder contents, not everything an agent discovers or has loaded."
+	text += "\nX: permanently remove from destination only; x does nothing. No confirmation, trash, backup, or undo.\nWhile working, navigation remains available; extra mutations are ignored and refresh waits. Quit waits for completion.\nOther agents may also load skills from these folders. sei shows configured folder contents, not everything an agent discovers or has loaded."
+	if m.status != "" {
+		text += "\nResult: " + displayText(m.status)
+	}
+	if m.pendingQuit {
+		text += "\nExit requested; waiting for work"
+	}
 	return strings.Split(ansi.Hardwrap(text, max(1, m.width), true), "\n")
 }
