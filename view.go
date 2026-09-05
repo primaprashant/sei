@@ -36,9 +36,10 @@ func panelView(p browsePanel, library bool, width, height int) string {
 		if visible < len(p.entries) && visible > 1 {
 			visible--
 		}
-		for _, entry := range p.entries[:visible] {
+		start := max(0, p.selected-visible+1)
+		for _, entry := range p.entries[start : start+visible] {
 			marker := "  "
-			if library && entry.name == p.selectedName {
+			if entry.name == p.selectedName {
 				marker = "> "
 			}
 			label := displayText(entry.name)
@@ -48,7 +49,7 @@ func panelView(p browsePanel, library bool, width, height int) string {
 			lines = append(lines, marker+label)
 		}
 		if visible < len(p.entries) {
-			lines = append(lines, fmt.Sprintf("... %d more (navigation unavailable)", len(p.entries)-visible))
+			lines = append(lines, fmt.Sprintf("Rows %d-%d / %d", start+1, start+visible, len(p.entries)))
 		}
 	}
 	for i, line := range lines {
@@ -62,15 +63,28 @@ func panelView(p browsePanel, library bool, width, height int) string {
 }
 
 func (m browseModel) View() tea.View {
+	if m.showHelp {
+		lines := m.helpLines()
+		offset := max(0, min(m.helpOffset, len(lines)-m.helpHeight()))
+		v := tea.NewView(strings.Join(lines[offset:min(len(lines), offset+m.helpHeight())], "\n") +
+			fmt.Sprintf("\nHelp %d/%d | up/down scroll | ?/Esc close | q quit%s", offset+1, len(lines), m.sequenceHint()))
+		v.AltScreen = true
+		return v
+	}
 	// Provisional grid, not a supported terminal-size or overflow contract.
-	columns := min(3, m.agents)
+	columns := min(max(1, m.width/40), 3, m.agents)
 	rows := (m.agents + columns - 1) / columns
+	visibleRows := min(rows, max(1, (m.height-7)/10))
+	firstRow := 0
+	if m.focused > 0 {
+		firstRow = max(0, (m.focused-1)%m.agents/columns-visibleRows+1)
+	}
 	leftWidth := max(1, m.width/3)
 	panelWidth := max(1, (m.width-leftWidth-3)/columns-1)
-	panelHeight := max(4, (m.height-4)/(2*rows)-1)
+	panelHeight := max(4, (m.height-7)/(2*visibleRows)-1)
 	var rightRows []string
 	for scope := range 2 {
-		for row := range rows {
+		for row := firstRow; row < min(rows, firstRow+visibleRows); row++ {
 			var cells []string
 			for col := range columns {
 				i := row*columns + col
@@ -78,19 +92,71 @@ func (m browseModel) View() tea.View {
 					if len(cells) > 0 {
 						cells = append(cells, " ")
 					}
-					cells = append(cells, panelView(m.panels[1+scope*m.agents+i], false, panelWidth, panelHeight))
+					id := 1 + scope*m.agents + i
+					cells = append(cells, panelView(m.labeledPanel(id), false, panelWidth, panelHeight))
 				}
 			}
 			rightRows = append(rightRows, lipgloss.JoinHorizontal(lipgloss.Top, cells...))
 		}
 	}
 	right := strings.Join(rightRows, "\n\n")
-	left := panelView(m.panels[0], true, leftWidth, lipgloss.Height(right))
+	left := panelView(m.labeledPanel(0), true, leftWidth, lipgloss.Height(right))
 	h := help.New()
 	keys := h.ShortHelpView([]key.Binding{key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q / ctrl+c", "quit"))})
 	v := tea.NewView("sei | Read-only configured folders\n" +
 		lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right) +
-		"\nNavigation, refresh, add/remove unavailable.\n" + keys)
+		"\n" + ansi.Truncate("Focused: "+displayText(m.panels[m.focused].label)+" | Selected: "+displayText(m.panels[m.focused].selectedName), m.width, "~") +
+		"\n0 library | 1-9 local | g 1-9 global | up/down | r refresh | ? full targets/help" + m.sequenceHint() +
+		"\nAdd/remove disabled; exact add mappings in headers and ? help. " + keys)
 	v.AltScreen = true
 	return v
+}
+
+const addKeys = "abcdefhio"
+
+func (m browseModel) sequenceHint() string {
+	if m.pendingGlobal {
+		return " | g pending: 1-9 global, Esc cancel"
+	}
+	return ""
+}
+
+func (m browseModel) labeledPanel(id int) browsePanel {
+	p := m.panels[id]
+	shortcut := "0"
+	if id > 0 {
+		slot := (id - 1) % m.agents
+		shortcut = strconv.Itoa(slot + 1)
+		add := string(addKeys[slot])
+		if id <= m.agents {
+			shortcut = "g " + shortcut
+			add = strings.ToUpper(add)
+		}
+		p.label += " [add " + add + " disabled]"
+	}
+	p.label = "[" + shortcut + "] " + p.label
+	if id == m.focused {
+		p.label = "> " + p.label
+	}
+	return p
+}
+
+func (m browseModel) helpHeight() int { return max(1, m.height-1) }
+
+func (m browseModel) helpLines() []string {
+	p := m.panels[m.focused]
+	text := "sei | Read-only help\nFocused: " + displayText(p.label) + "\nRoot path: " + displayText(p.path) +
+		"\nSelected name: " + displayText(p.selectedName)
+	if p.selectedName == "" {
+		text += "(none)"
+	}
+	if p.err != nil {
+		text += "\nError: " + displayText(p.err.Error())
+	}
+	text += "\n0 library; 1-9 local; g then 1-9 global. Unconfigured slots do nothing.\nUp/Down clamp selection; in help scroll. r refreshes listings, not config.\ng has no timeout; invalid continuation is consumed. Esc cancels/closes; q/Ctrl+C quit. Paste ignored.\nAdd from library only (disabled):"
+	for i := range m.agents {
+		text += fmt.Sprintf("\n%c: %s; %c: %s", addKeys[i], displayText(m.panels[1+m.agents+i].label), strings.ToUpper(string(addKeys[i]))[0], displayText(m.panels[1+i].label))
+	}
+	text += "\nX: remove from destination only (disabled); x does nothing.\nOther agents may also load skills from these folders. sei shows configured folder contents, not everything an agent discovers or has loaded."
+	return strings.Split(ansi.Hardwrap(text, max(1, m.width), true), "\n")
 }

@@ -9,7 +9,7 @@ contract and [the implementation plan](implementation-plan.md) for progress.
 
 The executable supports strict JSON configuration, `--config`, `--project`,
 `--help`, `--version`, and an asynchronous read-only configured folder browser
-(quit with `q` or Ctrl+C). Setup, navigation, refresh, and skill mutations are not
+(quit with `q` or Ctrl+C). Setup and skill mutations are not
 implemented. Missing configuration
 and the recognized `setup` command report that setup is unavailable (status `1`);
 malformed or unreadable configuration fails without starting setup or writing files.
@@ -46,9 +46,19 @@ raw selection names. The library appears left, with configured globals above
 locals on the right. Missing destinations show `Not created` and remain absent;
 inaccessible or invalid roots show errors independently of other panels.
 Configured root aliases can be read, but physical safety validation is still deferred.
-The 1-9-agent grid is provisional: larger lists show an overflow count, small
-windows can clip content, and full-target inspection/navigation remains Task 7.
-No minimum terminal size or final overflow behavior is established.
+The grid is provisional: it pages to the focused agent and scrolls lists to the
+selection. No minimum terminal size or final overflow behavior is established.
+
+Keys: Up/Down clamp; `0` library; `1-9` local; `g` then `1-9` global.
+Each panel remembers its raw-name selection. `r` refreshes listings, not config,
+preserving the raw name if present, otherwise clamping the old index.
+`g` stays visibly pending without a timeout; invalid continuations are consumed.
+`Esc` cancels/closes help; `q`/Ctrl+C retain quit priority. Paste is ignored.
+`?` shows full sanitized selected name/root path and mappings; Up/Down scroll
+wrapped help, including arbitrarily long targets. Navigation retains errors.
+Add slots are exactly `a b c d e f h i o` local and `A B C D E F H I O` global,
+from library only. These and destination-only `X` removal remain **disabled**;
+lowercase `x` and unconfigured slots do nothing.
 
 Other agents may also load skills from these folders. sei shows configured folder
 contents, not everything an agent discovers or has loaded.
@@ -178,6 +188,9 @@ HOME="$scratch" XDG_CONFIG_HOME="$scratch" ./bin/sei --config "$scratch/config.j
 The configuration and configured folders are read; no destinations or skills are
 created by the browser. The local destination in this example stays absent.
 Focused browser checks: `go test -count=1 -run 'TestBrowse' .`.
+Task 7 checks: `go test -count=1 -run 'Test(Navigation|KeySequence|Help|Refresh)' .`.
+Standard/build/race and disposable 1/3/9-agent Linux PTY smoke passed (100x30,
+xterm-256color, no-color); full lifecycle and cross-terminal proof remain deferred.
 
 Generated tools, binaries, release output, coverage output, and `/.opencode/`
 remain ignored. GoReleaser Community `v2.18.0` is reserved for the later release

@@ -14,7 +14,7 @@ const usage = `Usage: sei [options] [setup]
 
 sei is a terminal skill-folder manager, currently in development.
 Load strict JSON configuration and browse configured folders read-only.
-Setup, navigation, refresh, and mutations are not implemented yet.
+Setup and mutations are not implemented yet.
 Global options must precede the optional setup subcommand.
 
 Options:
@@ -29,7 +29,14 @@ Examples:
 
 Other agents may also load skills from these folders. sei shows configured folder contents, not everything an agent discovers or has loaded.
 
-Terminal keys: q or Ctrl+C to quit.
+Terminal keys: Up/Down (clamped), 0 library, 1-9 local, g then 1-9 global.
+r refreshes listings (not config); ? full sanitized targets/help, Up/Down scroll.
+g stays pending until a key: invalid continuations are consumed; Esc cancels/closes.
+q or Ctrl+C always quit; recognized paste is ignored. Selections are per panel;
+refresh preserves raw names, otherwise clamps the old index.
+Add mappings by slot: a b c d e f h i o local, A B C D E F H I O global
+(library only, disabled). X remove (destination only, disabled); x does nothing.
+Layout is provisional; no minimum terminal size has been approved.
 `
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {

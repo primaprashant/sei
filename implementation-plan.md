@@ -271,11 +271,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Make the read-only UI genuinely usable with all positional focus keys, selection memory, visible pending sequences, and inspectable full targets.
 
 **Acceptance criteria:**
-- [ ] Implement Up/Down clamping, `0`, local `1-9`, global `g` then `1-9`, per-panel selection memory, and `r` selection preservation by raw name; unconfigured slots do nothing.
-- [ ] Show headers and exact `a b c d e f h i o` / uppercase destination mappings, persistent pending `g` without timeout, consumed invalid continuations, and effective Esc/quit behavior. Ignore recognized paste input.
-- [ ] `?` exposes full sanitized name/path and the shared-discovery disclaimer; focus/scope/agent are readable without color, and navigation does not erase a displayed error. All 1-9 slots are addressable even while final layout dimensions remain provisional.
+- [x] Implement Up/Down clamping, `0`, local `1-9`, global `g` then `1-9`, per-panel selection memory, and `r` selection preservation by raw name; unconfigured slots do nothing.
+- [x] Show headers and exact `a b c d e f h i o` / uppercase destination mappings, persistent pending `g` without timeout, consumed invalid continuations, and effective Esc/quit behavior. Ignore recognized paste input.
+- [x] `?` exposes full sanitized name/path and the shared-discovery disclaimer; focus/scope/agent are readable without color, and navigation does not erase a displayed error. All 1-9 slots are addressable even while final layout dimensions remain provisional.
 
 **Verification:** `go test -count=1 -run 'Test(Navigation|KeySequence|Help|Refresh)' .`; manual one/three/nine-agent navigation and long-name inspection, including `g` then a would-be action key.
+
+**Verified (2026-09-05):** Focused/standard/build/race checks and disposable 1/3/9-agent Linux PTY smoke pass (100x30, xterm-256color, no-color): navigation, long-name help, consumed `ga`, paste, pending quit, restored termios, destinations absent. Layout provisional; mutations disabled; native macOS/SSH and lifecycle proof deferred.
 
 **Dependencies:** Task 6.
 

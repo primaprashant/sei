@@ -193,7 +193,7 @@ func TestBrowseCommandsAndGenerations(t *testing.T) {
 			t.Fatal("stale or duplicate completion overwrote finished panel")
 		}
 	}
-	for _, input := range "0123456789gabcdefhioABCDEFHIOXxr?" {
+	for _, input := range "abcdefhioABCDEFHIOXx" {
 		updated, cmd = m.Update(tea.KeyPressMsg{Code: input})
 		if cmd != nil || !reflect.DeepEqual(updated, m) {
 			t.Fatalf("future key %q enabled", input)
