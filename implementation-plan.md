@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phases A-B complete, including four-platform CI. Phase C in progress.
+**Status:** Phase C implemented and locally verified; new native macOS/terminal evidence pending. Phase D not started.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -325,9 +325,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Checkpoint C: Tasks 7-9
 
-- [ ] Standard checks and PTY lifecycle checks pass; all configured targets are inspectable without mutation.
+- [x] Standard checks and PTY lifecycle checks pass; all configured targets are inspectable without mutation.
 - [ ] Review filesystem containment/overlap evidence before enabling either destructive action.
-- [ ] Resolve ambiguity gates for unverifiable roots, configuration placement, and signals before the tasks that depend on them; do not silently broaden supported behavior.
+- [x] Resolve ambiguity gates for unverifiable roots, configuration placement, and signals before the tasks that depend on them; do not silently broaden supported behavior.
+
+**Verified (2026-09-05):** Local standard/build/race/PTY checks pass; root/lifecycle review fixes tested. Native macOS safety/PTY execution and manual terminal round trips remain pending; mutations disabled, no push performed.
 
 ### Phase D: First-Run Setup
 
