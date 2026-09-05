@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase B implemented and locally verified; Task 4/Checkpoint B native CI execution awaits push authorization. Phase C not started.
+**Status:** Phases A-B complete, including four-platform CI. Phase C in progress.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -205,12 +205,12 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Acceptance criteria:**
 - [x] Add PR/push checks with reviewed full-SHA action references and exact Go/linter versions; verify downloaded tool integrity and module hygiene.
-- [ ] Run native Linux/macOS tests on the selected four architecture labels, Linux amd64 race checks, and non-rewriting formatting/lint/vet checks; record actual runner OS/architecture.
+- [x] Run native Linux/macOS tests on the selected four architecture labels, Linux amd64 race checks, and non-rewriting formatting/lint/vet checks; record actual runner OS/architecture.
 - [x] Use read-only permissions for PR jobs, no release secrets or live agent installations, and no generated-file rewriting to make CI pass.
 
 **Verification:** Run standard checks locally; exercise the workflow on an authorized branch/PR and verify all four jobs actually ran. Record unavailable runner access as a blocker, not a pass.
 
-**Verified (2026-09-05):** CI implemented; local standard/race and workflow syntax checks pass. Four-runner execution pending push authorization; see `docs/release.md`.
+**Verified (2026-09-05):** Local checks and all four native CI jobs pass; see `docs/release.md`.
 
 **Dependencies:** Task 3.
 
@@ -258,11 +258,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Checkpoint B: Tasks 4-6
 
-- [ ] Standard checks pass locally and native CI passes on all four selected architecture jobs.
+- [x] Standard checks pass locally and native CI passes on all four selected architecture jobs.
 - [x] A manually written config opens populated real folders without creating any destination.
 - [x] Invalid configuration, unavailable folders, and blocked links are distinguishable; mutations remain disabled.
 
-**Verified (2026-09-05):** Local standard/build/race checks and isolated terminal smoke pass. Four native CI results remain pending; no push performed.
+**Verified (2026-09-05):** Local checks/terminal smoke and all four jobs in [CI run 33966759655](https://github.com/primaprashant/sei/actions/runs/33966759655) pass; platform evidence is in `docs/release.md`.
 
 ### Phase C: Targets And Terminal Safety
 
@@ -888,6 +888,8 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 ## Decision Gates
 
 Repository identity, MIT licensing, and the release-version policy are confirmed, and the owner has approved the plan. The following task-specific decisions and execution authorizations remain explicit gates; plan approval does not claim that future prototype reviews or publication approvals have already occurred.
+
+**Approved (2026-09-05):** PTY v1.1.24/existing terminal helper; inspection with affected unsafe mutations blocked; SIGINT/SIGTERM/SIGHUP wait-and-restore (HUP best-effort); reject config symlink writes/managed-root placement without creating destinations. Config-write enforcement remains Phase D; ShellCheck approval remains later.
 
 | Gate | Recommendation / Question | Resolve Before |
 | --- | --- | --- |

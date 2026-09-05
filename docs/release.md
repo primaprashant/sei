@@ -79,7 +79,7 @@ new full commit SHA. Checksums detect corruption/substitution relative to the
 reviewed bytes, not a compromised publisher. Module checksum verification stays
 enabled with `sum.golang.org`; these controls are not release attestations.
 
-## Verification And Blockers
+## Verification Evidence
 
 Local verification on 2026-09-05 passed on Linux amd64 (Debian kernel
 `6.12.90+deb13.1-cloud-amd64`, GCC `14.2.0`):
@@ -97,21 +97,30 @@ Local verification on 2026-09-05 passed on Linux amd64 (Debian kernel
   `actionlint` and ShellCheck were not installed; YAML/Bash syntax checks are
   not a substitute for GitHub workflow validation or native remote execution.
 
-Remote runner execution is **blocked: no push authorization**. No branch/PR was
-pushed or workflow dispatched for Task 4. There are no remote
-run URLs or actual runner image results to report; all four native execution
-results remain pending, not passed.
+Remote verification on 2026-09-05 used read-only `gh run view 33966759655
+--repo primaprashant/sei --json url,headSha,status,conclusion,jobs` and the same
+command with `--log`. [Run 33966759655](https://github.com/primaprashant/sei/actions/runs/33966759655)
+completed with **success**, testing commit
+`0c6f150aca18388e3ea30adad37d5191c8d7b113`. All four jobs actually executed and
+completed successfully; none was skipped, canceled, or merely queued.
 
-After owner review, a sequential Task 4 commit, and explicit push authorization:
+| Job / Source Log | Actual OS / Native Architecture | Set Up Job Image / Version | Go Version / Platform | golangci-lint | Result |
+| --- | --- | --- | --- | --- | --- |
+| [ubuntu-24.04](https://github.com/primaprashant/sei/actions/runs/33966759655/job/101308141064) | Ubuntu 24.04.4 LTS; Linux `6.17.0-1022-azure`; X64 / `x86_64` | `ubuntu-24.04` / `20260831.293.1` | `1.27.1` / `linux/amd64` | `2.13.2` | Success; race passed |
+| [ubuntu-24.04-arm](https://github.com/primaprashant/sei/actions/runs/33966759655/job/101308141087) | Ubuntu 24.04.4 LTS; Linux `6.17.0-1022-azure`; ARM64 / `aarch64` | `ubuntu-24.04-arm` / `20260831.111.1` | `1.27.1` / `linux/arm64` | `2.13.2` | Success; race skipped by design |
+| [macos-15-intel](https://github.com/primaprashant/sei/actions/runs/33966759655/job/101308141005) | macOS 15.7.9 (`24G830`); Darwin `24.6.0`; X64 / `x86_64` | `macos-15` / `20260824.0482.1` | `1.27.1` / `darwin/amd64` | `2.13.2` | Success; race skipped by design |
+| [macos-15](https://github.com/primaprashant/sei/actions/runs/33966759655/job/101308140968) | macOS 15.7.9 (`24G830`); Darwin `24.6.0`; ARM64 / `arm64` | `macos-15-arm64` / `20260829.0321.1` | `1.27.1` / `darwin/arm64` | `2.13.2` | Success; race skipped by design |
 
-1. Exercise PR/push CI on the authorized branch/PR.
-2. Inspect the run with `gh run view <run-id> --repo primaprashant/sei` and
-   `gh run view <run-id> --repo primaprashant/sei --log`.
-3. Record the run URL, tested commit, all four job conclusions, actual image/OS/
-   architecture/tool versions, and Linux amd64 race result here. Confirm jobs
-   actually executed, rather than being skipped, canceled, or only queued.
-4. Investigate unavailable runner access as a blocker; never silently remove a
-   matrix entry. Close Task 4's native-execution criterion only with this evidence.
+The logged `ImageOS` values were `ubuntu24`, `ubuntu24-arm64`, and `macos15`
+(both Macs); image versions matched **Set up job**. Every linter reported
+build Go `1.27.0`, revision `27774aaf`. Linux used GCC `13.3.0`
+(`13.3.0-6ubuntu2~24.04.1`); both Macs used Apple clang `17.0.0`
+(`clang-1700.0.13.5`). Native host/Go target assertions and macOS's no-Rosetta
+assertion passed. All jobs passed archive verification, standard checks (zero
+lint issues, uncached tests, build and help/version), and tracked-file cleanliness.
+Linux amd64 passed `CGO_ENABLED=1 go test -race -count=1 ./...` (`ok`, `1.301s`);
+the other three race steps were intentionally skipped, not claimed as passes.
+This evidence inspection did not dispatch/rerun workflows, commit, or push.
 
 These newer CI images do not validate the proposed Ubuntu 22.04/5.15 kernel
 floor or macOS 13. Native machines/VMs on both architectures still need to be
