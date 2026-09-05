@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase E implemented; macOS CI exposed fixture/path assumptions, fixed locally; native rerun pending. Linux checks pass.
+**Status:** Phase E implemented; all four native CI jobs pass. Human terminal reviews and later-phase audits remain pending.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -468,6 +468,8 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Verified (2026-09-06):** Linux standard/build/race, ten PTY workflow repetitions, and macOS cross-builds pass; code review complete. Native Phase E/case-volume and human terminal checks pending; no push. Scan-to-operation identity audit remains Task 17.
 
 **CI follow-up (2026-09-06):** Both Macs failed [33999023333](https://github.com/primaprashant/sei/actions/runs/33999023333): unsupported raw-name fixtures and `/var` aliases in hook/PTY expectations. Tests fixed with capability probes and Linux alias regressions; full/race/lint/vet, ten repetitions, and macOS cross-builds pass. Native rerun pending; production unchanged.
+
+**Native verified (2026-09-06):** [CI 33999522026](https://github.com/primaprashant/sei/actions/runs/33999522026) passes all four Linux/macOS architecture jobs at `664a898`, including Linux race. Human terminal review and Task 17 cross-filesystem collision audit remain pending.
 
 ### Phase F: Failure And Concurrency Behavior
 

@@ -230,7 +230,7 @@ can leave a reader goroutine until process exit; no in-process reuse is promised
 
 Phase E adds rooted copy/removal/replacement, preflight and injected-failure tests,
 umask subprocesses, and PTY add-three/remove-two/restart workflows. Linux standard
-and race checks pass; native Phase E/case-volume execution remains pending. The
+and race checks pass; all four native jobs pass in [CI 33999522026](https://github.com/primaprashant/sei/actions/runs/33999522026). The
 scan-to-operation identity audit is Task 17; this is a prototype, not a release.
 
 Generated tools, binaries, release output, coverage output, and `/.opencode/`

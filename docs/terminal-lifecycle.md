@@ -106,5 +106,5 @@ pass after the fix; both Darwin architectures cross-compile. Native verification
 of these fixes subsequently passed in runs `33970786802` and `33994932478`.
 
 Phase E Linux model/race and real add/remove/replace/restart PTY checks pass.
-Help always exposes busy/pending-quit status in its footer. Native execution of
-these new tests remains pending; ordinary active-operation signal proof is Task 18.
+Help always exposes busy/pending-quit status in its footer. Native execution passed
+all four jobs in CI `33999522026`; ordinary active-operation signal proof is Task 18.
