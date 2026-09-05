@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase A and Tasks 5-6 complete; Task 4 CI implemented with native runner execution pending. Task 7 not started.
+**Status:** Phase B implemented and locally verified; Task 4/Checkpoint B native CI execution awaits push authorization. Phase C not started.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -259,8 +259,10 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 ### Checkpoint B: Tasks 4-6
 
 - [ ] Standard checks pass locally and native CI passes on all four selected architecture jobs.
-- [ ] A manually written config opens populated real folders without creating any destination.
-- [ ] Invalid configuration, unavailable folders, and blocked links are distinguishable; mutations remain disabled.
+- [x] A manually written config opens populated real folders without creating any destination.
+- [x] Invalid configuration, unavailable folders, and blocked links are distinguishable; mutations remain disabled.
+
+**Verified (2026-09-05):** Local standard/build/race checks and isolated terminal smoke pass. Four native CI results remain pending; no push performed.
 
 ### Phase C: Targets And Terminal Safety
 
