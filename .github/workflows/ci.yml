@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  GOTOOLCHAIN: go1.27.1
+  GOENV: 'off'
+  GOWORK: 'off'
+  GOFLAGS: -mod=readonly
+  GOSUMDB: sum.golang.org
+
+jobs:
+  checks:
+    name: Native checks (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            os: linux
+            arch: amd64
+            host: Linux/x86_64
+            go-sha256: 63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445
+            lint-sha256: 2277d43b98ec0054280f2ac26b53268bae97682444678a59a657dd565da021d6
+          - runner: ubuntu-24.04-arm
+            os: linux
+            arch: arm64
+            host: Linux/aarch64
+            go-sha256: 3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec
+            lint-sha256: a2a4e0065aa41be71f7c5ac90f271b61751331e5d04314e62afe4027855f0893
+          - runner: macos-15-intel
+            os: darwin
+            arch: amd64
+            host: Darwin/x86_64
+            go-sha256: 8f8f52c6649542cf027bbc9b9c68d1ec042f9f34808a40413f0b8b3f66f3caa4
+            lint-sha256: 8a13aaf9cbbb1dee52824e862cf0d0720e5bb97c1f4260d1e51623a09492b57b
+          - runner: macos-15
+            os: darwin
+            arch: arm64
+            host: Darwin/arm64
+            go-sha256: ee215d57e0ec269c60cc9ceca68e6bda321ba9ee5afe24f4b0988703c2d87d12
+            lint-sha256: f4bf83f0b64f055c42b28fc9a38861839f69c096e61c788e72dfaae412011789
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Record and assert native runner
+        env:
+          EXPECTED_HOST: ${{ matrix.host }}
+        run: |
+          printf 'Runner OS=%s arch=%s image=%s version=%s\n' \
+            "$RUNNER_OS" "$RUNNER_ARCH" "${ImageOS:-unknown}" "${ImageVersion:-unknown}"
+          uname -a
+          test "$(uname -s)/$(uname -m)" = "$EXPECTED_HOST"
+          if [ "$RUNNER_OS" = macOS ]; then
+            sw_vers
+            test "$(sysctl -in sysctl.proc_translated 2>/dev/null || true)" != 1
+          else
+            cat /etc/os-release
+          fi
+          cc --version
+
+      - name: Install verified Go and golangci-lint archives
+        env:
+          TOOL_OS: ${{ matrix.os }}
+          TOOL_ARCH: ${{ matrix.arch }}
+          GO_SHA256: ${{ matrix.go-sha256 }}
+          LINT_SHA256: ${{ matrix.lint-sha256 }}
+        run: |
+          tools=$(mktemp -d "$RUNNER_TEMP/sei-tools.XXXXXX")
+          go_archive="go1.27.1.$TOOL_OS-$TOOL_ARCH.tar.gz"
+          lint_package="golangci-lint-2.13.2-$TOOL_OS-$TOOL_ARCH"
+          curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            --output "$tools/$go_archive" "https://go.dev/dl/$go_archive"
+          curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            --output "$tools/$lint_package.tar.gz" \
+            "https://github.com/golangci/golangci-lint/releases/download/v2.13.2/$lint_package.tar.gz"
+          # Both platforms provide shasum; fail before extracting either archive.
+          printf '%s  %s\n' "$GO_SHA256" "$tools/$go_archive" \
+            "$LINT_SHA256" "$tools/$lint_package.tar.gz" | shasum -a 256 --check -
+          tar -xzf "$tools/$go_archive" -C "$tools"
+          mkdir -p .bin "$RUNNER_TEMP/sei-home" "$RUNNER_TEMP/sei-config"
+          tar -xzf "$tools/$lint_package.tar.gz" -C .bin \
+            --strip-components=1 "$lint_package/golangci-lint"
+          printf '%s\n' "$tools/go/bin" >> "$GITHUB_PATH"
+          printf 'GOROOT=%s\n' "$tools/go" >> "$GITHUB_ENV"
+
+      - name: Standard checks
+        env:
+          HOME: ${{ runner.temp }}/sei-home
+          XDG_CONFIG_HOME: ${{ runner.temp }}/sei-config
+          EXPECTED_PLATFORM: ${{ matrix.os }}/${{ matrix.arch }}
+        run: |
+          go version
+          test "$(go env GOVERSION)" = go1.27.1
+          test "$(go env GOHOSTOS)/$(go env GOHOSTARCH)" = "$EXPECTED_PLATFORM"
+          test "$(go env GOOS)/$(go env GOARCH)" = "$EXPECTED_PLATFORM"
+          go env GOTOOLCHAIN GOROOT GOOS GOARCH CGO_ENABLED
+          ./.bin/golangci-lint version
+          go mod download
+          go mod verify
+          go mod tidy -diff
+          ./.bin/golangci-lint config verify --config .golangci.yml
+          ./.bin/golangci-lint fmt --config .golangci.yml --diff
+          ./.bin/golangci-lint run --config .golangci.yml --timeout=5m ./...
+          go vet ./...
+          go test -count=1 ./...
+          mkdir -p bin
+          go build -o ./bin/sei .
+          ./bin/sei --help
+          ./bin/sei --version
+
+      - name: Linux amd64 race checks
+        if: matrix.runner == 'ubuntu-24.04'
+        env:
+          HOME: ${{ runner.temp }}/sei-home
+          XDG_CONFIG_HOME: ${{ runner.temp }}/sei-config
+          CGO_ENABLED: '1'
+        run: go test -race -count=1 ./...
+
+      - name: Reject tracked-file changes
+        if: always()
+        run: git diff --exit-code HEAD -- .

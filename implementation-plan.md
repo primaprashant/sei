@@ -204,11 +204,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Put the working executable behind repeatable, secret-free native CI rather than deferring automation to release week.
 
 **Acceptance criteria:**
-- [ ] Add PR/push checks with reviewed full-SHA action references and exact Go/linter versions; verify downloaded tool integrity and module hygiene.
+- [x] Add PR/push checks with reviewed full-SHA action references and exact Go/linter versions; verify downloaded tool integrity and module hygiene.
 - [ ] Run native Linux/macOS tests on the selected four architecture labels, Linux amd64 race checks, and non-rewriting formatting/lint/vet checks; record actual runner OS/architecture.
-- [ ] Use read-only permissions for PR jobs, no release secrets or live agent installations, and no generated-file rewriting to make CI pass.
+- [x] Use read-only permissions for PR jobs, no release secrets or live agent installations, and no generated-file rewriting to make CI pass.
 
 **Verification:** Run standard checks locally; exercise the workflow on an authorized branch/PR and verify all four jobs actually ran. Record unavailable runner access as a blocker, not a pass.
+
+**Verified (2026-09-05):** CI implemented; local standard/race and workflow syntax checks pass. Four-runner execution pending push authorization; see `docs/release.md`.
 
 **Dependencies:** Task 3.
 
