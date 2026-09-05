@@ -53,6 +53,9 @@ func (browseModel) Init() tea.Cmd {
 
 func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case exitRequestMsg:
+		// Future mutations must defer this quit until their completion message.
+		return m, tea.Quit
 	case startBrowseMsg:
 		m.safetyGeneration++
 		cfg, generation := m.config, m.safetyGeneration
@@ -113,7 +116,7 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		input := msg.String()
 		switch input {
 		case "q", "ctrl+c":
-			return m, tea.Quit
+			return m.Update(exitRequestMsg{})
 		case "esc":
 			m.showHelp, m.pendingGlobal = false, false
 			return m, nil

@@ -17,6 +17,10 @@ There is no published installer or usable release. Unknown flags, commands, and
 unexpected positional arguments return status `2`. After configuration validation,
 interactive startup requires terminal stdin and stdout and otherwise returns `1`.
 Help/version use stdout and need neither configuration nor a terminal; errors use stderr.
+SIGINT, SIGTERM, and SIGHUP request ordinary exit through the same model path as
+`q`/Ctrl+C; repeated signals never force exit. Terminal restoration precedes final
+runtime diagnostics. HUP restoration is best effort on a disconnected terminal;
+SIGKILL cannot restore anything. See [lifecycle policy and evidence](docs/terminal-lifecycle.md).
 
 Use global options **before** the optional `setup` subcommand:
 
@@ -111,9 +115,10 @@ was reviewed: on Linux/macOS it uses a read-only termios ioctl via `x/sys/unix`,
 not a character-device heuristic. The existing `github.com/charmbracelet/x/ansi`
 `v0.11.8` is now direct: its reviewed `StringWidth` and `Truncate` APIs measure
 grapheme clusters in terminal cells; untrusted text is escaped before these calls.
-No new module was added. The browser uses Bubble Tea's default lifecycle for
-read-only scans; quitting does not promise to join scan workers. Task 9 must
-establish the lifecycle contract before mutations are enabled.
+Task 9 adds only owner-approved, test-only `github.com/creack/pty v1.1.24`.
+The lifecycle disables Bubble Tea's default signal handlers; read-only scans are
+not joined on exit. Future mutation tasks must defer ordinary quit until their
+operation completes; no mutation/busy behavior is implemented here.
 
 ### Pinned Linter
 
@@ -193,13 +198,21 @@ created by the browser. The local destination in this example stays absent.
 Focused browser checks: `go test -count=1 -run 'TestBrowse' .`.
 Task 7 checks: `go test -count=1 -run 'Test(Navigation|KeySequence|Help|Refresh)' .`.
 Standard/build/race and disposable 1/3/9-agent Linux PTY smoke passed (100x30,
-xterm-256color, no-color); full lifecycle and cross-terminal proof remain deferred.
+xterm-256color, no-color); cross-terminal proof remains pending.
 
 Task 8 checks: `go test -count=1 -run 'Test(RootSafety|ResolveRoots|SkillName)' .`.
 Focused/standard/build/race checks pass on Linux amd64 with Go 1.27.1, including
 unprivileged permission tests; the disposable filesystem detected case-sensitive names.
 Native macOS execution of the new Task 8 tests remains pending; earlier CI does
 not cover them. No copy/remove implementation or mutation keys are enabled.
+
+Task 9 checks: `go test -count=1 -run 'TestPTYLifecycle' .`. Linux PTY and full
+race checks pass, including post-raw initialization failure, saved-termios
+restoration without repeated renderer cleanup, and sanitized runtime diagnostics;
+native macOS execution/manual Terminal.app evidence remains pending. Existing CI
+full-test jobs automatically include these tests; no workflow was added or changed.
+PTY reads use existing `x/sys` Poll/Read with cancellation. Upstream input bursts
+can leave a reader goroutine until process exit; no in-process reuse is promised.
 
 Generated tools, binaries, release output, coverage output, and `/.opencode/`
 remain ignored. GoReleaser Community `v2.18.0` is reserved for the later release

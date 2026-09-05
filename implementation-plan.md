@@ -309,11 +309,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Test the real process boundary early, before async mutations make incorrect interrupt behavior destructive.
 
 **Acceptance criteria:**
-- [ ] Approve and pin the minimal PTY test dependency proposal, verify both stdin/stdout TTY checks, and test actual key bytes under a PTY rather than model messages only.
-- [ ] Establish one lifecycle owner and ordinary exit-request message path for raw Ctrl+C and repeated SIGINT; verify the pinned Bubble Tea default handlers cannot bypass it. Approve/document SIGTERM and SIGHUP policy without changing the existing Ctrl+C contract.
-- [ ] Demonstrate idle quit, startup/runtime failure cleanup, no alternate-screen output on non-TTY failure, and restored terminal modes/cursor/screen state. Keep test coordination out of shipped flags and environment variables.
+- [x] Approve and pin the minimal PTY test dependency proposal, verify both stdin/stdout TTY checks, and test actual key bytes under a PTY rather than model messages only.
+- [x] Establish one lifecycle owner and ordinary exit-request message path for raw Ctrl+C and repeated SIGINT; verify the pinned Bubble Tea default handlers cannot bypass it. Approve/document SIGTERM and SIGHUP policy without changing the existing Ctrl+C contract.
+- [x] Demonstrate idle quit, startup/runtime failure cleanup, no alternate-screen output on non-TTY failure, and restored terminal modes/cursor/screen state. Keep test coordination out of shipped flags and environment variables.
 
 **Verification:** `go test -count=1 -run 'TestPTYLifecycle' .`, Linux race check, and a manual terminal round trip on both OS families. PTY timeout is a test failure, not a skipped result.
+
+**Evidence (2026-09-05):** After Task 8 commit `3656d6e`, Linux PTY/standard/full-race checks pass, including post-raw initialization failure and no redraw after exit. Owner approved PTY pin and INT/TERM/HUP ordinary-exit policy. Native macOS/manual terminal evidence pending; no new CI. [API review and limits](docs/terminal-lifecycle.md).
 
 **Dependencies:** Tasks 4 and 7; owner approval of test tooling and interruption clarification.
 

@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 
-	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/term"
 )
 
@@ -65,7 +64,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			text = "sei " + version + "\n"
 		}
 		if _, err := io.WriteString(stdout, text); err != nil {
-			_, _ = fmt.Fprintf(stderr, "sei: write output: %v\n", err)
+			_, _ = fmt.Fprintf(stderr, "sei: write output: %s\n", displayText(err.Error()))
 			return 1
 		}
 		return 0
@@ -82,22 +81,22 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	launch, err := os.Getwd()
 	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "sei: launch directory: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "sei: launch directory: %s\n", displayText(err.Error()))
 		return 1
 	}
 	path, err := configLocation(launch, *configOverride)
 	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "sei: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "sei: %s\n", displayText(err.Error()))
 		return 1
 	}
 	cfg, missing, err := loadConfig(path)
 	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "sei: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "sei: %s\n", displayText(err.Error()))
 		return 1
 	}
 	project, err := resolveProject(launch, *projectOverride)
 	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "sei: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "sei: %s\n", displayText(err.Error()))
 		return 1
 	}
 	if missing {
@@ -106,7 +105,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	resolved, err := resolveConfigPaths(cfg, project)
 	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "sei: config %q: %v\n", path, err)
+		_, _ = fmt.Fprintf(stderr, "sei: config %q: %s\n", path, displayText(err.Error()))
 		return 1
 	}
 	if flags.NArg() == 1 {
@@ -119,8 +118,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintln(stderr, "sei: interactive mode requires terminal stdin and stdout; use --help or --version")
 		return 1
 	}
-	if _, err := tea.NewProgram(newBrowseModel(resolved), tea.WithInput(stdin), tea.WithOutput(stdout)).Run(); err != nil {
-		_, _ = fmt.Fprintf(stderr, "sei: terminal: %v\n", err)
+	if _, err := runLifecycle(newBrowseModel(resolved), stdin, stdout); err != nil {
+		_, _ = fmt.Fprintf(stderr, "sei: terminal: %s\n", displayText(err.Error()))
 		return 1
 	}
 	return 0
