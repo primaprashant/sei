@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase E in progress (Task 13 complete locally). Phase D four-platform CI passes; new native/manual checks pending.
+**Status:** Phase E in progress (Tasks 13-14 complete locally). Phase D four-platform CI passes; new native/manual checks pending.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -426,11 +426,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** A library row can now be copied into a missing skill target by its destination-specific letter without switching panels.
 
 **Acceptance criteria:**
-- [ ] Wire all configured lowercase local and uppercase global slot keys from library focus only to captured requests, source preflight, destination revalidation/creation, independent recursive copy, and affected-panel refresh.
-- [ ] Copy nested directories, dotfiles, bytes, and executable bits subject to umask; reject links/special files, raw-name conflicts/case aliases, and invalid roots. Missing destinations are created only by an actual add.
-- [ ] Preserve library selection/focus after success, show the exact action target/result, and keep failure/busy/quit behavior from Task 13. Existing same-named targets remain explicitly unavailable until Task 15, never accidentally merged.
+- [x] Wire all configured lowercase local and uppercase global slot keys from library focus only to captured requests, source preflight, destination revalidation/creation, independent recursive copy, and affected-panel refresh.
+- [x] Copy nested directories, dotfiles, bytes, and executable bits subject to umask; reject links/special files, raw-name conflicts/case aliases, and invalid roots. Missing destinations are created only by an actual add.
+- [x] Preserve library selection/focus after success, show the exact action target/result, and keep failure/busy/quit behavior from Task 13. Existing same-named targets remain explicitly unavailable until Task 15, never accidentally merged.
 
 **Verification:** `go test -count=1 -run 'Test(AddSkill|AddFlow|CopyPermissions)' .`; compare independent file contents and source tree snapshots; run umask checks in subprocesses and test every slot's captured destination.
+
+**Verified (2026-09-06):** Linux full tests/race/lint/build, 18 mappings, umask subprocesses, and PTY add/restart pass. Existing targets preserved; native case-alias execution pending.
 
 **Dependencies:** Task 13.
 

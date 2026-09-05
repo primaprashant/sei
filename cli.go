@@ -13,7 +13,7 @@ const usage = `Usage: sei [options] [setup]
 
 sei is a terminal skill-folder manager, currently in development.
 Load strict JSON configuration and manage configured folders.
-First-run/explicit setup and permanent removal are available; add is not implemented yet.
+Setup, fresh skill copies, and permanent removal are available; replacement is not enabled yet.
 Global options must precede the optional setup subcommand.
 
 Options:
@@ -34,7 +34,7 @@ g stays pending until a key: invalid continuations are consumed; Esc cancels/clo
 q or Ctrl+C always quit; recognized paste is ignored. Selections are per panel;
 refresh preserves raw names, otherwise clamps the old index.
 Add mappings by slot: a b c d e f h i o local, A B C D E F H I O global
-(library only, disabled). X permanently removes (destination only); x does nothing.
+(library only). X permanently removes (destination only); x does nothing.
 Removal has no confirmation, trash, backup, or undo. Quit waits for active work.
 Layout is provisional; no minimum terminal size has been approved.
 `

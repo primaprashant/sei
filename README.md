@@ -12,7 +12,8 @@ The executable supports strict JSON configuration, `--config`, `--project`,
 (quit with `q` or Ctrl+C). Missing configuration opens editable first-run setup;
 `sei setup` reconfigures ordered agents, confirms config replacement, and saves/exits.
 Uppercase `X` permanently removes the selected destination skill, without
-confirmation, trash, backup, or undo. Add/copy is not implemented yet. During work,
+confirmation, trash, backup, or undo. Library add keys copy to fresh targets only;
+existing targets remain unchanged until replacement is implemented. During work,
 navigation remains available; extra mutations are ignored, refresh is coalesced,
 and quit waits for completion. Failures remain visible and listings refresh.
 Malformed or unreadable configuration fails without starting setup or writing files.

@@ -130,6 +130,11 @@ func TestKeySequence(t *testing.T) {
 		m.pendingGlobal = false
 		for _, key := range "abcdefhioABCDEFHIOXx" {
 			updated, cmd := press(m, key)
+			// This fixture has unchecked roots: action keys may report a guard
+			// reason, but cannot mutate or alter navigation. Help ignores them.
+			if !help {
+				updated.status = m.status
+			}
 			if cmd != nil || !reflect.DeepEqual(m, updated) {
 				t.Fatalf("mutation %c enabled", key)
 			}

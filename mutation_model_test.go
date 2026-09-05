@@ -137,7 +137,7 @@ func TestMutationGuard(t *testing.T) {
 			if cmd != nil || m.active != nil || m.nextOperation != 0 || m.pendingGlobal {
 				t.Fatalf("guard failed: %+v", m)
 			}
-			if (kind == "unchecked" || kind == "unsafe") && !strings.Contains(m.status, "Remove blocked:") {
+			if (kind == "unchecked" || kind == "unsafe") && !strings.Contains(m.status, "Mutation blocked:") {
 				t.Fatal("missing safety feedback")
 			}
 			assertRemoveSnapshot(t, m.panels[1].path, before)

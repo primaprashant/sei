@@ -118,7 +118,7 @@ func (m browseModel) View() tea.View {
 		lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right) +
 		"\n" + ansi.Truncate("Focused: "+displayText(m.panels[m.focused].label)+" | Selected: "+displayText(m.panels[m.focused].selectedName), m.width, "~") +
 		"\n0 library | 1-9 local | g 1-9 global | up/down | r refresh | ? full targets/help" + m.sequenceHint() +
-		"\nX permanently removes selected destination skill; add disabled. " + keys +
+		"\nAdd from library using header keys; X permanently removes. " + keys +
 		"\n" + ansi.Truncate(displayText(status), m.width, "~"))
 	v.AltScreen = true
 	return v
@@ -144,7 +144,7 @@ func (m browseModel) labeledPanel(id int) browsePanel {
 			shortcut = "g " + shortcut
 			add = strings.ToUpper(add)
 		}
-		p.label += " [add " + add + " disabled]"
+		p.label += " [add " + add + "]"
 	}
 	p.label = "[" + shortcut + "] " + p.label
 	if id == m.focused {
@@ -172,7 +172,7 @@ func (m browseModel) helpLines() []string {
 	} else {
 		text += "\nRoot relations checked; every mutation revalidates."
 	}
-	text += "\n0 library; 1-9 local; g then 1-9 global. Unconfigured slots do nothing.\nUp/Down clamp selection; in help scroll. r refreshes listings, not config.\ng has no timeout; invalid continuation is consumed. Esc cancels/closes; q/Ctrl+C quit. Paste ignored.\nAdd from library only (disabled):"
+	text += "\n0 library; 1-9 local; g then 1-9 global. Unconfigured slots do nothing.\nUp/Down clamp selection; in help scroll. r refreshes listings, not config.\ng has no timeout; invalid continuation is consumed. Esc cancels/closes; q/Ctrl+C quit. Paste ignored.\nAdd from library only (fresh targets; replacement not enabled yet):"
 	for i := range m.agents {
 		text += fmt.Sprintf("\n%c: %s; %c: %s", addKeys[i], displayText(m.panels[1+m.agents+i].label), strings.ToUpper(string(addKeys[i]))[0], displayText(m.panels[1+i].label))
 	}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -41,9 +42,13 @@ type mutationRequest struct {
 	destination       panelID
 	name, label, path string
 	selected          int
+	add               bool
 }
 
 func (r mutationRequest) target() string {
+	if r.add {
+		return fmt.Sprintf("Add %q to %s (%s)", r.name, r.label, r.path)
+	}
 	return fmt.Sprintf("Remove %q from %s (%s)", r.name, r.label, r.path)
 }
 
@@ -111,7 +116,7 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.status = r.target() + ": complete"
 		if msg.err != nil {
 			m.status = r.target() + ": " + msg.err.Error()
-		} else {
+		} else if !r.add {
 			m.panels = append([]browsePanel(nil), m.panels...)
 			p := &m.panels[r.destination]
 			p.selectedName, p.selected = "", r.selected
@@ -185,32 +190,18 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil // Invalid continuations are consumed, never replayed.
 		}
+		if len(input) == 1 && m.focused == 0 {
+			if slot := strings.IndexByte(addKeys, strings.ToLower(input)[0]); slot >= 0 && slot < m.agents {
+				destination := 1 + m.agents + slot
+				if input[0] >= 'A' && input[0] <= 'Z' {
+					destination = 1 + slot
+				}
+				return m.startMutation(panelID(destination), true)
+			}
+		}
 		switch input {
 		case "X":
-			if m.active != nil || m.showHelp || m.focused == 0 || m.width <= 0 || m.height <= 0 {
-				return m, nil
-			}
-			p := m.panels[m.focused]
-			if p.loading || p.err != nil || p.missing || p.selectedName == "" || p.selected < 0 || p.selected >= len(p.entries) {
-				return m, nil
-			}
-			if p.entries[p.selected].blocked || p.entries[p.selected].name != p.selectedName {
-				return m, nil
-			}
-			if !p.safetyChecked || p.safetyErr != nil {
-				m.status = "Remove blocked: root safety is unchecked or unsafe; ? for details"
-				return m, nil
-			}
-			m.nextOperation++
-			r := mutationRequest{m.nextOperation, panelID(m.focused), p.selectedName, p.label, p.path, p.selected}
-			m.active, m.status = &r, r.target()+": working"
-			m.safetyGeneration++
-			m.panels = append([]browsePanel(nil), m.panels...)
-			for i := range m.panels {
-				m.panels[i].generation++
-			}
-			cfg := m.config
-			return m, func() tea.Msg { return mutationResult{r.id, removeSkill(cfg, r.destination, r.name)} }
+			return m.startMutation(panelID(m.focused), false)
 		case "g":
 			m.pendingGlobal = true
 		case "?":
@@ -243,4 +234,37 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, nil
+}
+
+func (m browseModel) startMutation(destination panelID, add bool) (tea.Model, tea.Cmd) {
+	if m.active != nil || m.pendingQuit || m.showHelp || destination <= 0 || int(destination) >= len(m.panels) || m.width <= 0 || m.height <= 0 {
+		return m, nil
+	}
+	p := m.panels[m.focused]
+	if p.loading || p.err != nil || p.missing || p.selectedName == "" || p.selected < 0 || p.selected >= len(p.entries) {
+		return m, nil
+	}
+	if p.entries[p.selected].blocked || p.entries[p.selected].name != p.selectedName {
+		return m, nil
+	}
+	d := m.panels[destination]
+	if !p.safetyChecked || p.safetyErr != nil || !d.safetyChecked || d.safetyErr != nil {
+		m.status = "Mutation blocked: root safety is unchecked or unsafe; ? for details"
+		return m, nil
+	}
+	m.nextOperation++
+	r := mutationRequest{id: m.nextOperation, destination: destination, name: p.selectedName, label: d.label, path: d.path, selected: p.selected, add: add}
+	m.active, m.status = &r, r.target()+": working"
+	m.safetyGeneration++
+	m.panels = append([]browsePanel(nil), m.panels...)
+	for i := range m.panels {
+		m.panels[i].generation++
+	}
+	cfg := m.config
+	return m, func() tea.Msg {
+		if r.add {
+			return mutationResult{r.id, addSkill(cfg, r.destination, r.name)}
+		}
+		return mutationResult{r.id, removeSkill(cfg, r.destination, r.name)}
+	}
 }
