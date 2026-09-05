@@ -33,8 +33,8 @@ func TestCLI(t *testing.T) {
 		{"version", []string{"--version"}, 0, "sei dev\n", ""},
 		{"unknown flag", []string{"--unknown"}, 2, "", "flag provided but not defined"},
 		{"unknown command", []string{"unknown"}, 2, "", "unexpected argument"},
-		{"unimplemented setup", []string{"setup"}, 1, "", "setup is not implemented"},
-		{"flags before setup", []string{"--config", path, "--project", ".", "setup"}, 1, "", "setup is not implemented"},
+		{"nonterminal setup", []string{"setup"}, 1, "", "requires terminal stdin and stdout"},
+		{"flags before setup", []string{"--config", path, "--project", ".", "setup"}, 1, "", "requires terminal stdin and stdout"},
 		{"flag after setup", []string{"setup", "--help"}, 2, "", "unexpected argument"},
 		{"extra setup argument", []string{"setup", "extra"}, 2, "", "unexpected argument"},
 		{"no headless add", []string{"add"}, 2, "", "unexpected argument"},
@@ -139,16 +139,13 @@ func TestCLIConfig(t *testing.T) {
 				diagnostic := want
 				if explicit {
 					args = append(args, "setup")
-					if kind == "valid" || kind == "valid symlink" || setupAllowed {
-						diagnostic = "setup is not implemented"
-					}
 				}
 				var stdout, stderr bytes.Buffer
 				code := run(args, strings.NewReader(""), &stdout, &stderr)
 				if code != 1 || stdout.Len() != 0 || !strings.Contains(stderr.String(), diagnostic) {
 					t.Fatalf("explicit=%v: status %d, stdout %q, stderr %q; want %q", explicit, code, &stdout, &stderr, diagnostic)
 				}
-				if !setupAllowed && diagnostic != "setup is not implemented" && strings.Contains(stderr.String(), "setup") {
+				if !setupAllowed && strings.Contains(stderr.String(), "setup") {
 					t.Fatalf("existing invalid config dispatched setup: %s", &stderr)
 				}
 			}

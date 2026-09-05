@@ -57,7 +57,7 @@ func TestSetupDefaultsAndEditing(t *testing.T) {
 		want = append([]agentConfig(nil), m.cfg.Agents...)
 		m, _ = setupUpdate(t, m, tea.KeyPressMsg{Code: tea.KeyTab})
 	}
-	if m.field != 0 || !reflect.DeepEqual(newSetupModel("", "").cfg.Agents, setupPresets) || setupPresets[0].Name != "Claude Code" {
+	if m.field != 0 || !reflect.DeepEqual(newSetupModel("", "").cfg.Agents, setupPresets[:3]) || setupPresets[0].Name != "Claude Code" {
 		t.Fatal("navigation did not wrap or presets were mutated")
 	}
 	for _, key := range []tea.KeyPressMsg{{Code: tea.KeyTab, Mod: tea.ModShift}, {Code: tea.KeyDown}, {Code: tea.KeyUp}} {

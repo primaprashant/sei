@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase D in progress (Task 10 complete). Phase C macOS harness fixes await native rerun.
+**Status:** Phase D in progress (Tasks 10-11 complete). Phase C macOS harness fixes await native rerun.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -357,11 +357,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Extend the working setup flow to explicit reconfiguration, all presets, and custom one-to-nine-agent arrangements.
 
 **Acceptance criteria:**
-- [ ] `sei setup` is prepopulated from a valid existing file, requires confirmation before configuration replacement, saves and exits, and never repairs/overwrites malformed existing JSON implicitly.
-- [ ] Users can select fewer agents, add Pi/Cursor or a custom name/path pair, edit destinations, and choose order; bounds and duplicate names are enforced. Preview key mappings reflect that exact order.
-- [ ] Cancellation at any step leaves existing config and skills unchanged; no last project, selection, or focus is persisted and no unconfigured agent is discovered.
+- [x] `sei setup` is prepopulated from a valid existing file, requires confirmation before configuration replacement, saves and exits, and never repairs/overwrites malformed existing JSON implicitly.
+- [x] Users can select fewer agents, add Pi/Cursor or a custom name/path pair, edit destinations, and choose order; bounds and duplicate names are enforced. Preview key mappings reflect that exact order.
+- [x] Cancellation at any step leaves existing config and skills unchanged; no last project, selection, or focus is persisted and no unconfigured agent is discovered.
 
 **Verification:** `go test -count=1 -run 'Test(SetupAgents|ExplicitSetup)' .`; manual one-agent and nine-agent setup, reorder, replacement refusal, and confirmed save.
+
+**Verified (2026-09-06):** Linux tests/race/lint/build and PTY one/nine-agent save, refusal, and exit pass; manual/native review pending.
 
 **Dependencies:** Task 10.
 

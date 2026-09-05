@@ -13,7 +13,7 @@ const usage = `Usage: sei [options] [setup]
 
 sei is a terminal skill-folder manager, currently in development.
 Load strict JSON configuration and browse configured folders read-only.
-First-run setup is available; mutations are not implemented yet.
+First-run and explicit setup are available; mutations are not implemented yet.
 Global options must precede the optional setup subcommand.
 
 Options:
@@ -107,22 +107,25 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintf(stderr, "sei: config %q: %s\n", path, displayText(err.Error()))
 		return 1
 	}
-	if flags.NArg() == 1 {
-		_, _ = fmt.Fprintln(stderr, "sei: setup is not implemented yet")
-		return 1
-	}
+	explicitSetup := flags.NArg() == 1
 	input, inputOK := stdin.(interface{ Fd() uintptr })
 	output, outputOK := stdout.(interface{ Fd() uintptr })
 	if !inputOK || !outputOK || !term.IsTerminal(input.Fd()) || !term.IsTerminal(output.Fd()) {
 		_, _ = fmt.Fprintln(stderr, "sei: interactive mode requires terminal stdin and stdout; use --help or --version")
 		return 1
 	}
-	if missing {
-		final, setupErr := runLifecycle(newSetupModel(project, path), stdin, stdout)
+	if missing || explicitSetup {
+		setup := newSetupModel(project, path)
+		if !missing {
+			setup.cfg = cfg
+			setup.cfg.Agents = append([]agentConfig(nil), cfg.Agents...)
+			setup.replace = true
+		}
+		final, setupErr := runLifecycle(setup, stdin, stdout)
 		if setupErr == nil {
 			result := final.(setupModel)
 			setupErr = result.fatal
-			if setupErr == nil && (!result.saved || result.pendingQuit) {
+			if setupErr == nil && (!result.saved || result.pendingQuit || explicitSetup) {
 				return 0
 			}
 			resolved = result.resolved

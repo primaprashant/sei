@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -28,14 +29,41 @@ func TestPTYFirstRunSetup(t *testing.T) {
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build: %v\n%s", err, output)
 	}
-	for _, scenario := range []string{"cancel-edit", "cancel-preview", "complete-restart"} {
+	for _, scenario := range []string{"cancel-edit", "cancel-preview", "complete-restart", "explicit-new", "explicit-one", "explicit-nine", "explicit-refuse"} {
 		t.Run(scenario, func(t *testing.T) {
 			root := t.TempDir()
 			if err := os.Mkdir(filepath.Join(root, "project"), 0o700); err != nil {
 				t.Fatal(err)
 			}
 			path := filepath.Join(root, "config", "sei.json")
-			for attempt := 0; attempt < 2; attempt++ {
+			explicit := strings.HasPrefix(scenario, "explicit-")
+			want := config{Library: "~/library", Agents: append([]agentConfig(nil), setupPresets[:3]...)}
+			if explicit && scenario != "explicit-new" {
+				want.Agents = nil
+				count := 1
+				if scenario == "explicit-nine" {
+					count = 9
+				}
+				for i := 1; i <= count; i++ {
+					want.Agents = append(want.Agents, agentConfig{fmt.Sprintf("Existing%d", i), fmt.Sprintf("~/global%d", i), fmt.Sprintf(".local%d/skills", i)})
+				}
+				if err := saveConfig(want, filepath.Join(root, "project"), path, false); err != nil {
+					t.Fatal(err)
+				}
+			}
+			var before []byte
+			if scenario == "explicit-refuse" {
+				var err error
+				before, err = os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			attempts := 2
+			if explicit {
+				attempts = 1
+			}
+			for attempt := 0; attempt < attempts; attempt++ {
 				// A second launch proves cancellation still starts setup, while a
 				// completed first run loads the persisted config directly into browse.
 				restart := attempt == 1 && scenario == "complete-restart"
@@ -43,13 +71,26 @@ func TestPTYFirstRunSetup(t *testing.T) {
 				if restart && strings.Contains(screen, "sei setup") {
 					t.Fatal("restart unexpectedly entered setup")
 				}
-				if scenario != "complete-restart" {
+				if scenario != "complete-restart" && !explicit {
 					setupAbsent(t, filepath.Dir(path))
 				} else {
 					cfg, missing, err := loadConfig(path)
-					if err != nil || missing || cfg.Library != "~/library" || !reflect.DeepEqual(cfg.Agents, setupPresets) {
+					if explicit && scenario != "explicit-new" && scenario != "explicit-refuse" {
+						want.Library += "-edited"
+					}
+					if err != nil || missing || !reflect.DeepEqual(cfg, want) {
 						t.Fatalf("persisted first-run config: %+v, %v, %v", cfg, missing, err)
 					}
+				}
+				if scenario == "explicit-refuse" {
+					after, err := os.ReadFile(path)
+					if err != nil || !bytes.Equal(before, after) {
+						t.Fatal("PTY refusal changed config")
+					}
+				}
+				setupAbsent(t, filepath.Join(root, "library-edited"))
+				for i := 1; i <= 9; i++ {
+					setupAbsent(t, filepath.Join(root, fmt.Sprintf("global%d", i)), filepath.Join(root, "project", fmt.Sprintf(".local%d", i)))
 				}
 				for _, dir := range []string{"library", ".claude", ".agents", ".opencode", ".config/opencode", "Library", "project/.claude", "project/.agents", "project/.opencode"} {
 					setupAbsent(t, filepath.Join(root, dir))
@@ -63,7 +104,12 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, binary, "--config", path)
+	args := []string{"--config", path}
+	explicit := strings.HasPrefix(scenario, "explicit-")
+	if explicit {
+		args = append(args, "setup")
+	}
+	cmd := exec.CommandContext(ctx, binary, args...)
 	cmd.Dir = filepath.Join(root, "project")
 	cmd.Env = []string{"HOME=" + root, "XDG_CONFIG_HOME=" + filepath.Join(root, ".config"), "TERM=xterm-256color", "NO_COLOR=1", "PATH=" + os.Getenv("PATH")}
 	cmd.WaitDelay = 5 * time.Second
@@ -116,9 +162,10 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 		}
 	}()
 	var screen strings.Builder
+	awaitFrom := 0
 	await := func(text string) {
 		t.Helper()
-		for !strings.Contains(screen.String(), text) {
+		for !strings.Contains(screen.String()[awaitFrom:], text) {
 			select {
 			case chunk, ok := <-chunks:
 				if !ok {
@@ -145,21 +192,53 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 		if err != nil || reflect.DeepEqual(before, raw) {
 			t.Fatalf("setup did not enter raw mode: %v", err)
 		}
-		send("~/library")
-		await("~/library")
+		if explicit && scenario != "explicit-new" {
+			await("Library: ~/library")
+			await("Name: Existing1")
+			send("-edited")
+			await("-edited")
+		} else {
+			send("~/library")
+			await("~/library")
+		}
 		if scenario == "cancel-edit" {
 			send("\x1b")
 		} else {
 			send("\r")
 			await("Enter save")
-			await("focus 3 / g3")
-			setupAbsent(t, filepath.Dir(path), filepath.Join(root, "library"))
+			slot := 3
+			if explicit && scenario != "explicit-new" {
+				slot = 1
+			}
+			if scenario == "explicit-nine" {
+				slot = 9
+			}
+			await(fmt.Sprintf("focus %d / g%d", slot, slot))
+			setupAbsent(t, filepath.Join(root, "library"))
+			if !explicit || scenario == "explicit-new" {
+				setupAbsent(t, filepath.Dir(path))
+			}
 			if scenario == "cancel-preview" {
 				send("\x1b")
 			} else {
 				send("\r")
-				await("Read-only configured folders")
-				send("q")
+				if explicit {
+					if scenario != "explicit-new" {
+						await("Replace existing configuration?")
+						if scenario == "explicit-refuse" {
+							awaitFrom = screen.Len()
+							send("n")
+							await("Enter save")
+							awaitFrom = 0
+							send("\x1b")
+						} else {
+							send("y")
+						}
+					}
+				} else {
+					await("Read-only configured folders")
+					send("q")
+				}
 			}
 		}
 	}

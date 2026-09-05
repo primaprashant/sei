@@ -10,7 +10,8 @@ contract and [the implementation plan](implementation-plan.md) for progress.
 The executable supports strict JSON configuration, `--config`, `--project`,
 `--help`, `--version`, and an asynchronous read-only configured folder browser
 (quit with `q` or Ctrl+C). Missing configuration opens editable first-run setup;
-explicit reconfiguration and skill mutations are not implemented yet.
+`sei setup` reconfigures ordered agents, confirms config replacement, and saves/exits.
+Skill mutations are not implemented yet.
 Malformed or unreadable configuration fails without starting setup or writing files.
 There is no published installer or usable release. Unknown flags, commands, and
 unexpected positional arguments return status `2`. After configuration validation,
@@ -25,9 +26,16 @@ Use global options **before** the optional `setup` subcommand:
 
 ```sh
 sei --config /tmp/sei.json --project ./example
-sei --config /tmp/sei.json setup  # Recognized, but not implemented yet.
+sei --config /tmp/sei.json setup
 sei --help
 ```
+
+Setup starts with Claude Code, Codex, and OpenCode. Tab/Up/Down selects a field;
+typing appends, Backspace deletes, and Ctrl+U clears. Ctrl+A adds a preset (including
+Pi/Cursor) or custom agent; Ctrl+D removes the selected agent; Ctrl+K/J reorders it.
+Enter validates and previews resolved paths/shortcuts, then Enter saves (existing
+config requires `y` confirmation). Esc/Ctrl+C cancels before saving; during a save,
+quit waits for completion. Setup never creates library or destination folders.
 
 Without `--config`, configuration uses `os.UserConfigDir()`: Linux uses
 `$XDG_CONFIG_HOME/sei/config.json` or `~/.config/sei/config.json`; macOS uses
