@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase D implemented; Linux checkpoint passes, owner/native review pending. Phase C macOS harness fixes await native rerun.
+**Status:** Phase D implemented; four-platform CI passes. Phase E in progress; owner manual reviews remain pending.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -292,7 +292,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Acceptance criteria:**
 - [x] Implement the rooted-resolution mechanism above, including missing ancestors, permitted configured-root symlinks, local resolved containment, component-aware overlap checks, and filesystem identity/case aliases.
 - [x] Reject source/destination nesting and destination overlap in both directions; protect library ancestors, project/home/destination roots, and invalid child names. Keep root revalidation callable by each mutation, not a one-time setup check.
-- [ ] Test absent, dangling, non-directory, inaccessible, and alias cases on native Linux/macOS. Distinguish an unavailable listing from an unverifiable safety boundary; preserve usable panels when their mutation safety can still be established.
+- [x] Test absent, dangling, non-directory, inaccessible, and alias cases on native Linux/macOS. Distinguish an unavailable listing from an unverifiable safety boundary; preserve usable panels when their mutation safety can still be established.
 
 **Verification:** `go test -count=1 -run 'Test(RootSafety|ResolveRoots|SkillName)' .`; review rooted API usage against pinned Go docs and record the selected algorithm/limitations. No skill mutation is enabled in this task.
 
@@ -326,7 +326,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 ### Checkpoint C: Tasks 7-9
 
 - [x] Standard checks and PTY lifecycle checks pass; all configured targets are inspectable without mutation.
-- [ ] Review filesystem containment/overlap evidence before enabling either destructive action.
+- [x] Review filesystem containment/overlap evidence before enabling either destructive action.
 - [x] Resolve ambiguity gates for unverifiable roots, configuration placement, and signals before the tasks that depend on them; do not silently broaden supported behavior.
 
 **Verified (2026-09-05):** Local standard/build/race/PTY checks pass; root/lifecycle review fixes tested. Native macOS safety/PTY execution and manual terminal round trips remain pending; mutations disabled, no push performed.
@@ -399,6 +399,8 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Verified (2026-09-06):** Linux standard/build/race/PTY checks and both macOS test cross-builds pass. Owner disposable-path review/native execution pending; no push, mutations disabled.
 
 ### Phase E: First Destructive Workflow
+
+**Dependency evidence (2026-09-06):** Reviewed rooted safety code and [CI 33994932478](https://github.com/primaprashant/sei/actions/runs/33994932478): all four native jobs pass at `2dc65db`, including safety/setup/PTY tests and Linux race. Manual terminal/owner reviews remain pending.
 
 ### Task 13: Remove A Destination Skill
 
