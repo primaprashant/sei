@@ -48,21 +48,35 @@ func (m lifecycleProbe) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 type lifecycleReadFailure struct{ *os.File }
 
-// Tea's raw-mode setup gets the real fd; cancelreader initialization gets an
-// invalid one. No descriptor is closed and restoration uses the saved real fd.
+// Linux registers the fd during cancelreader initialization; Darwin only stages
+// its kevents, so fail its earlier kqueue allocation instead. Both faults occur
+// after raw mode, without closing the real fd needed for restoration.
 type lifecycleInitFailure struct {
 	*os.File
-	before  *term.State
-	tripped bool
+	before   *term.State
+	tripped  bool
+	limit    unix.Rlimit
+	faultErr error
 }
 
 func (r *lifecycleInitFailure) Fd() uintptr {
 	state, err := term.GetState(r.File.Fd())
-	if err == nil && !reflect.DeepEqual(r.before, state) {
+	if runtime.GOOS != "darwin" && err == nil && !reflect.DeepEqual(r.before, state) {
 		r.tripped = true
 		return ^uintptr(0)
 	}
 	return r.File.Fd()
+}
+
+func (r *lifecycleInitFailure) Name() string {
+	state, err := term.GetState(r.File.Fd())
+	if runtime.GOOS == "darwin" && !r.tripped && err == nil && !reflect.DeepEqual(r.before, state) {
+		limit := r.limit
+		limit.Cur = 0
+		r.faultErr = unix.Setrlimit(unix.RLIMIT_NOFILE, &limit)
+		r.tripped = r.faultErr == nil
+	}
+	return r.File.Name()
 }
 
 func (r lifecycleReadFailure) Read(b []byte) (int, error) {
@@ -117,7 +131,20 @@ func TestPTYLifecycleProcess(t *testing.T) {
 				t.Fatal(err)
 			}
 			input := &lifecycleInitFailure{File: os.Stdin, before: before}
-			code := run([]string{"--config", path}, input, os.Stdout, os.Stderr)
+			if err := unix.Getrlimit(unix.RLIMIT_NOFILE, &input.limit); err != nil {
+				t.Fatal(err)
+			}
+			code := func() int {
+				defer func() {
+					if err := unix.Setrlimit(unix.RLIMIT_NOFILE, &input.limit); err != nil {
+						t.Fatalf("restore descriptor limit: %v", err)
+					}
+				}()
+				return run([]string{"--config", path}, input, os.Stdout, os.Stderr)
+			}()
+			if input.faultErr != nil {
+				t.Fatalf("inject initialization failure: %v", input.faultErr)
+			}
 			after, err := term.GetState(os.Stdin.Fd())
 			if code != 1 || !input.tripped || err != nil || !reflect.DeepEqual(before, after) {
 				t.Fatalf("post-raw failure: code=%d tripped=%v restored=%v err=%v", code, input.tripped, reflect.DeepEqual(before, after), err)
@@ -224,7 +251,9 @@ func TestPTYLifecycle(t *testing.T) {
 			}
 			var stdout, stderr bytes.Buffer
 			cmd.Stdin, cmd.Stdout, cmd.Stderr = slave, slave, &stderr
-			cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true, Setctty: true, Ctty: 0}
+			// Explicit terminal fds suffice. A controlling PTY is revoked on Darwin
+			// session-leader exit, invalidating the parent's restoration probe.
+			cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 			interactive := scenario != "stdin-pipe" && scenario != "stdout-pipe" && scenario != "help" && scenario != "version" && scenario != "startup-failure" && scenario != "init-failure"
 			if scenario == "stdin-pipe" || scenario == "help" || scenario == "version" {
 				cmd.Stdin = strings.NewReader("")

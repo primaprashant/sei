@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase C implemented and locally verified; new native macOS/terminal evidence pending. Phase D not started.
+**Status:** Phase C implemented; macOS CI exposed PTY harness defects, fixes awaiting native rerun. Phase D not started.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -315,7 +315,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Verification:** `go test -count=1 -run 'TestPTYLifecycle' .`, Linux race check, and a manual terminal round trip on both OS families. PTY timeout is a test failure, not a skipped result.
 
-**Evidence (2026-09-05):** After Task 8 commit `3656d6e`, Linux PTY/standard/full-race checks pass, including post-raw initialization failure and no redraw after exit. Owner approved PTY pin and INT/TERM/HUP ordinary-exit policy. Native macOS/manual terminal evidence pending; no new CI. [API review and limits](docs/terminal-lifecycle.md).
+**Evidence (2026-09-05):** Linux checks pass. Both Macs failed PTY probes in run `33970232319`; fixed session-revocation and deferred-kevent fault assumptions. Native rerun/manual checks pending; assertions retained. [Details](docs/terminal-lifecycle.md).
 
 **Dependencies:** Tasks 4 and 7; owner approval of test tooling and interruption clarification.
 

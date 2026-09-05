@@ -69,8 +69,11 @@ show/alternate-screen leave, stdin-only and stdout-only non-TTY rejection, and
 non-TTY help/version despite invalid native config. Runtime diagnostics are
 captured separately and accepted only after modes/cursor/screen are restored.
 No printable application output or alternate-screen reentry may follow the first
-alternate-screen leave. The initialization fault is a test-only fd wrapper that
-returns an invalid fd only after observing raw mode; the saved real fd remains open.
+alternate-screen leave. The initialization fault is test-only and triggers after
+observing raw mode: Linux gets an invalid fd at epoll registration; Darwin gets
+a zero soft descriptor limit immediately before kqueue allocation in `Name()`.
+The hard limit and existing descriptors remain intact, and the original soft
+limit is restored before assertions or process exit.
 Test-only subprocess wrappers acknowledge three successive signals through fd 3
 to prove every delivered request reaches `Update`, without inventing mutation
 work. Render readiness and fd acknowledgments coordinate tests; build/process/
@@ -80,5 +83,24 @@ or shipped test flags/environment hooks exist.
 
 Every child has disposable HOME, Linux XDG and macOS native config, cwd, and
 configured paths. Existing full-test CI picks these tests up automatically;
-no workflow changes. Native macOS execution and manual Terminal.app round trip
-remain pending, as do human emulator/SSH checks; local PTYs are not that evidence.
+no workflow changes. Successful native macOS execution and manual Terminal.app
+round trip remain pending, as do human emulator/SSH checks; local PTYs are not
+that evidence.
+
+## macOS CI Regression
+
+[Run 33970232319](https://github.com/primaprashant/sei/actions/runs/33970232319)
+passed both Linux jobs but failed both macOS jobs in the PTY harness. The parent
+queried the slave after controlling-session-leader exit, when Darwin revokes that
+terminal. The harness now creates a session without acquiring a controlling
+terminal; explicit stdin/stdout PTY fds still exercise raw mode and full state
+restoration. It does not test foreground job control or kernel-generated hangup;
+SIGINT/TERM/HUP are delivered explicitly. No ENOTTY suppression or macOS skips.
+
+The invalid-fd initialization fault also assumed Linux epoll behavior. Darwin's
+cancelreader constructor only prepares kevents; it submits them later during
+reading, so an invalid fd did not force constructor failure. The allocation fault
+above tests the intended post-raw initialization error on Darwin instead.
+Linux standard checks/build, five PTY repetitions, and three PTY race repetitions
+pass after the fix; both Darwin architectures cross-compile. Native verification
+of these fixes awaits the next push/CI run.
