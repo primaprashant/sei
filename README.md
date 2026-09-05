@@ -8,8 +8,9 @@ contract and [the implementation plan](implementation-plan.md) for progress.
 ## Status
 
 The executable supports strict JSON configuration, `--config`, `--project`,
-`--help`, `--version`, and a non-mutating terminal shell (quit with `q` or Ctrl+C).
-Browsing, setup, and skill mutations are not implemented. Missing configuration
+`--help`, `--version`, and an asynchronous read-only configured folder browser
+(quit with `q` or Ctrl+C). Setup, navigation, refresh, and skill mutations are not
+implemented. Missing configuration
 and the recognized `setup` command report that setup is unavailable (status `1`);
 malformed or unreadable configuration fails without starting setup or writing files.
 There is no published installer or usable release. Unknown flags, commands, and
@@ -36,6 +37,21 @@ Library/global paths must be absolute or begin with `~/`; only that home shortha
 is expanded. Local paths are project-relative and lexically contained. Raw path
 components are retained; physical symlink containment and overlap checks remain
 Task 8, so this milestone is not mutation-ready.
+
+The browser lists immediate ordinary directories, including dot-directories,
+without parsing `SKILL.md`. Loose files are ignored; symlink entries are shown as
+blocked and are not followed. Listings use raw, case-sensitive Go string ordering;
+display labels are escaped and truncated by terminal cell width without changing
+raw selection names. The library appears left, with configured globals above
+locals on the right. Missing destinations show `Not created` and remain absent;
+inaccessible or invalid roots show errors independently of other panels.
+Configured root aliases can be read, but physical safety validation is still deferred.
+The 1-9-agent grid is provisional: larger lists show an overflow count, small
+windows can clip content, and full-target inspection/navigation remains Task 7.
+No minimum terminal size or final overflow behavior is established.
+
+Other agents may also load skills from these folders. sei shows configured folder
+contents, not everything an agent discovers or has loaded.
 
 ## Project Decisions
 
@@ -79,9 +95,12 @@ checksum verification enabled.
 The existing Charm dependency `github.com/charmbracelet/x/term v0.2.2` is also a
 direct dependency for stdin/stdout TTY detection. Its `IsTerminal` implementation
 was reviewed: on Linux/macOS it uses a read-only termios ioctl via `x/sys/unix`,
-not a character-device heuristic. No extra PTY module is added in Phase A.
-The shell uses Bubble Tea's default lifecycle only while no asynchronous work or
-mutations exist; Task 9 must establish the lifecycle contract before mutations.
+not a character-device heuristic. The existing `github.com/charmbracelet/x/ansi`
+`v0.11.8` is now direct: its reviewed `StringWidth` and `Truncate` APIs measure
+grapheme clusters in terminal cells; untrusted text is escaped before these calls.
+No new module was added. The browser uses Bubble Tea's default lifecycle for
+read-only scans; quitting does not promise to join scan workers. Task 9 must
+establish the lifecycle contract before mutations are enabled.
 
 ### Pinned Linter
 
@@ -147,15 +166,18 @@ destination directories. Set both `HOME` (including macOS's native
 `$HOME/Library/Application Support` location) and Linux `XDG_CONFIG_HOME` to
 disposable paths; never inspect real agent installations or execute skill
 scripts. Tests isolate native HOME/XDG configuration paths and use disposable
-config files. For an interactive shell smoke check with isolated data:
+config files. For an interactive browser smoke check with isolated data:
 
 ```sh
 scratch=$(mktemp -d)
+mkdir -p "$scratch/library/.hidden" "$scratch/library/example" "$scratch/global/installed"
 printf '%s\n' '{"library":"~/library","agents":[{"name":"Example","global":"~/global","local":".local/skills"}]}' > "$scratch/config.json"
 HOME="$scratch" XDG_CONFIG_HOME="$scratch" ./bin/sei --config "$scratch/config.json" --project "$scratch"
 ```
 
-Only the configuration is read; the shell does not scan or create skill folders.
+The configuration and configured folders are read; no destinations or skills are
+created by the browser. The local destination in this example stays absent.
+Focused browser checks: `go test -count=1 -run 'TestBrowse' .`.
 
 Generated tools, binaries, release output, coverage output, and `/.opencode/`
 remain ignored. GoReleaser Community `v2.18.0` is reserved for the later release

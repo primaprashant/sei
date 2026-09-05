@@ -6,18 +6,15 @@ import (
 	"io"
 	"os"
 
-	"charm.land/bubbles/v2/help"
-	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/term"
 )
 
 const usage = `Usage: sei [options] [setup]
 
 sei is a terminal skill-folder manager, currently in development.
-Load strict JSON configuration and open a non-mutating terminal shell.
-Setup is recognized but unavailable; browsing and mutations are not implemented.
+Load strict JSON configuration and browse configured folders read-only.
+Setup, navigation, refresh, and mutations are not implemented yet.
 Global options must precede the optional setup subcommand.
 
 Options:
@@ -100,7 +97,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintf(stderr, "sei: configuration %q is missing; first-run setup is not implemented yet\n", path)
 		return 1
 	}
-	if _, err := resolveConfigPaths(cfg, project); err != nil {
+	resolved, err := resolveConfigPaths(cfg, project)
+	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "sei: config %q: %v\n", path, err)
 		return 1
 	}
@@ -114,35 +112,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintln(stderr, "sei: interactive mode requires terminal stdin and stdout; use --help or --version")
 		return 1
 	}
-	if _, err := tea.NewProgram(shellModel{}, tea.WithInput(stdin), tea.WithOutput(stdout)).Run(); err != nil {
+	if _, err := tea.NewProgram(newBrowseModel(resolved), tea.WithInput(stdin), tea.WithOutput(stdout)).Run(); err != nil {
 		_, _ = fmt.Fprintf(stderr, "sei: terminal: %v\n", err)
 		return 1
 	}
 	return 0
-}
-
-type shellModel struct{}
-
-func (shellModel) Init() tea.Cmd { return nil }
-
-func (m shellModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if msg, ok := msg.(tea.KeyPressMsg); ok {
-		switch msg.String() {
-		case "q", "ctrl+c":
-			return m, tea.Quit
-		}
-	}
-	return m, nil
-}
-
-func (shellModel) View() tea.View {
-	title := lipgloss.NewStyle().Bold(true).Render("sei")
-	h := help.New()
-	keys := h.ShortHelpView([]key.Binding{
-		key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q / ctrl+c", "quit")),
-	})
-	v := tea.NewView(title + "\n\nDevelopment shell. No folders are read or changed.\n" +
-		"Setup, browsing, and mutations are not implemented.\n\n" + keys)
-	v.AltScreen = true
-	return v
 }

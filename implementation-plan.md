@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase A and Task 5 complete; Task 4 CI implemented with native runner execution pending. Task 6 not started.
+**Status:** Phase A and Tasks 5-6 complete; Task 4 CI implemented with native runner execution pending. Task 7 not started.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -242,11 +242,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Replace the terminal shell with a read-only vertical slice from configured paths through asynchronous directory scans to library and destination panels.
 
 **Acceptance criteria:**
-- [ ] Scan immediate ordinary directories, including dot-directories, without parsing `SKILL.md`; ignore loose files and show symlinks as blocked. Use deterministic raw Go string ordering.
-- [ ] Render the library left and configured global/local destinations right, with raw selected name stored separately from sanitized/cell-width-aware display text. Missing destinations stay absent and show not-created; inaccessible paths show errors.
-- [ ] Scans run outside `Update`/`View`, with typed results and generation checks. An unavailable library or panel does not prevent reading other panels; no add/remove inputs are enabled yet.
+- [x] Scan immediate ordinary directories, including dot-directories, without parsing `SKILL.md`; ignore loose files and show symlinks as blocked. Use deterministic raw Go string ordering.
+- [x] Render the library left and configured global/local destinations right, with raw selected name stored separately from sanitized/cell-width-aware display text. Missing destinations stay absent and show not-created; inaccessible paths show errors.
+- [x] Scans run outside `Update`/`View`, with typed results and generation checks. An unavailable library or panel does not prevent reading other panels; no add/remove inputs are enabled yet.
 
 **Verification:** `go test -count=1 -run 'TestBrowse' .` with real temporary trees and injected scan completion order; build and inspect an isolated three-agent configuration.
+
+**Verified (2026-09-05):** Focused/standard/race checks and disposable three-agent PTY smoke pass (Linux, xterm-256color, 150x36): populated panels, absent destinations unchanged, actions disabled, clean quit. Layout and lifecycle proof remain provisional.
 
 **Dependencies:** Task 5.
 

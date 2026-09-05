@@ -238,11 +238,8 @@ func TestCLIOutputFailure(t *testing.T) {
 	}
 }
 
-func TestShell(t *testing.T) {
-	m := shellModel{}
-	if m.Init() != nil {
-		t.Fatal("shell must not start filesystem commands")
-	}
+func TestBrowseKeys(t *testing.T) {
+	m := newBrowseModel(config{Library: t.TempDir(), Agents: []agentConfig{{Name: "Example"}}})
 	for _, msg := range []tea.Msg{
 		tea.KeyPressMsg{Code: 'q'},
 		tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl},
@@ -264,7 +261,7 @@ func TestShell(t *testing.T) {
 		}
 	}
 	v := m.View()
-	if !v.AltScreen || !strings.Contains(v.Content, "No folders are read or changed") || !strings.Contains(v.Content, "quit") {
-		t.Fatalf("unexpected shell view: %+v", v)
+	if !v.AltScreen || !strings.Contains(v.Content, "Read-only configured folders") || !strings.Contains(v.Content, "quit") {
+		t.Fatalf("unexpected browser view: %+v", v)
 	}
 }
