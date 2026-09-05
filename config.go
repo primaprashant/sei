@@ -13,6 +13,8 @@ import (
 )
 
 type config struct {
+	Project string        `json:"-"`
+	Home    string        `json:"-"`
 	Library string        `json:"library"`
 	Agents  []agentConfig `json:"agents"`
 }
@@ -169,7 +171,8 @@ func expandRoot(path string) (string, error) {
 }
 
 func resolveConfigPaths(cfg config, project string) (config, error) {
-	resolved := config{Agents: make([]agentConfig, len(cfg.Agents))}
+	resolved := config{Agents: make([]agentConfig, len(cfg.Agents)), Project: project}
+	resolved.Home, _ = os.UserHomeDir()
 	var err error
 	resolved.Library, err = expandRoot(cfg.Library)
 	if err != nil {

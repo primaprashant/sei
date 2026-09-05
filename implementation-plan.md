@@ -290,11 +290,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Connect physical root validation to launch so the UI cannot present an unsafe configuration as mutation-ready later.
 
 **Acceptance criteria:**
-- [ ] Implement the rooted-resolution mechanism above, including missing ancestors, permitted configured-root symlinks, local resolved containment, component-aware overlap checks, and filesystem identity/case aliases.
-- [ ] Reject source/destination nesting and destination overlap in both directions; protect library ancestors, project/home/destination roots, and invalid child names. Keep root revalidation callable by each mutation, not a one-time setup check.
+- [x] Implement the rooted-resolution mechanism above, including missing ancestors, permitted configured-root symlinks, local resolved containment, component-aware overlap checks, and filesystem identity/case aliases.
+- [x] Reject source/destination nesting and destination overlap in both directions; protect library ancestors, project/home/destination roots, and invalid child names. Keep root revalidation callable by each mutation, not a one-time setup check.
 - [ ] Test absent, dangling, non-directory, inaccessible, and alias cases on native Linux/macOS. Distinguish an unavailable listing from an unverifiable safety boundary; preserve usable panels when their mutation safety can still be established.
 
 **Verification:** `go test -count=1 -run 'Test(RootSafety|ResolveRoots|SkillName)' .`; review rooted API usage against pinned Go docs and record the selected algorithm/limitations. No skill mutation is enabled in this task.
+
+**Verified (2026-09-05):** Linux focused/standard/build/race checks pass, including protected-root ancestry. Native macOS tests pending; mutations disabled. Algorithm/API review: [filesystem safety](docs/filesystem-safety.md).
 
 **Dependencies:** Task 5.
 

@@ -3,31 +3,40 @@ package main
 import tea "charm.land/bubbletea/v2"
 
 type browsePanel struct {
-	label, path  string
-	generation   uint64
-	loading      bool
-	entries      []skillEntry
-	selectedName string
-	selected     int
-	missing      bool
-	err          error
+	label, path   string
+	generation    uint64
+	loading       bool
+	entries       []skillEntry
+	selectedName  string
+	selected      int
+	missing       bool
+	err           error
+	safetyChecked bool
+	safetyErr     error
 }
 
 type browseModel struct {
-	panels        []browsePanel // Library, configured globals, then corresponding locals.
-	agents        int
-	width, height int
-	focused       int
-	pendingGlobal bool
-	showHelp      bool
-	helpOffset    int
+	config           config
+	safetyGeneration uint64
+	panels           []browsePanel // Library, configured globals, then corresponding locals.
+	agents           int
+	width, height    int
+	focused          int
+	pendingGlobal    bool
+	showHelp         bool
+	helpOffset       int
 }
 
 type startBrowseMsg struct{}
 
+type rootSafetyMsg struct {
+	generation uint64
+	safety     rootSafety
+}
+
 // Construction only captures resolved configuration; Update owns scan state.
 func newBrowseModel(cfg config) browseModel {
-	m := browseModel{agents: len(cfg.Agents), width: 100, height: 30}
+	m := browseModel{config: cfg, agents: len(cfg.Agents), width: 100, height: 30}
 	m.panels = append(m.panels, browsePanel{label: "Library", path: cfg.Library, loading: true})
 	for _, agent := range cfg.Agents {
 		m.panels = append(m.panels, browsePanel{label: agent.Name + " / Global", path: agent.Global, loading: true})
@@ -45,15 +54,28 @@ func (browseModel) Init() tea.Cmd {
 func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case startBrowseMsg:
+		m.safetyGeneration++
+		cfg, generation := m.config, m.safetyGeneration
 		m.panels = append([]browsePanel(nil), m.panels...)
 		commands := make([]tea.Cmd, len(m.panels))
 		for i := range m.panels {
 			p := &m.panels[i]
 			p.generation++
 			p.loading = true
+			p.safetyChecked = false
 			commands[i] = scanPanel(panelID(i), p.generation, p.path)
 		}
+		commands = append(commands, func() tea.Msg { return rootSafetyMsg{generation, resolveRoots(cfg)} })
 		return m, tea.Batch(commands...)
+	case rootSafetyMsg:
+		if msg.generation != m.safetyGeneration || len(msg.safety.blocked) != len(m.panels) {
+			return m, nil
+		}
+		m.panels = append([]browsePanel(nil), m.panels...)
+		for i := range m.panels {
+			m.panels[i].safetyChecked = true
+			m.panels[i].safetyErr = msg.safety.blocked[i]
+		}
 	case scanResult:
 		if msg.panel < 0 || int(msg.panel) >= len(m.panels) {
 			return m, nil

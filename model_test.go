@@ -151,7 +151,7 @@ func TestBrowseCommandsAndGenerations(t *testing.T) {
 	updated, cmd := m.Update(m.Init()())
 	m = updated.(browseModel)
 	old := cmd().(tea.BatchMsg)
-	if len(old) != 7 {
+	if len(old) != 8 {
 		t.Fatalf("got %d independent commands", len(old))
 	}
 	// Trees appear only after construction, Init, Update, View and command creation.

@@ -181,7 +181,7 @@ func TestRefresh(t *testing.T) {
 		}
 		m.focused = 6
 		m, cmd := press(m, 'r')
-		if cmd == nil || len(cmd().(tea.BatchMsg)) != len(m.panels) {
+		if cmd == nil || len(cmd().(tea.BatchMsg)) != len(m.panels)+1 {
 			t.Fatal("refresh did not schedule scans")
 		}
 		var entries []skillEntry

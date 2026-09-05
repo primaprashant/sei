@@ -35,8 +35,9 @@ The [PRD configuration example](prd.md#setup-and-configuration) documents the ex
 schema: a library and 1-9 ordered agents, each with a name and global/local paths.
 Library/global paths must be absolute or begin with `~/`; only that home shorthand
 is expanded. Local paths are project-relative and lexically contained. Raw path
-components are retained; physical symlink containment and overlap checks remain
-Task 8, so this milestone is not mutation-ready.
+components are retained; Task 8 checks physical containment, root overlap, and
+existing filesystem identity aliases asynchronously. This milestone is still not
+mutation-ready; see [the safety algorithm and limits](docs/filesystem-safety.md).
 
 The browser lists immediate ordinary directories, including dot-directories,
 without parsing `SKILL.md`. Loose files are ignored; symlink entries are shown as
@@ -45,7 +46,9 @@ display labels are escaped and truncated by terminal cell width without changing
 raw selection names. The library appears left, with configured globals above
 locals on the right. Missing destinations show `Not created` and remain absent;
 inaccessible or invalid roots show errors independently of other panels.
-Configured root aliases can be read, but physical safety validation is still deferred.
+Configured root aliases are permitted when root checks pass. Safety warnings are
+independent of listings, with full reasons in help; unsafe roots remain inspectable.
+Every future mutation must revalidate, including after missing-root creation.
 The grid is provisional: it pages to the focused agent and scrolls lists to the
 selection. No minimum terminal size or final overflow behavior is established.
 
@@ -191,6 +194,12 @@ Focused browser checks: `go test -count=1 -run 'TestBrowse' .`.
 Task 7 checks: `go test -count=1 -run 'Test(Navigation|KeySequence|Help|Refresh)' .`.
 Standard/build/race and disposable 1/3/9-agent Linux PTY smoke passed (100x30,
 xterm-256color, no-color); full lifecycle and cross-terminal proof remain deferred.
+
+Task 8 checks: `go test -count=1 -run 'Test(RootSafety|ResolveRoots|SkillName)' .`.
+Focused/standard/build/race checks pass on Linux amd64 with Go 1.27.1, including
+unprivileged permission tests; the disposable filesystem detected case-sensitive names.
+Native macOS execution of the new Task 8 tests remains pending; earlier CI does
+not cover them. No copy/remove implementation or mutation keys are enabled.
 
 Generated tools, binaries, release output, coverage output, and `/.opencode/`
 remain ignored. GoReleaser Community `v2.18.0` is reserved for the later release

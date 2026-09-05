@@ -19,6 +19,13 @@ func displayText(raw string) string {
 
 func panelView(p browsePanel, library bool, width, height int) string {
 	lines := []string{displayText(p.label), displayText(p.path)}
+	if !p.safetyChecked {
+		lines = append(lines, "Root safety: checking")
+	} else if p.safetyErr != nil {
+		lines = append(lines, "Root safety: blocked (? reason)")
+	} else {
+		lines = append(lines, "Root relations checked; actions disabled")
+	}
 	switch {
 	case p.loading:
 		lines = append(lines, "Loading...")
@@ -31,7 +38,7 @@ func panelView(p browsePanel, library bool, width, height int) string {
 	case len(p.entries) == 0:
 		lines = append(lines, "Empty")
 	default:
-		available := max(1, height-2)
+		available := max(1, height-len(lines))
 		visible := min(len(p.entries), available)
 		if visible < len(p.entries) && visible > 1 {
 			visible--
@@ -152,6 +159,13 @@ func (m browseModel) helpLines() []string {
 	}
 	if p.err != nil {
 		text += "\nError: " + displayText(p.err.Error())
+	}
+	if !p.safetyChecked {
+		text += "\nRoot safety: checking"
+	} else if p.safetyErr != nil {
+		text += "\nRoot safety blocked: " + displayText(p.safetyErr.Error())
+	} else {
+		text += "\nRoot relations checked; each future mutation must revalidate. Actions disabled."
 	}
 	text += "\n0 library; 1-9 local; g then 1-9 global. Unconfigured slots do nothing.\nUp/Down clamp selection; in help scroll. r refreshes listings, not config.\ng has no timeout; invalid continuation is consumed. Esc cancels/closes; q/Ctrl+C quit. Paste ignored.\nAdd from library only (disabled):"
 	for i := range m.agents {
