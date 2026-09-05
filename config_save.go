@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"unicode/utf8"
@@ -49,7 +50,7 @@ func validateSetupConfig(cfg config, project, path string) (config, error) {
 }
 
 // configSaveLocation is a fresh observation, not permission for a later write.
-func configSaveLocation(cfg config, path string) (resolvedRoot, string, os.FileInfo, error) {
+func configSaveLocation(cfg config, path string, existing ...config) (resolvedRoot, string, os.FileInfo, error) {
 	fail := func(err error) (resolvedRoot, string, os.FileInfo, error) {
 		return resolvedRoot{}, "", nil, err
 	}
@@ -65,17 +66,19 @@ func configSaveLocation(cfg config, path string) (resolvedRoot, string, os.FileI
 	if parent.err != nil {
 		return fail(fmt.Errorf("config parent: %w", parent.err))
 	}
-	s := resolveRoots(cfg)
-	for i, err := range s.blocked {
-		if err != nil {
-			return fail(fmt.Errorf("managed root %d: %w", i, err))
-		}
-	}
 	location := parent
 	location.path = filepath.Join(parent.path, name)
-	for _, managed := range s.roots {
-		if rootWithin(managed, location) {
-			return fail(fmt.Errorf("config must not be inside managed root %q", managed.path))
+	for _, protected := range append([]config{cfg}, existing...) {
+		s := resolveRoots(protected)
+		for i, err := range s.blocked {
+			if err != nil {
+				return fail(fmt.Errorf("managed root %d: %w", i, err))
+			}
+		}
+		for _, managed := range s.roots {
+			if rootWithin(managed, location) || rootWithin(location, managed) {
+				return fail(fmt.Errorf("config must not overlap managed root %q", managed.path))
+			}
 		}
 	}
 	info, err := os.Lstat(path)
@@ -113,6 +116,27 @@ func checkConfigParent(before, after resolvedRoot) error {
 // rename commit; it never indicates that a committed save should be retried.
 // External writers are not locked out, but observed changes abort the save.
 func saveConfig(cfg config, project, path string, replace bool) error {
+	return saveConfigWithIO(cfg, project, path, replace, configSaveIO{
+		create: func(root *os.Root, name string) (*os.File, error) {
+			return root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+		},
+		write:  (*os.File).Write,
+		sync:   (*os.File).Sync,
+		close:  (*os.File).Close,
+		rename: (*os.Root).Rename,
+	})
+}
+
+// Only the fallible output operations are replaceable, and only for this call.
+type configSaveIO struct {
+	create func(*os.Root, string) (*os.File, error)
+	write  func(*os.File, []byte) (int, error)
+	sync   func(*os.File) error
+	close  func(*os.File) error
+	rename func(*os.Root, string, string) error
+}
+
+func saveConfigWithIO(cfg config, project, path string, replace bool, output configSaveIO) error {
 	resolved, err := validateSetupConfig(cfg, project, path)
 	if err != nil {
 		return err
@@ -132,6 +156,27 @@ func saveConfig(cfg config, project, path string, replace bool) error {
 	if original != nil && !replace {
 		return fmt.Errorf("config already exists: %w", os.ErrExist)
 	}
+	// Read before any parent creation. Reconfiguration cannot erase the old
+	// boundaries; resolve their original spellings again at each safety check.
+	var existing []config
+	if original != nil {
+		old, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		previous, err := parseConfig(old)
+		if err != nil {
+			return fmt.Errorf("existing config: %w", err)
+		}
+		previous, err = resolveConfigPaths(previous, project)
+		if err != nil {
+			return fmt.Errorf("existing config: %w", err)
+		}
+		existing = append(existing, previous)
+	}
+	if _, _, _, err := configSaveLocation(resolved, path, existing...); err != nil {
+		return err
+	}
 	root, err := os.OpenRoot(parent.ancestor)
 	if err != nil {
 		return err
@@ -144,8 +189,9 @@ func saveConfig(cfg config, project, path string, replace bool) error {
 	if !os.SameFile(info, parent.ancestors[0].info) {
 		return fmt.Errorf("config ancestor changed while opening")
 	}
-	for _, component := range parent.missing {
-		fresh, _, _, err := configSaveLocation(resolved, path)
+	for len(parent.missing) > 0 {
+		component := parent.missing[0]
+		fresh, _, _, err := configSaveLocation(resolved, path, existing...)
 		if err != nil {
 			return err
 		}
@@ -175,7 +221,7 @@ func saveConfig(cfg config, project, path string, replace bool) error {
 		if !os.SameFile(info, created) {
 			return fmt.Errorf("config parent changed while opening")
 		}
-		fresh, _, _, err = configSaveLocation(resolved, path)
+		fresh, _, _, err = configSaveLocation(resolved, path, existing...)
 		if err != nil {
 			return err
 		}
@@ -190,7 +236,7 @@ func saveConfig(cfg config, project, path string, replace bool) error {
 	// Keep the original target identity (including absence) through the entire
 	// operation. Size/time/mode also catch ordinary in-place edits of that inode.
 	check := func() error {
-		fresh, _, current, err := configSaveLocation(resolved, path)
+		fresh, _, current, err := configSaveLocation(resolved, path, existing...)
 		if err != nil {
 			return err
 		}
@@ -215,39 +261,33 @@ func saveConfig(cfg config, project, path string, replace bool) error {
 	if err := check(); err != nil {
 		return err
 	}
-	if original != nil {
-		old, err := root.ReadFile(name)
-		if err != nil {
-			return err
-		}
-		if _, err := parseConfig(old); err != nil {
-			return fmt.Errorf("existing config: %w", err)
-		}
-	}
 	temp := ".sei-config-" + rand.Text()
-	file, err := root.OpenFile(temp, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	file, err := output.create(root, temp)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = root.Remove(temp) }()
-	_, writeErr := file.Write(data)
+	n, writeErr := output.write(file, data)
+	if writeErr == nil && n != len(data) {
+		writeErr = io.ErrShortWrite
+	}
 	var syncErr error
 	if writeErr == nil {
-		syncErr = file.Sync()
+		syncErr = output.sync(file)
 	}
 	tempInfo, statErr := file.Stat()
-	if err := errors.Join(writeErr, syncErr, statErr, file.Close()); err != nil {
+	if err := errors.Join(writeErr, syncErr, statErr, output.close(file)); err != nil {
 		return err
 	}
 	currentTemp, err := root.Lstat(temp)
 	if err != nil {
 		return err
 	}
-	if !currentTemp.Mode().IsRegular() || !os.SameFile(tempInfo, currentTemp) || tempInfo.Size() != currentTemp.Size() || !tempInfo.ModTime().Equal(currentTemp.ModTime()) {
+	if !currentTemp.Mode().IsRegular() || !os.SameFile(tempInfo, currentTemp) || tempInfo.Mode() != currentTemp.Mode() || tempInfo.Size() != currentTemp.Size() || !tempInfo.ModTime().Equal(currentTemp.ModTime()) {
 		return fmt.Errorf("temporary config changed")
 	}
 	if err := check(); err != nil {
 		return err
 	}
-	return root.Rename(temp, name)
+	return output.rename(root, temp, name)
 }

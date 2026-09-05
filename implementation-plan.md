@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase D in progress (Tasks 10-11 complete). Phase C macOS harness fixes await native rerun.
+**Status:** Phase D implemented; Linux checkpoint passes, owner/native review pending. Phase C macOS harness fixes await native rerun.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -376,11 +376,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Complete the setup slice's persistence failure coverage before real skill mutations depend on saved targets.
 
 **Acceptance criteria:**
-- [ ] Exercise marshal/validation, temporary create/write/sync/close, and rename failures using real filesystem conditions or narrowly scoped deterministic seams; pre-commit failures preserve valid existing bytes.
-- [ ] Apply the owner-approved config symlink/placement policy and reject observed unsafe changes before committing; no config save can mutate the source library or become part of a deletable managed skill inadvertently.
-- [ ] Report setup-save failures on stderr with status `1`, clean temporary config output where possible, and distinguish committed saves from pre-commit failures without claiming crash durability.
+- [x] Exercise marshal/validation, temporary create/write/sync/close, and rename failures using real filesystem conditions or narrowly scoped deterministic seams; pre-commit failures preserve valid existing bytes.
+- [x] Apply the owner-approved config symlink/placement policy and reject observed unsafe changes before committing; no config save can mutate the source library or become part of a deletable managed skill inadvertently.
+- [x] Report setup-save failures on stderr with status `1`, clean temporary config output where possible, and distinguish committed saves from pre-commit failures without claiming crash durability.
 
 **Verification:** `go test -count=1 -run 'Test(ConfigSaveFailure|ConfigSaveSafety)' .`; compare byte snapshots of config, library, and destinations after every failure case.
+
+**Verified (2026-09-06):** Injected I/O failures, old/new-root placement, observed-change snapshots, and PTY stderr/status/cleanup pass. Typed schema has no reachable marshal-error case; invalid values/UTF-8 tested.
 
 **Dependencies:** Task 11.
 
@@ -390,9 +392,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Checkpoint D: Tasks 10-12
 
-- [ ] Standard checks pass; first-run setup opens the browser and explicit setup saves/exits.
-- [ ] Cancel and failed-save tests prove previous config and all skill folders remain unchanged.
+- [x] Standard checks pass; first-run setup opens the browser and explicit setup saves/exits.
+- [x] Cancel and failed-save tests prove previous config and all skill folders remain unchanged.
 - [ ] Owner can configure their actual intended paths in a disposable equivalent without hand-editing JSON.
+
+**Verified (2026-09-06):** Linux standard/build/race/PTY checks and both macOS test cross-builds pass. Owner disposable-path review/native execution pending; no push, mutations disabled.
 
 ### Phase E: First Destructive Workflow
 

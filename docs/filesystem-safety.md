@@ -52,6 +52,25 @@ Safety warnings do not hide listings or listing errors; full reasons are in help
 `Update` and `View` perform no filesystem I/O. These observations are display state,
 not cached authorization for later mutations.
 
+## Configuration Saves
+
+Setup validates without writing. Saving creates only config parents through rooted
+handles, writes private exclusive temporary output, checks write/sync/close, and
+renames to commit. Pre-commit failures preserve existing config bytes; cleanup is
+best effort and newly created empty config parents may remain. There is no fallible
+post-commit metadata step or crash-durability guarantee.
+
+Config-file symlinks and nonregular files cannot be replaced. Placement must not
+overlap any managed root, including physical aliases and roots from the existing
+config during reconfiguration. Parent, target, temporary-file identities and root
+relationships are checked again before commit. Observed unsafe changes abort;
+these checks do not lock out concurrent writers. Loading a safe config symlink for
+read-only browsing remains supported.
+
+Linux tests cover each fallible output operation, short writes, validation failures,
+retargeted aliases, substituted config/temp files, unchanged populated skill trees,
+and terminal-restored save-failure diagnostics. Native macOS execution is pending.
+
 ## Future Integration
 
 Each mutation command must capture raw config paths, name, destination, scope, and

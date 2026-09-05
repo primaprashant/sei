@@ -100,6 +100,66 @@ func TestPTYFirstRunSetup(t *testing.T) {
 	}
 }
 
+func TestConfigSaveFailurePTY(t *testing.T) {
+	binary := filepath.Join(t.TempDir(), "sei")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	build := exec.CommandContext(ctx, "go", "build", "-o", binary, ".")
+	build.WaitDelay = 5 * time.Second
+	if output, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build: %v\n%s", err, output)
+	}
+	root := t.TempDir()
+	paths := []string{"library", ".claude/skills", ".agents/skills", ".config/opencode/skills", "project/.claude/skills", "project/.agents/skills", "project/.opencode/skills"}
+	for _, path := range paths {
+		dir := filepath.Join(root, path, "existing")
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte("original skill\n\x00\xff"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Include directory entries and file bytes so additions and removals also fail.
+	snapshot := func() map[string]string {
+		t.Helper()
+		entries := make(map[string]string)
+		for _, path := range paths {
+			if err := filepath.WalkDir(filepath.Join(root, path), func(path string, d os.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+				entries[path] = "directory"
+				if !d.IsDir() {
+					data, err := os.ReadFile(path)
+					if err != nil {
+						return err
+					}
+					entries[path] = string(data)
+				}
+				return nil
+			}); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return entries
+	}
+	before := snapshot()
+	path := filepath.Join(root, "config", "sei.json")
+	runSetupPTY(t, binary, root, path, "save-failure", false)
+	if after := snapshot(); !reflect.DeepEqual(before, after) {
+		t.Fatalf("save failure changed skills: before=%q after=%q", before, after)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil || string(data) != "concurrent config\n\x1b[31m\r\x00\xff" {
+		t.Fatalf("competing config changed: %q, %v", data, err)
+	}
+	entries, err := os.ReadDir(filepath.Dir(path))
+	if err != nil || len(entries) != 1 || entries[0].Name() != "sei.json" {
+		t.Fatalf("unexpected config directory contents: %v, %v", entries, err)
+	}
+}
+
 func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool) string {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -214,13 +274,24 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 				slot = 9
 			}
 			await(fmt.Sprintf("focus %d / g%d", slot, slot))
-			setupAbsent(t, filepath.Join(root, "library"))
+			if scenario != "save-failure" {
+				setupAbsent(t, filepath.Join(root, "library"))
+			}
 			if !explicit || scenario == "explicit-new" {
 				setupAbsent(t, filepath.Dir(path))
 			}
 			if scenario == "cancel-preview" {
 				send("\x1b")
 			} else {
+				if scenario == "save-failure" {
+					// The preview observed absence; publish a competing file before save.
+					if err := os.Mkdir(filepath.Dir(path), 0o700); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.WriteFile(path, []byte("concurrent config\n\x1b[31m\r\x00\xff"), 0o600); err != nil {
+						t.Fatal(err)
+					}
+				}
 				send("\r")
 				if explicit {
 					if scenario != "explicit-new" {
@@ -235,7 +306,7 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 							send("y")
 						}
 					}
-				} else {
+				} else if scenario != "save-failure" {
 					await("Read-only configured folders")
 					send("q")
 				}
@@ -276,7 +347,15 @@ waiting:
 			t.Fatal("timeout draining PTY")
 		}
 	}
-	if ctx.Err() != nil || waitErr != nil || stderr.Len() != 0 {
+	if scenario == "save-failure" {
+		var exitErr *exec.ExitError
+		if ctx.Err() != nil || !errors.As(waitErr, &exitErr) || exitErr.ExitCode() != 1 {
+			t.Fatalf("save failure exit: %v, stderr=%q, screen=%s", waitErr, stderr.String(), screen.String())
+		}
+		if stderr.String() != "sei: setup: config already exists: file already exists\n" || strings.ContainsAny(stderr.String(), "\x1b\r\x00") {
+			t.Fatalf("missing or unsafe final save diagnostic: %q", stderr.String())
+		}
+	} else if ctx.Err() != nil || waitErr != nil || stderr.Len() != 0 {
 		t.Fatalf("exit: %v, stderr=%q, screen=%s", waitErr, stderr.String(), screen.String())
 	}
 	for _, pair := range [][2]string{{"\x1b[?1049h", "\x1b[?1049l"}, {"\x1b[?25l", "\x1b[?25h"}} {
