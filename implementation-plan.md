@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase A complete; later phases not started.
+**Status:** Phase A and Task 5 complete; Task 4 CI implemented with native runner execution pending. Task 6 not started.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -223,11 +223,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Let a user point the executable at a real JSON configuration and project, with actionable errors before any terminal or filesystem mutation.
 
 **Acceptance criteria:**
-- [ ] Implement the JSON mechanism above with table tests for duplicate/escaped keys, unknown/exactly spelled keys, incorrect types/null, trailing values, required fields, duplicate names, and 1-9 ordered agents.
-- [ ] Resolve native config locations, relative-XDG rejection on Linux, `--config`, launch-directory project semantics, relative `--project`, `~/`, spaces/Unicode, and local lexical containment without config merging or shell expansion.
-- [ ] Wire command dispatch and stdout/stderr/status behavior: malformed/unreadable existing config never starts setup or gets overwritten. Missing configuration produces an explicit not-yet-implemented setup diagnostic until Task 10.
+- [x] Implement the JSON mechanism above with table tests for duplicate/escaped keys, unknown/exactly spelled keys, incorrect types/null, trailing values, required fields, duplicate names, and 1-9 ordered agents.
+- [x] Resolve native config locations, relative-XDG rejection on Linux, `--config`, launch-directory project semantics, relative `--project`, `~/`, spaces/Unicode, and local lexical containment without config merging or shell expansion.
+- [x] Wire command dispatch and stdout/stderr/status behavior: malformed/unreadable existing config never starts setup or gets overwritten. Missing configuration produces an explicit not-yet-implemented setup diagnostic until Task 10.
 
 **Verification:** `go test -count=1 -run 'Test(ParseConfig|ConfigPaths|CLI)' .`, standard build, and disposable manual launches with config/project overrides. Include non-TTY help/version with invalid config present.
+
+**Verified (2026-09-05):** Focused/standard/race checks and disposable CLI launches pass, including permissions, dangling config, and raw path traversal. Physical root safety remains Task 8.
 
 **Dependencies:** Task 2.
 

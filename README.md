@@ -7,11 +7,35 @@ contract and [the implementation plan](implementation-plan.md) for progress.
 
 ## Status
 
-The bootstrap executable supports `--help`, `--version`, and a non-mutating
-terminal shell (quit with `q` or Ctrl+C). Configuration, browsing, setup, and
-skill mutations are not implemented. There is no published installer or usable
-release. Unknown flags, commands, and positional arguments return status `2`;
+The executable supports strict JSON configuration, `--config`, `--project`,
+`--help`, `--version`, and a non-mutating terminal shell (quit with `q` or Ctrl+C).
+Browsing, setup, and skill mutations are not implemented. Missing configuration
+and the recognized `setup` command report that setup is unavailable (status `1`);
+malformed or unreadable configuration fails without starting setup or writing files.
+There is no published installer or usable release. Unknown flags, commands, and
+unexpected positional arguments return status `2`. After configuration validation,
 interactive startup requires terminal stdin and stdout and otherwise returns `1`.
+Help/version use stdout and need neither configuration nor a terminal; errors use stderr.
+
+Use global options **before** the optional `setup` subcommand:
+
+```sh
+sei --config /tmp/sei.json --project ./example
+sei --config /tmp/sei.json setup  # Recognized, but not implemented yet.
+sei --help
+```
+
+Without `--config`, configuration uses `os.UserConfigDir()`: Linux uses
+`$XDG_CONFIG_HOME/sei/config.json` or `~/.config/sei/config.json`; macOS uses
+`~/Library/Application Support/sei/config.json` and ignores XDG. Relative Linux
+`XDG_CONFIG_HOME` is rejected. Relative config/project overrides use the launch
+directory, never a Git root or the config file's parent. There is no config merging.
+The [PRD configuration example](prd.md#setup-and-configuration) documents the exact
+schema: a library and 1-9 ordered agents, each with a name and global/local paths.
+Library/global paths must be absolute or begin with `~/`; only that home shorthand
+is expanded. Local paths are project-relative and lexically contained. Raw path
+components are retained; physical symlink containment and overlap checks remain
+Task 8, so this milestone is not mutation-ready.
 
 ## Project Decisions
 
@@ -122,13 +146,16 @@ Tests and manual experiments must use disposable HOME/config/project/library/
 destination directories. Set both `HOME` (including macOS's native
 `$HOME/Library/Application Support` location) and Linux `XDG_CONFIG_HOME` to
 disposable paths; never inspect real agent installations or execute skill
-scripts. The current tests isolate HOME and do not access configuration or skill
-folders. For an interactive shell smoke check with isolated data:
+scripts. Tests isolate native HOME/XDG configuration paths and use disposable
+config files. For an interactive shell smoke check with isolated data:
 
 ```sh
 scratch=$(mktemp -d)
-HOME="$scratch" XDG_CONFIG_HOME="$scratch" ./bin/sei
+printf '%s\n' '{"library":"~/library","agents":[{"name":"Example","global":"~/global","local":".local/skills"}]}' > "$scratch/config.json"
+HOME="$scratch" XDG_CONFIG_HOME="$scratch" ./bin/sei --config "$scratch/config.json" --project "$scratch"
 ```
+
+Only the configuration is read; the shell does not scan or create skill folders.
 
 Generated tools, binaries, release output, coverage output, and `/.opencode/`
 remain ignored. GoReleaser Community `v2.18.0` is reserved for the later release
