@@ -203,7 +203,7 @@ func prepareSkillSource(cfg config, name string, ops copySkillOps) (_ *preparedS
 		info, statErr = f.Stat()
 		closeErr := f.Close()
 		if err := errors.Join(readErr, statErr, closeErr); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("read source %q during preflight: %w", entry.path, err)
 		}
 		if !sameCopyEntry(info, entry.info) || n != entry.info.Size() {
 			return nil, fmt.Errorf("source changed while reading %q", entry.path)
@@ -434,7 +434,7 @@ func copyPreparedSkill(cfg config, destination panelID, s *preparedSkill, initia
 			}
 			f, err := open(target, entry.path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o666|entry.info.Mode().Perm()&0o111)
 			if err != nil {
-				return errors.Join(err, source.Close())
+				return errors.Join(fmt.Errorf("create output %q: %w", entry.path, err), source.Close())
 			}
 			opened, statErr := f.Stat()
 			pathInfo, pathErr := target.Lstat(entry.path)
@@ -449,7 +449,7 @@ func copyPreparedSkill(cfg config, destination panelID, s *preparedSkill, initia
 			sourceInfo, sourceStatErr := source.Stat()
 			written, statErr := f.Stat()
 			if err := errors.Join(copyErr, sourceStatErr, statErr, source.Close(), f.Close()); err != nil {
-				return err
+				return fmt.Errorf("copy %q (output may be partial): %w", entry.path, err)
 			}
 			if !sameCopyEntry(sourceInfo, entry.info) || n != entry.info.Size() {
 				return fmt.Errorf("source changed while copying %q", entry.path)

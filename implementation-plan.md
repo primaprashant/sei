@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase E implemented; all four native CI jobs pass. Human terminal reviews and later-phase audits remain pending.
+**Status:** Phase E and Task 16 implemented; Phase E passes all four native CI jobs. Task 16 verified on native Linux only. Human terminal reviews and later-phase audits remain pending.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -478,11 +478,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Make mid-operation errors usable and truthful across filesystem results, status display, and refreshed listings.
 
 **Acceptance criteria:**
-- [ ] Inject/readily reproduce read, write, close, permission, and removal failures at deterministic points; assert missing/partial state is retained and a retry/removal works without touching the library.
-- [ ] Errors identify operation, captured skill, scope, and actual destination; navigation leaves them visible, while explicit actions can supersede them. Failed refresh does not hide the mutation error or present stale contents as current.
-- [ ] Unavailable library disables adds but permits otherwise-safe destination deletion; inaccessible destinations remain visibly distinct from empty/missing ones and unaffected panels remain usable.
+- [x] Inject/readily reproduce read, write, close, permission, and removal failures at deterministic points; assert missing/partial state is retained and a retry/removal works without touching the library.
+- [x] Errors identify operation, captured skill, scope, and actual destination; navigation leaves them visible, while explicit actions can supersede them. Failed refresh does not hide the mutation error or present stale contents as current.
+- [x] Unavailable library disables adds but permits otherwise-safe destination deletion; inaccessible destinations remain visibly distinct from empty/missing ones and unaffected panels remain usable.
 
 **Verification:** `go test -count=1 -run 'Test(OperationFailure|ErrorPersistence|UnavailableRoots)' .`; use channels/completion signals rather than sleep-based fault timing.
+
+**Verified (2026-09-06):** Native Linux amd64 only, Go 1.27.1: focused tests (also ten repetitions), full tests/race, build, vet, module hygiene, formatter/config checks, and lint pass. `operation_failure_test.go` covers synchronous per-call faults with real copy/remove/close operations, actual non-root permission failures, retained missing/partial output, retry/UI removal, failed-refresh error persistence/escaping, and unavailable-root panel isolation. Copy errors now include file/phase context. Native macOS and human terminal review remain pending; no Task 17/18 implementation or new cross-platform claim.
 
 **Dependencies:** Task 15.
 
