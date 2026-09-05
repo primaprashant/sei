@@ -20,9 +20,11 @@ type preparedSkill struct {
 
 // Per-call seams; before runs before validation, not after authorization.
 type copySkillOps struct {
-	before func(string)
-	copy   func(io.Writer, io.Reader) (int64, error)
-	open   func(*os.Root, string, int, os.FileMode) (copySkillFile, error)
+	before       func(string)
+	copy         func(io.Writer, io.Reader) (int64, error)
+	open         func(*os.Root, string, int, os.FileMode) (copySkillFile, error)
+	beforeRemove func(string)
+	remove       func(*os.Root, string) error
 }
 
 type copySkillFile interface {
@@ -35,7 +37,8 @@ func addSkill(cfg config, destination panelID, name string) error {
 }
 
 func addSkillWithOps(cfg config, destination panelID, name string, ops copySkillOps) (err error) {
-	if _, err = revalidateSkillRoot(cfg, destination, name); err != nil {
+	initial, err := revalidateSkillRoot(cfg, destination, name)
+	if err != nil {
 		return err
 	}
 	source, err := prepareSkillSource(cfg, name, ops)
@@ -43,7 +46,99 @@ func addSkillWithOps(cfg config, destination panelID, name string, ops copySkill
 		return err
 	}
 	defer func() { err = errors.Join(err, source.root.Close()) }()
-	return copyPreparedSkill(cfg, destination, source, ops)
+	r, err := revalidateCopyDestination(cfg, destination, name, initial, 0)
+	if err != nil {
+		return err
+	}
+	if len(r.missing) == 0 {
+		target, err := openSkillRoot(cfg, destination, name)
+		if err != nil {
+			return err
+		}
+		defer func() { err = errors.Join(err, target.Close()) }()
+		if _, lookupErr := target.Lstat(name); lookupErr == nil {
+			inventory, err := inventorySkill(target, name)
+			if err != nil {
+				return err
+			}
+			if err := replacementNames(target, source, inventory); err != nil {
+				return err
+			}
+			err = removeSkillInventory(cfg, destination, name, target, r.ancestors[0].info, inventory, func(path string) error {
+				if ops.beforeRemove != nil {
+					ops.beforeRemove(path)
+				}
+				if _, err := revalidateCopyDestination(cfg, destination, name, initial, 0); err != nil {
+					return err
+				}
+				return source.validate(cfg)
+			}, ops.remove)
+			if err != nil {
+				return err
+			}
+		} else if !errors.Is(lookupErr, os.ErrNotExist) {
+			return lookupErr
+		}
+	}
+	return copyPreparedSkill(cfg, destination, source, initial, ops)
+}
+
+// Keep one destination observation across preparation, removal, and copying.
+// Only components created by this copy may consume the original missing suffix.
+// These checks reject observed changes, not arbitrary hostile-writer races.
+func revalidateCopyDestination(cfg config, destination panelID, name string, initial resolvedRoot, created int) (resolvedRoot, error) {
+	current, err := revalidateSkillRoot(cfg, destination, name)
+	if err != nil {
+		return resolvedRoot{}, err
+	}
+	if current.path != initial.path || len(current.missing) != len(initial.missing)-created || len(current.ancestors) != len(initial.ancestors)+created {
+		return resolvedRoot{}, fmt.Errorf("destination resolution changed")
+	}
+	for i, ancestor := range initial.ancestors {
+		now := current.ancestors[i+created]
+		if now.path != ancestor.path || !os.SameFile(now.info, ancestor.info) {
+			return resolvedRoot{}, fmt.Errorf("destination ancestor changed: %q", ancestor.path)
+		}
+	}
+	return current, nil
+}
+
+// Check actual lookup behavior, not guessed case folding or writing probes.
+// Missing directories (including file-to-directory swaps) provide no evidence
+// about nested aliases: exclusive creation may discover those only after removal.
+func replacementNames(target *os.Root, source *preparedSkill, inventory []skillTreeEntry) error {
+	directories := map[string]bool{".": true}
+	for _, entry := range inventory {
+		directories[entry.path] = entry.info.IsDir()
+	}
+	for i := len(source.inventory) - 1; i >= 0; i-- {
+		path := source.inventory[i].path
+		parent := filepath.Dir(path)
+		if !directories[parent] {
+			continue
+		}
+		entries, err := readSkillDirectory(target, parent)
+		if err != nil {
+			return err
+		}
+		_, err = target.Lstat(path)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		exact := false
+		for _, entry := range entries {
+			if entry.Name() == filepath.Base(path) {
+				exact = true
+			}
+		}
+		if !exact {
+			return fmt.Errorf("replacement name %q aliases an existing entry", path)
+		}
+	}
+	return nil
 }
 
 func prepareSkillSource(cfg config, name string, ops copySkillOps) (_ *preparedSkill, err error) {
@@ -193,8 +288,8 @@ func copyDirectorySafety(info os.FileInfo, safety rootSafety) error {
 
 // Only this phase creates output. Errors after creation may leave a partial
 // fresh tree; never remove or merge an existing entry, including lookup aliases.
-func copyPreparedSkill(cfg config, destination panelID, s *preparedSkill, ops copySkillOps) (err error) {
-	r, err := revalidateSkillRoot(cfg, destination, s.name)
+func copyPreparedSkill(cfg config, destination panelID, s *preparedSkill, initial resolvedRoot, ops copySkillOps) (err error) {
+	r, err := revalidateCopyDestination(cfg, destination, s.name, initial, 0)
 	if err != nil {
 		return err
 	}
@@ -215,14 +310,12 @@ func copyPreparedSkill(cfg config, destination panelID, s *preparedSkill, ops co
 		}
 	}()
 	created := make(map[string]os.FileInfo)
+	createdComponents := 0
 	var target *os.Root
 	check := func() error {
-		current, err := revalidateSkillRoot(cfg, destination, s.name)
+		_, err := revalidateCopyDestination(cfg, destination, s.name, initial, createdComponents)
 		if err != nil {
 			return err
-		}
-		if current.path != r.path {
-			return fmt.Errorf("destination resolution changed")
 		}
 		if err := s.validate(cfg); err != nil {
 			return err
@@ -299,6 +392,7 @@ func copyPreparedSkill(cfg config, destination panelID, s *preparedSkill, ops co
 			return err
 		}
 		dirs = append(dirs, heldDirectory{filepath.Join(parent.path, component), next, info})
+		createdComponents++
 		if err := check(); err != nil {
 			return err
 		}

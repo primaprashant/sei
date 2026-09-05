@@ -170,7 +170,7 @@ func runMutationPTY(t *testing.T, binary, root, path, scope string, restart bool
 		await("Configured folders")
 		from = screen.Len()
 		send("X")
-		await(": complete")
+		await("complete")
 		from = screen.Len()
 		send("?")
 		await("Selected name: survivor")

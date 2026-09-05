@@ -73,8 +73,14 @@ func (m browseModel) View() tea.View {
 	if m.showHelp {
 		lines := m.helpLines()
 		offset := max(0, min(m.helpOffset, len(lines)-m.helpHeight()))
+		quit := "q quit"
+		if m.pendingQuit {
+			quit = "Exit requested; waiting for work"
+		} else if m.active != nil {
+			quit = "Working; q waits for completion"
+		}
 		v := tea.NewView(strings.Join(lines[offset:min(len(lines), offset+m.helpHeight())], "\n") +
-			fmt.Sprintf("\nHelp %d/%d | up/down scroll | ?/Esc close | q quit%s", offset+1, len(lines), m.sequenceHint()))
+			fmt.Sprintf("\nHelp %d/%d | up/down scroll | ?/Esc close | %s%s", offset+1, len(lines), quit, m.sequenceHint()))
 		v.AltScreen = true
 		return v
 	}
@@ -172,11 +178,11 @@ func (m browseModel) helpLines() []string {
 	} else {
 		text += "\nRoot relations checked; every mutation revalidates."
 	}
-	text += "\n0 library; 1-9 local; g then 1-9 global. Unconfigured slots do nothing.\nUp/Down clamp selection; in help scroll. r refreshes listings, not config.\ng has no timeout; invalid continuation is consumed. Esc cancels/closes; q/Ctrl+C quit. Paste ignored.\nAdd from library only (fresh targets; replacement not enabled yet):"
+	text += "\n0 library; 1-9 local; g then 1-9 global. Unconfigured slots do nothing.\nUp/Down clamp selection; in help scroll. r refreshes listings, not config.\ng has no timeout; invalid continuation is consumed. Esc cancels/closes; q/Ctrl+C quit. Paste ignored.\nAdd from library only (existing same-named targets are deleted first, then copied):"
 	for i := range m.agents {
 		text += fmt.Sprintf("\n%c: %s; %c: %s", addKeys[i], displayText(m.panels[1+m.agents+i].label), strings.ToUpper(string(addKeys[i]))[0], displayText(m.panels[1+i].label))
 	}
-	text += "\nX: permanently remove from destination only; x does nothing. No confirmation, trash, backup, or undo.\nWhile working, navigation remains available; extra mutations are ignored and refresh waits. Quit waits for completion.\nOther agents may also load skills from these folders. sei shows configured folder contents, not everything an agent discovers or has loaded."
+	text += "\nReplacement loses local edits and destination-only files, even if content seems identical. Not merge or sync.\nX: permanently remove from destination only; x does nothing. No confirmation, trash, backup, or undo.\nCopy failure may leave a missing or partial destination; no rollback. Retry add or remove the partial skill.\nWhile working, navigation remains available; extra mutations are ignored and refresh waits. Quit waits for completion.\nOther agents may also load skills from these folders. sei shows configured folder contents, not everything an agent discovers or has loaded."
 	if m.status != "" {
 		text += "\nResult: " + displayText(m.status)
 	}

@@ -208,7 +208,6 @@ func TestAddGuards(t *testing.T) {
 			assertRemoveSnapshot(t, filepath.Dir(m.config.Library), before)
 		})
 	}
-	// Task14 is fresh-add only. This refusal test will change in Task15.
 	for _, key := range "aA" {
 		for _, late := range []bool{false, true} {
 			t.Run(fmt.Sprintf("existing target/%c/late=%t", key, late), func(t *testing.T) {
@@ -220,12 +219,27 @@ func TestAddGuards(t *testing.T) {
 					d = 1
 				}
 				target := filepath.Join(m.panels[d].path, "b")
+				source := filepath.Join(m.config.Library, "b")
+				writeTestFile(t, filepath.Join(source, "nested", "SKILL.md"), "original\n\x00\xff\r\n")
+				browseMkdir(t, filepath.Join(source, "nested", "empty"))
 				if late {
 					if err := os.RemoveAll(target); err != nil {
 						t.Fatal(err)
 					}
 					next, refresh := m.Update(startBrowseMsg{})
 					m = finishMutationRefresh(t, next.(browseModel), refresh)
+				} else {
+					writeTestFile(t, filepath.Join(target, "keep"), "destination only")
+				}
+				selected, selectedName := m.panels[0].selected, m.panels[0].selectedName
+				roots := make([]map[string]removeSnapshotEntry, len(m.panels))
+				for i, p := range m.panels {
+					roots[i] = removeSnapshot(t, p.path)
+				}
+				siblings := make(map[string]map[string]removeSnapshotEntry)
+				for _, name := range []string{"a", "c"} {
+					path := filepath.Join(m.panels[d].path, name)
+					siblings[path] = removeSnapshot(t, path)
 				}
 				before := removeSnapshot(t, filepath.Dir(m.config.Library))
 				m, worker := press(m, key)
@@ -236,20 +250,43 @@ func TestAddGuards(t *testing.T) {
 				assertRemoveSnapshot(t, filepath.Dir(m.config.Library), before)
 				if late {
 					// Another writer creates the target after request capture.
-					browseMkdir(t, target)
+					browseMkdir(t, filepath.Join(target, "nested"))
 					writeTestFile(t, filepath.Join(target, "keep"), "external destination")
-					before = removeSnapshot(t, filepath.Dir(m.config.Library))
+					writeTestFile(t, filepath.Join(target, "nested", "SKILL.md"), "edited destination")
 				}
 				result := worker().(mutationResult)
-				if result.id != request.id || result.err == nil || !strings.Contains(result.err.Error(), "already exists") {
-					t.Fatalf("existing target not refused: %+v", result)
+				if result.id != request.id || result.err != nil {
+					t.Fatalf("existing target not replaced: %+v", result)
 				}
 				next, refresh := m.Update(result)
 				m = finishMutationRefresh(t, next.(browseModel), refresh)
-				if m.active != nil || m.exitError != nil || m.pendingQuit || m.focused != 0 || m.panels[0].selectedName != "b" || m.status != request.target()+": "+result.err.Error() {
-					t.Fatalf("refusal completion: %+v", m)
+				if m.active != nil || m.exitError != nil || m.pendingQuit || m.focused != 0 || m.panels[0].selected != selected || m.panels[0].selectedName != selectedName || m.status != request.target()+": complete" {
+					t.Fatalf("replacement completion: %+v", m)
 				}
-				assertRemoveSnapshot(t, filepath.Dir(m.config.Library), before)
+				for i, p := range m.panels {
+					if i != d {
+						assertRemoveSnapshot(t, p.path, roots[i])
+					}
+				}
+				for path, snapshot := range siblings {
+					assertRemoveSnapshot(t, path, snapshot)
+				}
+				setupAbsent(t, filepath.Join(target, "keep"))
+				copied := removeSnapshot(t, target)
+				original := removeSnapshot(t, source)
+				if len(copied) != len(original) {
+					t.Fatal("replacement tree differs from source")
+				}
+				for path, entry := range original {
+					rel, err := filepath.Rel(source, path)
+					if err != nil {
+						t.Fatal(err)
+					}
+					got, ok := copied[filepath.Join(target, rel)]
+					if !ok || got.data != entry.data || got.info.Mode().Type() != entry.info.Mode().Type() {
+						t.Fatalf("replacement differs at %s", rel)
+					}
+				}
 			})
 		}
 	}

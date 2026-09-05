@@ -52,11 +52,15 @@ func TestAddSkill(t *testing.T) {
 				writeTestFile(t, base+"/"+name+"/nested/.dot", "destination changed")
 				assertRemoveSnapshot(t, cfg.Library, library)
 				assertRemoveSnapshot(t, base+"/other", other)
-				before := removeSnapshot(t, base)
-				if err := addSkill(cfg, destination, name); err == nil {
-					t.Fatal("existing ordinary directory accepted")
+				if err := addSkill(cfg, destination, name); err != nil {
+					t.Fatal(err)
 				}
-				assertRemoveSnapshot(t, base, before)
+				got, err := os.ReadFile(base + "/" + name + "/nested/.dot")
+				if err != nil || string(got) != "dot" {
+					t.Fatalf("replacement: %q, %v", got, err)
+				}
+				assertRemoveSnapshot(t, cfg.Library, library)
+				assertRemoveSnapshot(t, base+"/other", other)
 			})
 		}
 	}
@@ -263,10 +267,12 @@ func TestAddSkill(t *testing.T) {
 				}
 				before := removeSnapshot(t, cfg.Agents[0].Global)
 				library := removeSnapshot(t, cfg.Library)
-				if err := addSkill(cfg, 1, "skill"); err == nil {
+				if err := addSkill(cfg, 1, "skill"); (err == nil) != (kind == "directory") {
 					t.Fatal("existing target accepted")
 				}
-				assertRemoveSnapshot(t, cfg.Agents[0].Global, before)
+				if kind != "directory" {
+					assertRemoveSnapshot(t, cfg.Agents[0].Global, before)
+				}
 				assertRemoveSnapshot(t, cfg.Library, library)
 			})
 		}

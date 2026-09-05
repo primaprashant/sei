@@ -8,13 +8,14 @@ cleanup finishes, disables Tea's signal handler, and sends `exitRequestMsg`.
 Only model `Update` decides to quit. Repeated signals have no forced-exit shortcut;
 OS signal coalescing is harmless because requests are idempotent.
 
-This read-only milestone quits immediately, without joining scan commands. Task
-13 must extend the existing exit-request branch to wait for its real sequential
-mutation; Tasks 18/19 prove busy quit and failure-after-pending-quit. No fake busy
-API, worker sleep, cancellation, or premature mutation behavior is introduced.
+Idle quit does not join read-only scans. Task 13 defers ordinary quit until its
+real sequential mutation completes. Navigation remains responsive before quit;
+additional mutations are rejected and refresh coalesces. Pending-quit failure
+returns sanitized stderr/status `1` after restoration. Tasks 18/19 still broaden
+real-process busy-quit and diagnostic coverage; model tests alone do not close them.
 HUP follows the same wait-and-restore policy, but a disconnected terminal may no
 longer accept restoration or diagnostics. SIGKILL/forced termination cannot run
-cleanup and future mutations may leave partial work.
+cleanup and mutations may leave partial work.
 
 ## Reviewed APIs
 
@@ -83,9 +84,8 @@ or shipped test flags/environment hooks exist.
 
 Every child has disposable HOME, Linux XDG and macOS native config, cwd, and
 configured paths. Existing full-test CI picks these tests up automatically;
-no workflow changes. Successful native macOS execution and manual Terminal.app
-round trip remain pending, as do human emulator/SSH checks; local PTYs are not
-that evidence.
+no workflow changes. Tasks 8-12 passed all four native jobs in run `33994932478`.
+Manual Terminal.app/emulator/SSH checks remain pending; PTYs are not that evidence.
 
 ## macOS CI Regression
 
@@ -103,4 +103,8 @@ reading, so an invalid fd did not force constructor failure. The allocation faul
 above tests the intended post-raw initialization error on Darwin instead.
 Linux standard checks/build, five PTY repetitions, and three PTY race repetitions
 pass after the fix; both Darwin architectures cross-compile. Native verification
-of these fixes awaits the next push/CI run.
+of these fixes subsequently passed in runs `33970786802` and `33994932478`.
+
+Phase E Linux model/race and real add/remove/replace/restart PTY checks pass.
+Help always exposes busy/pending-quit status in its footer. Native execution of
+these new tests remains pending; ordinary active-operation signal proof is Task 18.

@@ -13,7 +13,7 @@ const usage = `Usage: sei [options] [setup]
 
 sei is a terminal skill-folder manager, currently in development.
 Load strict JSON configuration and manage configured folders.
-Setup, fresh skill copies, and permanent removal are available; replacement is not enabled yet.
+Setup, skill copies/replacement, and permanent removal are available.
 Global options must precede the optional setup subcommand.
 
 Options:
@@ -35,7 +35,9 @@ q or Ctrl+C always quit; recognized paste is ignored. Selections are per panel;
 refresh preserves raw names, otherwise clamps the old index.
 Add mappings by slot: a b c d e f h i o local, A B C D E F H I O global
 (library only). X permanently removes (destination only); x does nothing.
-Removal has no confirmation, trash, backup, or undo. Quit waits for active work.
+Add deletes an existing same-named target before copying: local edits are lost.
+No action confirmation, trash, backup, or undo. Failure may leave partial output.
+Quit waits for active work.
 Layout is provisional; no minimum terminal size has been approved.
 `
 
@@ -136,6 +138,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			return 1
 		}
 	}
+	resolved.ConfigPath = path
 	final, err := runLifecycle(newBrowseModel(resolved), stdin, stdout)
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "sei: terminal: %s\n", displayText(err.Error()))

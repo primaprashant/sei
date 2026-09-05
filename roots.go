@@ -121,7 +121,18 @@ func rootWithin(parent, child resolvedRoot) bool {
 type rootSafety struct {
 	roots     []resolvedRoot // Same order as browser panels.
 	blocked   []error
-	protected []resolvedRoot // Home and project.
+	protected []resolvedRoot // Home, project, and the active config's locations.
+}
+
+// Represent a protected file using its physical parent and final component;
+// resolveRoot itself intentionally accepts directories only.
+func protectedConfigFile(path string) resolvedRoot {
+	dir, name := filepath.Split(path)
+	r := resolveRoot(dir)
+	if r.err == nil {
+		r.path = filepath.Join(r.path, name)
+	}
+	return r
 }
 
 // resolveRoots is a fresh observation, never a mutation authorization token.
@@ -140,6 +151,20 @@ func resolveRoots(cfg config) rootSafety {
 		s.blocked[i] = s.roots[i].err
 	}
 	s.protected = []resolvedRoot{resolveRoot(cfg.Home), resolveRoot(cfg.Project)}
+	if cfg.ConfigPath != "" {
+		s.protected = append(s.protected, protectedConfigFile(cfg.ConfigPath))
+		info, err := os.Lstat(cfg.ConfigPath)
+		if err == nil && info.Mode()&os.ModeSymlink != 0 {
+			target, err := filepath.EvalSymlinks(cfg.ConfigPath)
+			if err != nil {
+				s.protected = append(s.protected, resolvedRoot{err: err})
+			} else {
+				s.protected = append(s.protected, protectedConfigFile(target))
+			}
+		} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+			s.protected = append(s.protected, resolvedRoot{err: err})
+		}
+	}
 	for i := 1; i < len(paths); i++ {
 		for _, p := range s.protected {
 			if p.err != nil {

@@ -137,7 +137,7 @@ func runAddPTY(t *testing.T, binary, root, path, scope string, restart bool) {
 		} else {
 			send("a")
 		}
-		await(": complete")
+		await("complete")
 		from = screen.Len()
 		send("?")
 		await("Root relations checked; every mutation revalidates.")

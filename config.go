@@ -13,10 +13,11 @@ import (
 )
 
 type config struct {
-	Project string        `json:"-"`
-	Home    string        `json:"-"`
-	Library string        `json:"library"`
-	Agents  []agentConfig `json:"agents"`
+	ConfigPath string        `json:"-"`
+	Project    string        `json:"-"`
+	Home       string        `json:"-"`
+	Library    string        `json:"library"`
+	Agents     []agentConfig `json:"agents"`
 }
 
 type agentConfig struct {

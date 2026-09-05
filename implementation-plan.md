@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase E in progress (Tasks 13-14 complete locally). Phase D four-platform CI passes; new native/manual checks pending.
+**Status:** Phase E implemented; Linux checkpoint passes. Phase D four-platform CI passes; Phase E native/manual checks pending.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -445,11 +445,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Complete the product's add contract by replacing an existing same-named skill using validated delete-then-copy, not synchronization.
 
 **Acceptance criteria:**
-- [ ] Preflight the entire source and existing target before removal; reject links, special files, file conflicts, case collisions, and unsafe relationships without deleting old content.
-- [ ] Remove the old directory completely before copying; destination-only files and local edits disappear, even if content seems identical. A deletion failure prevents all subsequent copying into the remainder.
-- [ ] A later copy failure leaves truthful missing/partial output with no rollback, staging, backup, hidden success, or library changes; the user can retry or remove it through the existing UI.
+- [x] Preflight the entire source and existing target before removal; reject links, special files, file conflicts, case collisions, and unsafe relationships without deleting old content.
+- [x] Remove the old directory completely before copying; destination-only files and local edits disappear, even if content seems identical. A deletion failure prevents all subsequent copying into the remainder.
+- [x] A later copy failure leaves truthful missing/partial output with no rollback, staging, backup, hidden success, or library changes; the user can retry or remove it through the existing UI.
 
 **Verification:** `go test -count=1 -run 'Test(ReplaceSkill|ReplacePreflight|ReplaceFailure)' .`; manually replace a locally edited disposable skill and inspect destination-only file removal.
+
+**Verified (2026-09-06):** Preflight/failure/retry tests and PTY replacement pass. Review fixes protect active config, retain destination identity across phases, allow distinct hardlinks, and expose pending quit in help.
 
 **Dependencies:** Task 14.
 
@@ -459,9 +461,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Checkpoint E: Tasks 13-15
 
-- [ ] Standard checks and race checks pass, including destructive preflight and partial-failure regression tests.
-- [ ] Complete add-three/remove-two/quit in a disposable project; restart confirms persistence and the library is unchanged.
-- [ ] Review captured targets, no-confirmation warnings, and delete-then-copy behavior before wider testing; this is a functional prototype, not a release-ready claim.
+- [x] Standard checks and race checks pass, including destructive preflight and partial-failure regression tests.
+- [x] Complete add-three/remove-two/quit in a disposable project; restart confirms persistence and the library is unchanged.
+- [x] Review captured targets, no-confirmation warnings, and delete-then-copy behavior before wider testing; this is a functional prototype, not a release-ready claim.
+
+**Verified (2026-09-06):** Linux standard/build/race, ten PTY workflow repetitions, and macOS cross-builds pass; code review complete. Native Phase E/case-volume and human terminal checks pending; no push. Scan-to-operation identity audit remains Task 17.
 
 ### Phase F: Failure And Concurrency Behavior
 

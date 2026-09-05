@@ -1,10 +1,9 @@
 # Filesystem Safety
 
-Task 8 implements read-only root observation and callable revalidation, not copy,
-removal, destination creation, or mutation readiness. The owner approved keeping
-inspection usable while blocking affected mutations when safety is unprovable.
-Unavailable library contents may permit removal when its root relationships are
-still provable. All mutation keys remain disabled.
+Task 8 provides root observation; Tasks 13-15 add rooted removal, copying, and
+delete-then-copy replacement. Inspection remains usable while affected mutations
+are blocked when safety is unprovable. An unavailable library may still permit
+removal when its boundaries are provable.
 
 ## Algorithm
 
@@ -38,7 +37,7 @@ still provable. All mutation keys remain disabled.
    and raw name. It resolves everything afresh, validates the name as one nonempty
    Unix filename component (not `.`, `..`, slash, or NUL), rejects an existing
    non-directory/link child, and checks protected roots. The child cannot equal or
-   contain home, project, any destination, or library, including
+    contain home, project, the active config location/aliases, any destination, or library, including
    identity aliases. Backslashes, control bytes, and non-UTF-8 names remain raw Unix
    names; display escaping is never an operational name.
 7. `openSkillRoot` revalidates and opens only an existing destination with
@@ -69,27 +68,30 @@ read-only browsing remains supported.
 
 Linux tests cover each fallible output operation, short writes, validation failures,
 retargeted aliases, substituted config/temp files, unchanged populated skill trees,
-and terminal-restored save-failure diagnostics. Native macOS execution is pending.
+and terminal-restored save-failure diagnostics. Tasks 8-12 passed native CI on all
+four runners in run `33994932478`.
 
-## Future Integration
+## Skill Mutations
 
-Each mutation command must capture raw config paths, name, destination, scope, and
-operation identity, then call revalidation immediately before its sequential work.
-On add, create missing components only beneath the verified ancestor using rooted
-operations, reopen and revalidate the actual destination after creation, and reject
-observed alias/relationship changes before touching skill contents. Missing suffixes
-have no filesystem identity yet: textual separation is provisional, not proof of
-future case-distinct names. Revalidate newly created child placement too when a
-protected root was absent. Never use a startup success boolean to skip these steps.
+Each command captures raw config paths, name, destination, scope, and operation ID.
+Adds retain destination resolution and ancestor identities across preparation,
+deletion, and copying. Only explicit adds create missing components, through rooted
+handles followed by revalidation. Missing suffixes have no identity until created.
 
-Tasks 13-17 still must implement exact raw-name target matching (including actual
-case collisions), complete no-link/ordinary-file tree preflight, readable source
-checks, opened-file identity comparisons, per-operation inventories, and observed
-change checks. Use rooted `Lstat`, `Open` plus `File.ReadDir`, `OpenRoot`, `Mkdir`,
-`OpenFile` with exclusive creation, and postorder `Remove`. Do not use `CopyFS`,
-unrestricted recursive path operations, or `RemoveAll`. Incomplete deletion must
-prevent copying. Check read/write/close errors and preserve truthful partial state.
-Root validation alone is not a complete add/remove safety API.
+Both trees are fully inventoried before replacement deletion; source files are
+opened, read to discard, and closed during preflight. Copying reopens verified files
+and streams bytes, without buffering a source snapshot. Only regular files and
+ordinary directories are accepted. Removal consumes the original postorder inventory,
+rechecking identities, ancestry, protected roots, and unexpected children. It never
+uses `RemoveAll`; incomplete deletion prevents copying. Files use exclusive creation
+with `0666 | source execute bits`, directories `0777`, subject to umask without chmod.
+
+Exact directory spellings and actual lookups reject known aliases before deletion.
+Distinct hard-linked files remain regular files and become independent copies.
+Nested collisions beneath absent target directories may only be discovered during
+exclusive creation; later failures leave truthful missing/partial output. No merge,
+staging, backup, or rollback exists. Conservative repeated-tree checks are not yet
+performance-tuned. Scan-to-operation identity capture remains the Task 17 audit.
 
 ## API Review And Limits
 
@@ -120,7 +122,7 @@ directions, configured aliases, protected children, scope isolation, actual
 filesystem case identity, repeated revalidation, post-creation validation, rooted
 opening, and independent/stale browser safety messages.
 
-Native macOS execution of these new tests is **pending**. Previous four-platform
-CI evidence predates Task 8 and does not validate these changes. No push or new CI
-run is authorized by this task. Linux checks are recorded in the implementation
-plan after verification; they do not establish macOS case-insensitive behavior.
+Phase E Linux tests/race, injected failures, active-config protection, umask tests,
+and PTY add/remove/replace/restart pass. Both macOS test binaries cross-build;
+native Phase E/case-volume execution is pending. Earlier native CI validates only
+Tasks 8-12. No push was performed during Phase E.

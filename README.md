@@ -12,8 +12,11 @@ The executable supports strict JSON configuration, `--config`, `--project`,
 (quit with `q` or Ctrl+C). Missing configuration opens editable first-run setup;
 `sei setup` reconfigures ordered agents, confirms config replacement, and saves/exits.
 Uppercase `X` permanently removes the selected destination skill, without
-confirmation, trash, backup, or undo. Library add keys copy to fresh targets only;
-existing targets remain unchanged until replacement is implemented. During work,
+confirmation, trash, backup, or undo. Library add keys delete an existing same-named
+destination completely before copying: local edits and destination-only files are
+lost, even if content seems identical. This is not merging or synchronization.
+Later failure can leave missing/partial output; retry add or remove it, with no
+rollback. Predictable preflight rejection leaves the existing tree intact. During work,
 navigation remains available; extra mutations are ignored, refresh is coalesced,
 and quit waits for completion. Failures remain visible and listings refresh.
 Malformed or unreadable configuration fails without starting setup or writing files.
@@ -63,7 +66,8 @@ locals on the right. Missing destinations show `Not created` and remain absent;
 inaccessible or invalid roots show errors independently of other panels.
 Configured root aliases are permitted when root checks pass. Safety warnings are
 independent of listings, with full reasons in help; unsafe roots remain inspectable.
-Every future mutation must revalidate, including after missing-root creation.
+Every mutation revalidates, including after missing-root creation. The active
+config location and its aliases are protected even when the project changes.
 The grid is provisional: it pages to the focused agent and scrolls lists to the
 selection. No minimum terminal size or final overflow behavior is established.
 
@@ -75,7 +79,7 @@ preserving the raw name if present, otherwise clamping the old index.
 `?` shows full sanitized selected name/root path and mappings; Up/Down scroll
 wrapped help, including arbitrarily long targets. Navigation retains errors.
 Add slots are exactly `a b c d e f h i o` local and `A B C D E F H I O` global,
-from library only. These and destination-only `X` removal remain **disabled**;
+from library only. Uppercase `X` removes from destination panels only;
 lowercase `x` and unconfigured slots do nothing.
 
 Other agents may also load skills from these folders. sei shows configured folder
@@ -128,8 +132,8 @@ not a character-device heuristic. The existing `github.com/charmbracelet/x/ansi`
 grapheme clusters in terminal cells; untrusted text is escaped before these calls.
 Task 9 adds only owner-approved, test-only `github.com/creack/pty v1.1.24`.
 The lifecycle disables Bubble Tea's default signal handlers; read-only scans are
-not joined on exit. Future mutation tasks must defer ordinary quit until their
-operation completes; no mutation/busy behavior is implemented here.
+not joined on exit. Ordinary quit waits for the active sequential mutation. If it
+then fails, terminal cleanup precedes sanitized stderr and status `1`.
 
 ### Pinned Linter
 
@@ -204,8 +208,8 @@ printf '%s\n' '{"library":"~/library","agents":[{"name":"Example","global":"~/gl
 HOME="$scratch" XDG_CONFIG_HOME="$scratch" ./bin/sei --config "$scratch/config.json" --project "$scratch"
 ```
 
-The configuration and configured folders are read; no destinations or skills are
-created by the browser. The local destination in this example stays absent.
+Browsing alone creates no destinations or skills. The local destination in this
+example stays absent until an add key is used.
 Focused browser checks: `go test -count=1 -run 'TestBrowse' .`.
 Task 7 checks: `go test -count=1 -run 'Test(Navigation|KeySequence|Help|Refresh)' .`.
 Standard/build/race and disposable 1/3/9-agent Linux PTY smoke passed (100x30,
@@ -214,16 +218,20 @@ xterm-256color, no-color); cross-terminal proof remains pending.
 Task 8 checks: `go test -count=1 -run 'Test(RootSafety|ResolveRoots|SkillName)' .`.
 Focused/standard/build/race checks pass on Linux amd64 with Go 1.27.1, including
 unprivileged permission tests; the disposable filesystem detected case-sensitive names.
-Native macOS execution of the new Task 8 tests remains pending; earlier CI does
-not cover them. No copy/remove implementation or mutation keys are enabled.
+Tasks 8-12 passed all four native jobs in [CI 33994932478](https://github.com/primaprashant/sei/actions/runs/33994932478).
 
 Task 9 checks: `go test -count=1 -run 'TestPTYLifecycle' .`. Linux PTY and full
 race checks pass, including post-raw initialization failure, saved-termios
 restoration without repeated renderer cleanup, and sanitized runtime diagnostics;
-native macOS execution/manual Terminal.app evidence remains pending. Existing CI
+manual Terminal.app evidence remains pending. Existing CI
 full-test jobs automatically include these tests; no workflow was added or changed.
 PTY reads use existing `x/sys` Poll/Read with cancellation. Upstream input bursts
 can leave a reader goroutine until process exit; no in-process reuse is promised.
+
+Phase E adds rooted copy/removal/replacement, preflight and injected-failure tests,
+umask subprocesses, and PTY add-three/remove-two/restart workflows. Linux standard
+and race checks pass; native Phase E/case-volume execution remains pending. The
+scan-to-operation identity audit is Task 17; this is a prototype, not a release.
 
 Generated tools, binaries, release output, coverage output, and `/.opencode/`
 remain ignored. GoReleaser Community `v2.18.0` is reserved for the later release

@@ -67,6 +67,23 @@ func removeSkillObserved(cfg config, destination panelID, name string, beforeRem
 	if err != nil {
 		return err
 	}
+	inventory, err := inventorySkill(root, name)
+	if err != nil {
+		return err
+	}
+	return removeSkillInventory(cfg, destination, name, root, held, inventory, func(path string) error {
+		if beforeRemove != nil {
+			beforeRemove(path)
+		}
+		return nil
+	}, nil)
+}
+
+// Consume the original preflight inventory, never authorize a newly observed tree.
+func removeSkillInventory(cfg config, destination panelID, name string, root *os.Root, held os.FileInfo, inventory []skillTreeEntry, before func(string) error, remove func(*os.Root, string) error) error {
+	if remove == nil {
+		remove = (*os.Root).Remove
+	}
 	exactName := func() error {
 		entries, err := readSkillDirectory(root, ".")
 		if err != nil {
@@ -82,10 +99,6 @@ func removeSkillObserved(cfg config, destination panelID, name string, beforeRem
 	if err := exactName(); err != nil {
 		return err
 	}
-	inventory, err := inventorySkill(root, name)
-	if err != nil {
-		return err
-	}
 	if !inventory[len(inventory)-1].info.IsDir() {
 		return fmt.Errorf("skill %q is not an ordinary directory", name)
 	}
@@ -94,8 +107,10 @@ func removeSkillObserved(cfg config, destination panelID, name string, beforeRem
 		remaining[entry.path] = entry.info
 	}
 	for _, next := range inventory {
-		if beforeRemove != nil {
-			beforeRemove(next.path)
+		if before != nil {
+			if err := before(next.path); err != nil {
+				return err
+			}
 		}
 		resolved, err := revalidateSkillRoot(cfg, destination, name)
 		if err != nil {
@@ -120,7 +135,7 @@ func removeSkillObserved(cfg config, destination panelID, name string, beforeRem
 			if err != nil {
 				return err
 			}
-			if info.Mode().Type() != entry.info.Mode().Type() || !os.SameFile(info, entry.info) {
+			if !sameCopyEntry(info, entry.info) {
 				return fmt.Errorf("skill entry %q changed during removal", entry.path)
 			}
 			if !info.IsDir() {
@@ -169,7 +184,7 @@ func removeSkillObserved(cfg config, destination panelID, name string, beforeRem
 				return fmt.Errorf("skill entry %q changed before removal", path)
 			}
 		}
-		if err := root.Remove(next.path); err != nil {
+		if err := remove(root, next.path); err != nil {
 			return fmt.Errorf("remove %q: %w", next.path, err)
 		}
 		delete(remaining, next.path)
