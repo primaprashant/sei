@@ -579,7 +579,146 @@ evidence. No independent signature/attestation verification is claimed.
 Version checks also report Go `1.27.1`, golangci-lint `2.13.2`, Community
 GoReleaser `2.18.0`; existing pins remain unchanged.
 
-Task 30 will add POSIX `sh` installer lint (`sh -n`, this pinned
-`shellcheck -s sh`) and Go `testing`/`os/exec` integration tests using disposable
-HOME/destinations, local archives and mocked downloads on Linux/macOS. No Bats,
-live GitHub test dependency, new runtime, or installer script in Task 29.
+Task 29 added no installer. Task 30 implementation follows below.
+
+## Task 30 Fresh Installer
+
+Implemented locally after `b822902`, with owner approval to continue local/CI
+work despite the separate Task 28 floors/support approval and Task 29 Mac
+Gatekeeper blockers. **No public release exists.** No installer asset is uploaded,
+release workflow enabled, support claim made, or public install URL advertised.
+This turn does not authorize commits or pushes.
+
+`scripts/install.sh` is POSIX sh, invoked with `sh scripts/install.sh`. It accepts
+`--version latest` (also the default), an explicit `vMAJOR.MINOR.PATCH` with
+optional SemVer prerelease identifiers, and `--install-dir DIR` (default
+`$HOME/.local/bin`). Numeric core components and numeric prerelease identifiers
+cannot have leading zeros. Build metadata, unprefixed versions, whitespace,
+URL separators/query/fragment characters, empty values and repeated options
+are rejected. Control characters in install paths are rejected; ordinary spaces,
+apostrophes and relative paths are supported. `--help` prints usage only.
+
+Exactly these uname pairs are accepted, with no guessed aliases or emulation:
+
+| uname -s / uname -m | Asset Target |
+| --- | --- |
+| Linux / x86_64 | linux_amd64 |
+| Linux / aarch64 | linux_arm64 |
+| Darwin / x86_64 | darwin_amd64 |
+| Darwin / arm64 | darwin_arm64 |
+
+Latest is resolved in one curl invocation against the fixed repository's
+`/releases/latest`, requiring the effective URL to be its `/releases/tag/<tag>`
+with a validated concrete tag. Both subsequent downloads use that same tag,
+never a moving `/latest/download` URL. Explicit versions skip resolution.
+curl disables curlrc loading with `-q`, fails HTTP errors, and permits only HTTPS
+initial/redirect URLs with TLS 1.2 or later. No fake endpoint or application
+network configuration override exists.
+
+Prerequisites are POSIX shell/core utilities (`awk`, `cat`, `chmod`, `mkdir`,
+`mv`, `rm`, `sed`, `uname`, shell `printf`/`pwd`/`test`), plus `curl`, GNU/BSD
+`tar`, `gzip`, `mktemp`, and either `sha256sum` or macOS's `shasum -a 256`.
+No sudo, shell-profile edits, package manager, Go, agent, Node or Python runtime
+is needed. `shasum` uses the host's existing utility implementation; the installer
+does not download a Perl/runtime package. Success prints the absolute installed
+path and an executable single-quoted absolute invocation, escaping apostrophes.
+It also checks for the resolved absolute install directory as an exact PATH
+component. If absent, it prints `export PATH='<dir>':"$PATH"`, with the directory
+shell-quoted and `$PATH` left literal for the user's current shell. It prepends
+the directory without adding a leading empty component and preserves the user's
+existing PATH value. Relative or differently spelled aliases are not treated as
+exact matches. The installer never edits profiles or claims PATH already changed.
+
+### Validation And Ownership
+
+1. Refuse **any** existing `sei` or `.sei-install-receipt` entry before download,
+   including directories, symlinks and dangling links. Never run an existing
+   executable to identify it. Recheck both paths before committing.
+2. Create a private `mktemp -d` stage inside the resolved install directory with
+   umask 077. All downloaded and prepared files stay on that filesystem. Normal
+   exit and HUP/INT/TERM remove only this private stage. A failed install may leave
+   newly created empty parent directories; it never removes user directories.
+3. Require exactly one selected archive manifest entry with a lowercase 64-hex
+   SHA-256 and no extra fields. Hash downloaded bytes before inspecting tar.
+   Verify gzip integrity, then require exactly `sei`, `README.md`, `LICENSE`,
+   `THIRD_PARTY_NOTICES`, each once and ordinary. Name listings are checked
+   verbatim, including members after zero padding via `--ignore-zeros`; verbose
+   listings use only GNU/BSD tar's common leading type byte, not differing owner/date columns.
+   Links, specials, directories, duplicates,
+   extra/missing members and non-root/traversal paths fail closed.
+4. Only after both listings pass, run `tar -xOzf ... sei` to a private regular
+   file selected by the installer, never general filesystem extraction. Make it
+   0755, require successful `--version`, matching `sei <version>` output and empty
+   stderr, then hash the candidate executable. Only a checksummed candidate runs;
+   this is validation of trusted release content, not a sandbox for hostile code.
+5. Write a private 0600 receipt, then move it beside the binary **before** moving
+   the prepared executable to its final path. The receipt format is exactly:
+
+```text
+sei-install-receipt-v1
+v0.1.0 <64-lowercase-hex SHA-256 of the executable, not the tarball>
+```
+
+The concrete tag and digest are validated before recording. A receipt commit
+failure installs no binary; final binary-move failure retains the valid prepared
+receipt. Retrying currently refuses that receipt too, with manual inspection and
+relocation guidance. No cleanup trap deletes committed receipt/binary paths.
+Task 31 will validate these records against existing executable bytes and retain
+old plus candidate records before upgrades. There is no replacement/broad
+overwrite switch in Task 30, even for a recognized prior install.
+
+Same-publisher checksums and local receipts are not independent publisher
+authentication; the Task 29 attestation policy remains separate. No hostile
+concurrent-writer isolation, crash durability, forced-kill cleanup, or automatic
+rollback is promised. Both final moves are on the installation filesystem.
+
+### Tests And Evidence
+
+`installer_test.go` uses Go `testing`/`os/exec`, disposable HOME/config/paths,
+local Go-generated tar/gzip fixtures and PATH-local curl/uname/mv mocks. Shell
+fixture executables allow every host mapping to be tested without executing
+foreign architecture binaries. These tests are not native Mac or actual public
+release evidence. They compare downloaded source bytes, receipt contents and
+preserved existing entries; execute the printed apostrophe-containing command;
+assert latest resolves once and both asset URLs share its tag; and exercise
+malformed options/versions/checksums/archives, existing symlink/directory paths,
+candidate version rejection and failures at both placement commits.
+
+All four native CI jobs now install ShellCheck **v0.11.0**, verifying the four
+approved [platform hashes](#shellcheck-provenance) before extraction/execution,
+assert its exact version, and run `sh -n` plus `shellcheck -s sh`. Ordinary native
+Go tests include the installer suite, using each host's own tar and shell. No
+permissions, secrets or publication capabilities changed. Native hosted execution
+of these new changes remains pending; Task 32 still broadens utility failures,
+permissions, interruption and upgrade coverage.
+
+Local Linux amd64 verification: installer syntax/pinned ShellCheck and focused
+offline fixtures pass; module tidy diff, linter config/format/lint (zero issues),
+vet, full uncached tests and full CGO-enabled race suite pass. Cross-build and
+final verification results are recorded in the test matrix. No live release
+download or macOS Gatekeeper test was attempted.
+
+### Task 30 Review Fix
+
+Independent review found that BSD tar 3.7.4 rejects GNU's `-i` short option and
+that absolute invocation alone omitted required PATH guidance. Both listings now
+use the shared `--ignore-zeros` long option; the appended-archive regression
+requires the member-validation diagnostic, not just any failure. `TestInstallerPATH`
+covers missing/near-match and first/middle/last exact PATH components, suppresses
+unnecessary guidance, and executes the printed export in separate shells with
+different and empty PATH values. It verifies `command -v sei`, `sei --version`,
+apostrophes/spaces, literal `$PATH` and the resulting PATH bytes. The absolute
+Run command remains independently exercised by `TestInstallerFresh`.
+
+The entire installer suite passes on Linux with GNU tar **1.35** and isolated
+BSD tar/libarchive **3.7.4** from the review agent's `/tmp/opencode/sei-review-bsdtar`.
+For the latter, the test parent's PATH selects an external `tar` wrapper at
+`/tmp/opencode/sei-task30-bsd-tools`, which executes that bsdtar with its isolated
+library directory. No installer flag or environment seam was added. This is
+Linux BSD tar compatibility evidence, **not native macOS evidence**; native CI,
+Mac Gatekeeper and support-floor gates remain pending. No push was made.
+
+Review verification: syntax and pinned ShellCheck, module tidy diff, lint
+config/format/run (zero issues), vet, full uncached tests (`22.578s`) and full
+CGO-enabled race (`116.626s`) pass. The complete installer suite also passes
+inside an isolated Linux network namespace with each tar implementation.

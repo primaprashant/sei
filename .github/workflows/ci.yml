@@ -93,24 +93,32 @@ jobs:
             host: Linux/x86_64
             go-sha256: 63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445
             lint-sha256: 2277d43b98ec0054280f2ac26b53268bae97682444678a59a657dd565da021d6
+            shellcheck-platform: linux.x86_64
+            shellcheck-sha256: b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6
           - runner: ubuntu-24.04-arm
             os: linux
             arch: arm64
             host: Linux/aarch64
             go-sha256: 3450b45a3f9ee8568792736a5c5e70a1f2e9b36c35a8f74958c03e51d7d92bec
             lint-sha256: a2a4e0065aa41be71f7c5ac90f271b61751331e5d04314e62afe4027855f0893
+            shellcheck-platform: linux.aarch64
+            shellcheck-sha256: 68a8133197a50beb8803f8d42f9908d1af1c5540d4bb05fdfca8c1fa47decefc
           - runner: macos-15-intel
             os: darwin
             arch: amd64
             host: Darwin/x86_64
             go-sha256: 8f8f52c6649542cf027bbc9b9c68d1ec042f9f34808a40413f0b8b3f66f3caa4
             lint-sha256: 8a13aaf9cbbb1dee52824e862cf0d0720e5bb97c1f4260d1e51623a09492b57b
+            shellcheck-platform: darwin.x86_64
+            shellcheck-sha256: c2c15e08df0e8fbc374c335b230a7ee958c313fa5714817a59aa59f1aa594f51
           - runner: macos-15
             os: darwin
             arch: arm64
             host: Darwin/arm64
             go-sha256: ee215d57e0ec269c60cc9ceca68e6bda321ba9ee5afe24f4b0988703c2d87d12
             lint-sha256: f4bf83f0b64f055c42b28fc9a38861839f69c096e61c788e72dfaae412011789
+            shellcheck-platform: darwin.aarch64
+            shellcheck-sha256: 339b930feb1ea764467013cc1f72d09cd6b869ebf1013296ba9055ab2ffbd26f
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -157,6 +165,23 @@ jobs:
             --strip-components=1 "$lint_package/golangci-lint"
           printf '%s\n' "$tools/go/bin" >> "$GITHUB_PATH"
           printf 'GOROOT=%s\n' "$tools/go" >> "$GITHUB_ENV"
+
+      - name: Install verified native ShellCheck and lint installer
+        env:
+          TOOL_PLATFORM: ${{ matrix.shellcheck-platform }}
+          TOOL_SHA256: ${{ matrix.shellcheck-sha256 }}
+        run: |
+          tools=$(mktemp -d "$RUNNER_TEMP/sei-shellcheck.XXXXXX")
+          archive="shellcheck-v0.11.0.$TOOL_PLATFORM.tar.gz"
+          curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            --output "$tools/$archive" \
+            "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/$archive"
+          printf '%s  %s\n' "$TOOL_SHA256" "$tools/$archive" | shasum -a 256 --check -
+          tar -xzf "$tools/$archive" -C .bin --strip-components=1 shellcheck-v0.11.0/shellcheck
+          ./.bin/shellcheck --version
+          test "$(./.bin/shellcheck --version | grep '^version:')" = 'version: 0.11.0'
+          sh -n scripts/install.sh
+          ./.bin/shellcheck -s sh scripts/install.sh
 
       - name: Standard checks
         env:

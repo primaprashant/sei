@@ -1,5 +1,40 @@
 # Destructive And Failure Test Matrix
 
+## Task 30 Installer
+
+2026-09-06, sequentially after `b822902`: fresh-only installer and native CI
+ShellCheck pins implemented. [Contract and limits](release.md#task-30-fresh-installer).
+No public release exists; no push/publication in this turn.
+
+| Tests / Checks | Scope / Result |
+| --- | --- |
+| `TestInstallerFresh` | Four exact uname mappings with latest and explicit tag; latest resolved once; same-tag archive/checksum URLs; default directory; exact executable bytes and receipt digest; quoted absolute invocation with spaces/apostrophe; second install refused. PASS locally with shell fixtures, not foreign binary execution. |
+| `TestInstallerPATH` | Exact resolved directory at first/middle/last PATH component suppresses export; absent and near-match paths print it. Separate-shell execution verifies literal current-shell `$PATH`, quoting of spaces/apostrophes, `command -v sei`, version and PATH bytes, including no leading empty component with initially empty PATH. PASS. |
+| `TestInstallerInvalid` | Unsupported OS/CPU aliases; missing/unknown/repeated options; invalid versions and URL/control injection rejected before downloads. PASS. |
+| `TestInstallerSafety` | Existing binary/receipt files, directories, symlinks and dangling links refused before download/execution; identities/bytes preserved. PASS. |
+| `TestInstallerBrokenInputs` | Missing/duplicate/malformed/mismatched checksums, failed/partial download, latest URL/tag failures, invalid gzip, appended archive and candidate version; receipt/binary move failures; binary absent on failure, prepared receipt retained only after its commit. PASS. |
+| `TestInstallerArchiveSafety` | Extra/missing/duplicate members, traversal/absolute/dot/newline names, directory/symlink/hardlink/FIFO/device types; stage cleaned and destination empty. PASS with GNU tar 1.35 and BSD tar/libarchive 3.7.4 on Linux. |
+| `TestInstallerUtilities` | Restricted tool PATH exercises actual `shasum` fallback without `sha256sum` and missing curl rejection. PASS. |
+| Syntax and ShellCheck | `sh -n scripts/install.sh`, verified `.bin/shellcheck` v0.11.0 `-s sh`: PASS. Four-native CI installs approved hash-pinned tools; hosted execution pending. |
+| Standard/full/race | Module tidy diff, lint config/format/run, vet, uncached full suite and CGO-enabled full race suite: PASS locally. |
+| Offline installer suite | `unshare --user --map-current-user --net env GOTOOLCHAIN=go1.27.1 GOPROXY=off GOSUMDB=off go test -count=1 -run '^TestInstaller' .`: PASS after tool/module preparation. |
+| Builds / workflow | Linux build/help/version and both macOS application/test cross-builds: PASS, compilation only on Macs. Ruby/Psych YAML parse, four ShellCheck digest shapes, every run block `bash -n`, diff whitespace: PASS. `actionlint` unavailable. |
+
+Test-only PATH mocks cannot fall through to live curl; no public endpoint/fault
+flags exist. Source archives are unchanged after each invocation. Fixture roots
+resolve macOS `/var` aliases so physical absolute-path output is compared fairly.
+Review fix: both listings use `--ignore-zeros` rather than BSD-incompatible `-i`;
+the appended-archive test requires member-validation rejection. Full installer
+fixtures pass with GNU tar 1.35 and isolated BSD tar/libarchive 3.7.4 selected
+through the test parent's PATH; [reproduction details](release.md#task-30-review-fix).
+Both tar fixture runs also pass in an isolated network namespace. Review rerun:
+syntax/pinned ShellCheck, tidy/format/lint/vet, full tests (`22.578s`), full race
+(`116.626s`) and whitespace checks pass; lint reports zero issues.
+Task 31 upgrades and Task 32 broader missing-utility/permission/interruption
+tests remain open. Native Linux arm64/macOS installer execution remains pending
+remote CI, not established by Linux BSD tar tests, uname mocks or cross-builds.
+Task 28 floors/support approval and Task 29 Mac Gatekeeper remain release blockers.
+
 ## Task 29 Trust Gate
 
 2026-09-06 after `8ad23fe`: [trust runbook](release.md#task-29-trust-policy)

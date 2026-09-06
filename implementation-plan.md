@@ -802,11 +802,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Deliver a complete first-install path from a selected release artifact to a runnable user-owned binary.
 
 **Acceptance criteria:**
-- [ ] Implement POSIX `sh` installer host detection for the four supported targets and explicit `--version` / `--install-dir` options. Resolve latest once to a concrete release tag; download archive and matching checksums from that same tag.
-- [ ] Verify exactly the selected archive's SHA-256 before extraction/installation, validate the expected archive layout, and install executable `sei` to a user-writable directory such as `~/.local/bin` without sudo or agent/Go prerequisites. Establish the version/digest receipt described above before the final binary commit; unrelated existing receipt files are conflicts, not overwrite permission.
-- [ ] Report the installed version and absolute invocation; if not on PATH, print an exact correctly quoted follow-up command without editing shell profiles or claiming PATH is already set. Initially refuse an existing binary until Task 31 adds verified upgrades.
+- [x] Implement POSIX `sh` installer host detection for the four supported targets and explicit `--version` / `--install-dir` options. Resolve latest once to a concrete release tag; download archive and matching checksums from that same tag.
+- [x] Verify exactly the selected archive's SHA-256 before extraction/installation, validate the expected archive layout, and install executable `sei` to a user-writable directory such as `~/.local/bin` without sudo or agent/Go prerequisites. Establish the version/digest receipt described above before the final binary commit; unrelated existing receipt files are conflicts, not overwrite permission.
+- [x] Report the installed version and absolute invocation; if not on PATH, print an exact correctly quoted follow-up command without editing shell profiles or claiming PATH is already set. Initially refuse an existing binary until Task 31 adds verified upgrades.
 
 **Verification:** `sh -n scripts/install.sh`; `shellcheck -s sh scripts/install.sh` using the pinned binary; `go test -count=1 -run 'TestInstallerFresh' .` with local release fixtures/mock download tools on Linux and macOS.
+
+**Evidence (2026-09-06):** Fresh installer, receipt/safety tests and native ShellCheck CI implemented. Linux standard/race/offline fixtures pass with GNU/BSD tar; review fixed BSD options and quoted PATH guidance. [Contract/evidence](docs/release.md#task-30-fresh-installer). Native CI, floor/support and Mac trust gates remain open; upgrades/broader faults stay Tasks 31-32. No public release.
 
 **Dependencies:** Tasks 27 and 29.
 
@@ -818,7 +820,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 - [ ] Native artifact/support-floor evidence is recorded; untested support claims remain blocked.
 - [ ] Owner approves trust/provenance/credential decisions and any implementation follow-up tasks.
-- [ ] First install works against isolated release fixtures with checksum verification and honest PATH guidance.
+- [x] First install works against isolated release fixtures with checksum verification and honest PATH guidance.
 
 ### Phase K: Upgrade And Document
 
