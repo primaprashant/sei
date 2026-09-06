@@ -1,18 +1,19 @@
 # Development
 
-See [README](../README.md) for usage/configuration. One Go `main` package; tests live beside code.
+See [README](../README.md) for usage/configuration. A root entry point calls package `app` in `internal/`; tests live beside the application code.
 
 ## File Map
 
 | Files | Responsibility |
 | --- | --- |
-| `main.go`, `cli.go`, `lifecycle.go` | Entry point, arguments/errors, terminal and signals |
-| `config.go`, `config_save.go`, `setup.go` | Config parsing/paths, safe saving, setup UI |
-| `skills.go`, `roots.go` | Listings and filesystem boundary validation |
-| `mutation_fs.go`, `mutation_copy.go` | Rooted removal, add and delete-then-copy replacement |
-| `model.go`, `view.go` | Browser state/commands, keyboard handling, layout/display |
+| `main.go` | Entry point and build version |
+| `internal/cli.go`, `internal/lifecycle.go` | Arguments/errors, terminal and signals |
+| `internal/config.go`, `internal/config_save.go`, `internal/setup.go` | Config parsing/paths, safe saving, setup UI |
+| `internal/skills.go`, `internal/roots.go` | Listings and filesystem boundary validation |
+| `internal/mutation_fs.go`, `internal/mutation_copy.go` | Rooted removal, add and delete-then-copy replacement |
+| `internal/model.go`, `internal/view.go` | Browser state/commands, keyboard handling, layout/display |
 | `scripts/`, `.github/workflows/`, `.goreleaser.yaml` | Installer and release automation |
-| `testdata/views.golden` | Escaped model-view snapshots |
+| `internal/testdata/views.golden` | Escaped model-view snapshots |
 
 ## Checks
 
@@ -57,8 +58,8 @@ slot/key mappings depend on config order. Focus windows retain access to all nin
 Below 80x24, new mutations are blocked; active work continues and quit stays available.
 Preserve raw names through escaping/truncation; full escaped targets remain in help.
 
-Intentional snapshot changes: `SEI_TEST_UPDATE_VIEWS=1 go test -run '^TestViewSnapshots$' .`,
-then review `git diff -- testdata/views.golden`. Normal tests only compare snapshots.
+Intentional snapshot changes: `SEI_TEST_UPDATE_VIEWS=1 go test -run '^TestViewSnapshots$' ./internal`,
+then review `git diff -- internal/testdata/views.golden`. Normal tests only compare snapshots.
 
 ## Async And Lifecycle
 
@@ -76,6 +77,8 @@ SIGKILL cannot clean up; disconnected terminals may reject restoration. See
 
 ## Tests
 
+All test files below live in `internal/`.
+
 - Config/setup: `config*_test.go`, `setup*_test.go`; paths/files: `roots_test.go`, `mutation*_test.go`.
 - UI: `model_test.go`, `navigation_test.go`, `keyboard_contract_test.go`, `view_test.go`, `stale_state_test.go`.
 - Real terminals/errors: `*process_test.go`, `operation_failure_test.go`, `terminal_screen_test.go`.
@@ -84,7 +87,7 @@ SIGKILL cannot clean up; disconnected terminals may reject restoration. See
 
 ## Optional Performance Checks
 
-Microbenchmarks: `go test -run '^$' -bench . -benchmem .`. Optional PTY tests require this exact digest-pinned archive:
+Microbenchmarks: `go test -run '^$' -bench . -benchmem ./internal`. Optional PTY tests require this exact digest-pinned archive:
 
 - URL: https://codeload.github.com/addyosmani/agent-skills/tar.gz/469d00f4e67ff4a21eb6e6e467a086c9a1f1deb8
 - SHA-256: `9f134b3c1c308b88a5f3acc37e0e33fcf25cf86a964644df1d2f24866ea0d192`
@@ -95,7 +98,7 @@ Build with `CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o bin/sei .`, the
 
 ```sh
 SEI_TEST_ARCHIVE=/absolute/path/to/archive.tar.gz SEI_TEST_BINARY="$PWD/bin/sei" \
-  go test -count=1 -v -run '^(TestRepresentativePrototype|TestPerformanceRelease)$' .
+  go test -count=1 -v -run '^(TestRepresentativePrototype|TestPerformanceRelease)$' ./internal
 ```
 
 Run without competing builds/race tests. These are harness latencies, not disk-throughput claims;

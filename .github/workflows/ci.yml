@@ -88,7 +88,7 @@ jobs:
           fi
           cp scripts/install.sh dist/install.sh
           (cd dist && shasum -a 256 install.sh > install.sh.sha256)
-          SEI_RELEASE_DIST=dist go test -count=1 -run '^TestRelease' -v .
+          SEI_RELEASE_DIST=dist go test -count=1 -run '^TestRelease' -v ./internal
           printf 'commit=%s\nversion=%s\n' "$SEI_RELEASE_COMMIT" "$SEI_RELEASE_VERSION" >> "$GITHUB_OUTPUT"
       - name: Transfer only the four archives, manifest and installer
         id: upload
@@ -218,7 +218,7 @@ jobs:
           ./.bin/shellcheck -s bash scripts/release.sh
 
       - name: Offline installer failure matrix (native POSIX shells)
-        run: go test -count=1 -run '^TestInstaller' -v .
+        run: go test -count=1 -run '^TestInstaller' -v ./internal
 
       - name: Standard checks
         env:
@@ -270,7 +270,7 @@ jobs:
           XDG_CONFIG_HOME: ${{ runner.temp }}/sei-config
         run: |
           test "$(git rev-parse HEAD)" = "$SEI_RELEASE_COMMIT"
-          go test -count=1 -run '^TestRelease' -v .
+          go test -count=1 -run '^TestRelease' -v ./internal
 
       - name: Linux amd64 coverage report
         if: matrix.runner == 'ubuntu-24.04'
@@ -320,7 +320,7 @@ jobs:
           printf '%s\n' "$tools/go/bin" >> "$GITHUB_PATH"
           printf 'GOROOT=%s\n' "$tools/go" >> "$GITHUB_ENV"
 
-      - name: Fuzz one target in the root package
+      - name: Fuzz one target in the application package
         env:
           HOME: ${{ runner.temp }}/sei-home
           XDG_CONFIG_HOME: ${{ runner.temp }}/sei-config
@@ -331,13 +331,13 @@ jobs:
           test "$(go env GOOS)/$(go env GOARCH)" = linux/amd64
           go mod download
           go mod verify
-          go test . -run='^$' -fuzz="^${FUZZ_TARGET}$" -fuzztime=30s -parallel=2 -timeout=2m
+          go test ./internal -run='^$' -fuzz="^${FUZZ_TARGET}$" -fuzztime=30s -parallel=2 -timeout=2m
 
       - name: Print regression inputs on failure
         if: failure()
         run: |
-          if [ -d testdata/fuzz ]; then
-            find testdata/fuzz -type f -print -exec cat {} \;
+          if [ -d internal/testdata/fuzz ]; then
+            find internal/testdata/fuzz -type f -print -exec cat {} \;
           fi
 
       - name: Reject tracked-file changes

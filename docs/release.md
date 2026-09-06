@@ -22,9 +22,10 @@ export SEI_RELEASE_DIST=dist
 export SEI_RELEASE_VERSION=$(jq -er .version dist/metadata.json)
 export SEI_RELEASE_COMMIT=$(git rev-parse HEAD)
 test "$(jq -er .commit dist/metadata.json)" = "$SEI_RELEASE_COMMIT"
-go test -count=1 -run '^TestRelease' -v .
+go test -count=1 -run '^TestRelease' -v ./internal
 ```
 
+Relative `SEI_RELEASE_DIST` paths resolve from the repository root.
 Archive tests need all three `SEI_RELEASE_*` inputs; downloaded bundles need their producer
 version/full commit and matching checkout. All archives are inspected; only the native target runs help/version/PTY.
 Dirty local snapshots are identified; CI rejects dirty binaries. `GOPROXY=off` is not network isolation.
