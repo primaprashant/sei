@@ -144,6 +144,8 @@ func (m browseModel) View() tea.View {
 		}
 	}
 	h := help.New()
+	// Inherit terminal foreground/background instead of fixed low-contrast grays.
+	h.Styles = help.Styles{}
 	state := h.ShortHelpView([]key.Binding{key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q / ctrl+c", "quit"))})
 	if m.pendingQuit {
 		state = "Exit requested; waiting for work"

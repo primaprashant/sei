@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase H reopened; Task 22 implemented with owner-approved local-above-global layout and 80x24 minimum. Measurement, native/human verification, and release gates remain open.
+**Status:** Phase H automated work implemented; local-first 80x24 layout, approved Linux budgets, and display regressions pass. Owner shell comparison, native/human rendering, and release gates remain open.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -662,11 +662,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Lock in a small set of representative view regressions and ensure unusual names cannot spoof the destructive action target.
 
 **Acceptance criteria:**
-- [ ] Escape terminal control characters in names, paths, agent labels, and error text; measure/truncate by terminal cells, not bytes or rune counts, preserving raw names for operations and inspectable full targets.
-- [ ] Cover long names/paths, combining/wide Unicode, control-sequence filenames, empty/error/busy/help/no-color states, and the approved small-window fallback with representative deterministic snapshots.
+- [x] Escape terminal control characters in names, paths, agent labels, and error text; measure/truncate by terminal cells, not bytes or rune counts, preserving raw names for operations and inspectable full targets.
+- [x] Cover long names/paths, combining/wide Unicode, control-sequence filenames, empty/error/busy/help/no-color states, and the approved small-window fallback with representative deterministic snapshots.
 - [ ] Confirm light/dark/no-color readability and no dependency on enhanced keyboard protocols, reliable repeat detection, special glyphs, or animation. Do not reject legitimate raw filenames merely because they need display escaping.
 
 **Verification:** `go test -count=1 -run 'Test(View|DisplaySafety)' .`; inspect snapshot diffs and manual VTE/Terminal.app/SSH rendering. Re-run raw-name add/remove tests for hostile display text.
+
+**Evidence:** Six reviewed snapshots; rendered raw-name add/replace/remove and profile regressions pass. Quit hint now inherits terminal colors. Linux standard/race, Mac cross-builds, 36-case PTY matrix, and final-build Linux budgets pass; human/native rendering pending.
 
 **Dependencies:** Task 23.
 

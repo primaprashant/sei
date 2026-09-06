@@ -1,10 +1,16 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
+	"unicode"
+	"unicode/utf8"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -168,5 +174,233 @@ func TestResize(t *testing.T) {
 				t.Fatal("resize after completion lost state")
 			}
 		}
+	}
+}
+
+func TestViewSnapshots(t *testing.T) {
+	var corpus strings.Builder
+	corpus.WriteString("Rendered frames: right padding removed; Go escapes encode Unicode/backslashes.\nCell bounds are asserted before encoding. Not terminal screenshots.\n")
+	for _, scenario := range []string{"desktop-empty", "minimum-mixed", "busy-help", "busy-quit", "undersized", "nine-agent-focus"} {
+		m := navigationModel(3)
+		m.width, m.height = 143, 35
+		m.config.Home, m.config.Project = "/home/example", "/project"
+		m.panels[0].path = "/home/example/library"
+		for i, name := range []string{"Claude Code", "Codex", "OpenCode"} {
+			for _, id := range []int{1 + i, 4 + i} {
+				p := &m.panels[id]
+				scope, path := "Global", fmt.Sprintf("/home/example/.agent%d/skills", i+1)
+				if id > 3 {
+					scope, path = "Local", fmt.Sprintf("/project/.agent%d/skills", i+1)
+				}
+				p.label, p.path = name+" / "+scope, path
+				p.entries, p.selectedName, p.missing = nil, "", true
+			}
+		}
+		for i := range m.panels {
+			m.panels[i].safetyChecked = true
+		}
+		m.panels[0].entries = []skillEntry{{name: ".dot"}, {name: "e\u0301-\u754c-wide"}, {name: strings.Repeat("long-name-", 6)}, {name: "look-safe\x1b[2J\r\nspoof"}, {name: "linked", blocked: true}}
+		m.panels[0].selectedName = ".dot"
+		switch scenario {
+		case "minimum-mixed":
+			m.width, m.height = 80, 24
+			m.panels[0].selected, m.panels[0].selectedName = 3, m.panels[0].entries[3].name
+			m.panels[4].missing = false // Distinguish empty from absent.
+			m.panels[1].err = errors.New("denied\x1b]52;c;payload\a")
+			m.panels[1].safetyErr = errors.New("unverifiable root")
+		case "busy-help", "busy-quit":
+			m.width, m.height = 80, 24
+			m.active = &mutationRequest{id: 1, name: "look-safe\x1b[2J\r\nspoof", label: "Claude Code / Local", path: "/project/" + strings.Repeat("long-path/", 8), add: true}
+			m.status = m.active.target() + ": working"
+			m.showHelp = scenario == "busy-help"
+			m.pendingQuit, m.pendingGlobal = !m.showHelp, m.showHelp
+			if m.showHelp {
+				m.helpOffset = len(m.helpLines()) // Snapshot the result/footer end.
+			}
+		case "undersized":
+			m.width, m.height, m.pendingQuit = 79, 23, true
+			m.active = &mutationRequest{id: 1}
+		case "nine-agent-focus":
+			m = navigationModel(9)
+			m.width, m.height, m.focused = 80, 24, 18
+			for i := range m.panels {
+				m.panels[i].safetyChecked = true
+			}
+		}
+		view := ansi.Strip(m.View().Content)
+		lines := strings.Split(view, "\n")
+		if len(lines) > m.height {
+			t.Fatalf("%s height overflow", scenario)
+		}
+		fmt.Fprintf(&corpus, "\n=== %s (%dx%d) ===\n", scenario, m.width, m.height)
+		for _, line := range lines {
+			if ansi.StringWidth(line) > m.width {
+				t.Fatalf("%s width overflow: %q", scenario, line)
+			}
+			quoted := strconv.QuoteToASCII(strings.TrimRight(line, " "))
+			corpus.WriteString(quoted[1:len(quoted)-1] + "\n")
+		}
+	}
+	const path = "testdata/views.golden"
+	if os.Getenv("SEI_TEST_UPDATE_VIEWS") == "1" {
+		if err := os.WriteFile(path, []byte(corpus.String()), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(want) != corpus.String() {
+		t.Fatalf("view snapshot mismatch; review with SEI_TEST_UPDATE_VIEWS=1 go test -run '^TestViewSnapshots$' .\n%s", corpus.String())
+	}
+}
+
+func TestDisplaySafety(t *testing.T) {
+	var controls strings.Builder
+	for r := rune(0); r <= 0x9f; r++ {
+		if unicode.IsControl(r) {
+			controls.WriteRune(r)
+		}
+	}
+	for _, raw := range []string{controls.String(), "\x1b]52;c;clipboard\a\x1b]8;;https://example.invalid\x1b\\link", "\u202e\u2066\u200b\u2028\u2029", "\u0301leading-\u754c-e\u0301", "bad\xff", "quote\"literal\\n", strings.Repeat("long \u754c/", 80)} {
+		safe := displayText(raw)
+		decoded, err := strconv.Unquote(`"` + safe + `"`)
+		if err != nil || decoded != raw {
+			t.Fatalf("display escaping changed identity: %q", raw)
+		}
+		m := navigationModel(1)
+		m.width, m.height = 80, 24
+		m.panels[0].label, m.panels[0].path, m.panels[0].selectedName = raw, raw, raw
+		m.panels[0].entries = []skillEntry{{name: raw}}
+		m.panels[0].err, m.panels[0].safetyErr, m.status = errors.New(raw), errors.New(raw), raw
+		m.panels[0].safetyChecked = true
+		for _, help := range []bool{false, true} {
+			m.showHelp = help
+			view := m.View().Content
+			if !utf8.ValidString(view) {
+				t.Fatal("invalid UTF-8 in view")
+			}
+			for _, r := range view {
+				if (unicode.IsControl(r) && r != '\n') || unicode.Is(unicode.Cf, r) {
+					t.Fatalf("unsafe displayed rune %U for %q: %q", r, raw, view)
+				}
+			}
+			for _, line := range strings.Split(view, "\n") {
+				if ansi.StringWidth(line) > m.width {
+					t.Fatalf("unsafe cell width: %q", line)
+				}
+			}
+		}
+		full := strings.Join(m.helpLines(), "")
+		for _, field := range []string{"Focused: ", "Root path: ", "Selected name: ", "Error: ", "Root safety blocked: ", "Result: "} {
+			if !strings.Contains(full, field+safe) {
+				t.Fatalf("full %s not inspectable", field)
+			}
+		}
+		if m.panels[0].selectedName != raw || m.panels[0].path != raw || m.panels[0].label != raw {
+			t.Fatal("view rewrote raw model state")
+		}
+	}
+}
+
+func TestViewProfiles(t *testing.T) {
+	m := navigationModel(3)
+	m.width, m.height = 80, 24
+	for _, profile := range []string{"light", "dark", "no-color"} {
+		t.Run(profile, func(t *testing.T) {
+			t.Setenv("NO_COLOR", "")
+			t.Setenv("COLORFGBG", "0;15")
+			if profile == "dark" {
+				t.Setenv("COLORFGBG", "15;0")
+			}
+			if profile == "no-color" {
+				t.Setenv("NO_COLOR", "1")
+			}
+			view := m.View().Content
+			if strings.ContainsRune(view, '\x1b') {
+				t.Fatal("text presentation depends on fixed colors or control sequences")
+			}
+			for _, want := range []string{"* Library", "> a", "focus 1 | add a", "Local", "Global", "q / ctrl+c quit"} {
+				if !strings.Contains(view, want) {
+					t.Fatalf("%s missing no-color cue %q", profile, want)
+				}
+			}
+		})
+	}
+}
+
+func TestDisplaySafetyRawNames(t *testing.T) {
+	for _, raw := range []string{"line\nname", "look-safe\x1b[2J", "\u202ehidden", "wide-\u754c-e\u0301", ".dot", "bad\xff"} {
+		t.Run(displayText(raw), func(t *testing.T) {
+			cfg := rootFixture(t)
+			if !utf8.ValidString(raw) {
+				requireInvalidUTF8Names(t, cfg.Library)
+			}
+			writeTestFilePath := func(path, text string) {
+				t.Helper()
+				browseMkdir(t, filepath.Dir(path))
+				writeTestFile(t, path, text)
+			}
+			writeTestFilePath(filepath.Join(cfg.Library, raw, "file"), "source bytes")
+			base := cfg.Agents[0].Local
+			decoy := displayText(raw)
+			if decoy == raw {
+				decoy = "other"
+			}
+			writeTestFilePath(filepath.Join(base, decoy, "file"), "untouched decoy")
+			library, other := removeSnapshot(t, cfg.Library), removeSnapshot(t, filepath.Join(base, decoy))
+			m := newBrowseModel(cfg)
+			next, refresh := m.Update(m.Init()())
+			m = finishMutationRefresh(t, next.(browseModel), refresh)
+			for _, key := range []rune{'a', 'a', 'x'} {
+				if key == 'x' {
+					m.focused = m.agents + 1
+					p := &m.panels[m.focused]
+					for i, e := range p.entries {
+						if e.name == raw {
+							p.selected, p.selectedName = i, raw
+							break
+						}
+					}
+				}
+				if strings.ContainsRune(m.View().Content, '\x1b') {
+					t.Fatal("raw filename emitted terminal controls in browse")
+				}
+				m, _ = press(m, '?')
+				if strings.ContainsRune(m.View().Content, '\x1b') {
+					t.Fatal("raw filename emitted terminal controls in help")
+				}
+				if !strings.Contains(strings.Join(m.helpLines(), ""), "Selected name: "+displayText(raw)) {
+					t.Fatal("help lost exact raw target")
+				}
+				m, _ = press(m, '?')
+				p := m.panels[m.focused]
+				if p.selectedName != raw || p.entries[p.selected].name != raw {
+					t.Fatal("rendering changed raw selected/entry name")
+				}
+				var worker tea.Cmd
+				m, worker = press(m, key)
+				if worker == nil || m.active.name != raw {
+					t.Fatal("escaped spelling substituted for raw action name")
+				}
+				result := worker().(mutationResult)
+				if result.err != nil {
+					t.Fatal(result.err)
+				}
+				next, refresh = m.Update(result)
+				m = finishMutationRefresh(t, next.(browseModel), refresh)
+				if key == 'a' {
+					data, err := os.ReadFile(filepath.Join(base, raw, "file"))
+					if err != nil || string(data) != "source bytes" {
+						t.Fatalf("wrong copied target: %q %v", data, err)
+					}
+					writeTestFile(t, filepath.Join(base, raw, "file"), "local edit for replacement/removal")
+				}
+				assertRemoveSnapshot(t, cfg.Library, library)
+				assertRemoveSnapshot(t, filepath.Join(base, decoy), other)
+			}
+			setupAbsent(t, filepath.Join(base, raw))
+		})
 	}
 }

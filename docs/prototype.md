@@ -222,6 +222,30 @@ all-panel readiness, and direct browse navigation timing; historical P2 timing a
 captures above are not silently relabeled. Scoped Linux budgets approved; human
 comparison remains open, with owner authorization to proceed to Task 24.
 
+### Display Hardening (Task 24)
+
+Six [reviewed golden frames](../testdata/views.golden) cover desktop/minimum,
+Unicode/combining/control names, truncation, blocked/empty/absent/error states,
+busy help/full results, pending quit, undersized fallback, and ninth-agent focus.
+Golden text encodes Unicode/backslashes as Go escapes; terminal-cell bounds are
+asserted before encoding, so these are regression fixtures, not screenshots.
+Normal tests only compare; intentional regeneration uses
+`SEI_TEST_UPDATE_VIEWS=1 go test -run '^TestViewSnapshots$' .` followed by diff review.
+
+`TestDisplaySafety` checks C0/C1, OSC clipboard/hyperlink, bidi/format characters,
+invalid UTF-8, long paths, and full escaped help fields. Raw-name workflows render
+browse/help before real add/replace/remove, preserving selected/entry raw bytes,
+the source snapshot, and an escaped-spelling decoy. Unsupported invalid-UTF-8
+filesystems are capability-probed; pure display coverage is unconditional.
+
+The quit hint no longer forces fixed gray colors: text inherits terminal colors.
+Light/dark/no-color model profiles retain text focus/selection/scope/key cues, with
+no font, animation, enhanced-keyboard or repeat-detection requirement. Linux
+standard/full/race checks, Mac test cross-builds, the 36-case real-binary PTY
+matrix, and a fresh 42-trial budget run pass after this change. VTE/Terminal.app
+contrast, native execution, and SSH/human inspection are still open acceptance
+gates, not inferred from profiles, snapshots, or cross-compilation.
+
 ### Reproduce The Review
 
 Prepare a retained disposable fixture (the path must not already exist):
