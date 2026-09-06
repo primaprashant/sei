@@ -75,8 +75,9 @@ and copied skills remain.
    and save to start browsing. Use **F1** in setup for full paths, field guidance,
    and validation details.
 
-Setup offers Claude Code, Codex, OpenCode, Pi, and Cursor presets, plus custom
-agents. All names and paths are editable.
+Setup offers Claude Code, Codex, OpenCode, Pi, Cursor, Antigravity CLI, Crush,
+GitHub Copilot CLI, and Cline CLI presets, plus custom agents. All names and
+paths are editable.
 
 ```sh
 sei setup                         # Change your configuration

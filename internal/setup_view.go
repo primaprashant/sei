@@ -80,7 +80,7 @@ func (m setupModel) View() tea.View {
 	}
 	if m.adding {
 		helper = "Choose a preset or start with blank fields."
-		keys = "1–6 choose  Other keys back  Esc cancel setup"
+		keys = "1–9 preset  0 custom  Other keys back  Esc cancel setup"
 		extra = ""
 	}
 	if m.confirm {
@@ -95,7 +95,7 @@ func (m setupModel) View() tea.View {
 		case m.confirm:
 			keys, extra = "y confirm  n back", "Esc cancel"
 		case m.adding:
-			keys, extra = "1–6 choose", "Esc cancel · Other keys back"
+			keys, extra = "1–9 preset · 0 custom", "Esc cancel · Other keys back"
 		case m.preview:
 			keys, extra = "Enter save  e edit", "Esc cancel  ↑↓ scroll"
 		default:
@@ -172,8 +172,8 @@ func (m setupModel) setupBody(width int, s uiStyles) ([]string, int) {
 		for i, a := range setupPresets {
 			lines = append(lines, s.accent.Render(fmt.Sprint(i+1))+"  "+displayText(a.Name))
 		}
-		lines = append(lines, s.accent.Render("6")+"  Custom")
-		return strings.Split(s.frame("Add agent", "1–6 choose", lines, width, len(lines)+2, false), "\n"), 0
+		lines = append(lines, s.accent.Render("0")+"  Custom")
+		return strings.Split(s.frame("Add agent", "1–9 preset · 0 custom", lines, width, len(lines)+2, false), "\n"), 0
 	}
 	if m.details {
 		lines := []string{s.section.Render("PATHS AND FIELD")}

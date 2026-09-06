@@ -16,6 +16,10 @@ var setupPresets = []agentConfig{
 	{"OpenCode", "~/.config/opencode/skills", ".opencode/skills"},
 	{"Pi", "~/.pi/agent/skills", ".pi/skills"},
 	{"Cursor", "~/.cursor/skills", ".cursor/skills"},
+	{"Antigravity CLI", "~/.gemini/antigravity-cli/skills", ".agents/skills"},
+	{"Crush", "~/.config/crush/skills", ".crush/skills"},
+	{"GitHub Copilot CLI", "~/.copilot/skills", ".github/skills"},
+	{"Cline CLI", "~/.cline/skills", ".cline/skills"},
 }
 
 type setupResult struct {
@@ -125,11 +129,11 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if m.adding {
 			m.adding = false
-			if len(key) != 1 || key[0] < '1' || key[0] > '6' {
+			if len(key) != 1 || key[0] < '0' || key[0] > '9' {
 				return m, nil
 			}
 			a := agentConfig{}
-			if key != "6" {
+			if key != "0" {
 				a = setupPresets[int(key[0]-'1')]
 			}
 			for _, existing := range m.cfg.Agents {

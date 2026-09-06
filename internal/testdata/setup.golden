@@ -60,12 +60,12 @@ sei setup  Add agent
 │ 3  OpenCode                                                                  │
 │ 4  Pi                                                                        │
 │ 5  Cursor                                                                    │
-│ 6  Custom                                                                    │
-╰ 1–6 choose ──────────────────────────────────────────────────────────────────╯
-
-
-
-
+│ 6  Antigravity CLI                                                           │
+│ 7  Crush                                                                     │
+│ 8  GitHub Copilot CLI                                                        │
+│ 9  Cline CLI                                                                 │
+│ 0  Custom                                                                    │
+╰ 1–9 preset · 0 custom ───────────────────────────────────────────────────────╯
 
 
 
@@ -74,7 +74,7 @@ sei setup  Add agent
 
 
 Choose a preset or start with blank fields.
-1–6 choose  Other keys back  Esc cancel setup
+1–9 preset  0 custom  Other keys back  Esc cancel setup
 
 
 === review (100x35) ===
