@@ -607,6 +607,8 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Evidence:** [Refreshed report](docs/prototype.md): P2 readiness/completion waits fixed, isolated 36-case measurements/captures regenerated, then focused/full/race/lint/build checks passed. Owner/native/SSH acceptance remains pending.
 
+**CI follow-up (2026-09-06):** Both Macs in [34005706126](https://github.com/primaprashant/sei/actions/runs/34005706126) timed out awaiting truncated browse diagnostics. Long-path regression reproduced on Linux; PTY test now inspects wrapped help. Full/race/lint/build, 10x PTY tests, and macOS cross-builds pass; native rerun pending, production unchanged.
+
 ### Phase H: Evidence-Based Polish
 
 ### Task 22: Implement The Approved Layout

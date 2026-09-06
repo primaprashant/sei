@@ -193,7 +193,13 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 		}
 		for _, quit := range quits {
 			t.Run(operation+"/"+quit, func(t *testing.T) {
-				root, err := filepath.EvalSymlinks(t.TempDir())
+				root := t.TempDir()
+				if quit == "later-q" {
+					// Exercise diagnostic truncation even with short Linux temp paths.
+					root = filepath.Join(root, strings.Repeat("long-path-", 16))
+					browseMkdir(t, root)
+				}
+				root, err := filepath.EvalSymlinks(root)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -305,7 +311,8 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 				from := 0
 				await := func(text string) {
 					t.Helper()
-					for !strings.Contains(ansi.Strip(screen.String()[from:]), text) {
+					// Help hard-wraps long paths/results; escaped newlines remain literal.
+					for !strings.Contains(strings.NewReplacer("\r", "", "\n", "").Replace(ansi.Strip(screen.String()[from:])), text) {
 						select {
 						case chunk, ok := <-chunks:
 							if !ok {
@@ -416,6 +423,14 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 					if len(removeSnapshot(t, target)) != len(survivorBefore)-1 {
 						t.Fatal("expected exactly one real removal before release")
 					}
+				}
+				if quit == "later-q" {
+					// Browse status is intentionally truncated. Inspect the full result in
+					// help, opened while work is gated so no completion can race the toggle.
+					from = screen.Len()
+					send("?", "?")
+					await("Working; q waits for completion")
+					from = screen.Len()
 				}
 				if _, err := releaseW.Write([]byte("R")); err != nil {
 					t.Fatal(err)
