@@ -222,7 +222,7 @@ func TestErrorPersistence(t *testing.T) {
 				}
 			}
 			m.width = 1000
-			if view := m.View().Content; !strings.Contains(view, displayText(want)) || strings.Contains(view, "\x1b[31m") {
+			if view := m.View().Content; !strings.Contains(view, "Failed "+displayText(r.name)+" → "+displayText(r.label)+" · ? details") || strings.Contains(view, "\x1b[31m") {
 				t.Fatal("captured diagnostic missing or not escaped")
 			}
 			if help := strings.Join(m.helpLines(), "\n"); !strings.Contains(help, displayText(want)) {
@@ -340,7 +340,7 @@ func TestUnavailableRoots(t *testing.T) {
 			cfg := m.config
 			library := removeSnapshot(t, cfg.Library)
 			libraryPath := cfg.Library
-			path, want := cfg.Agents[0].Global, "Empty"
+			path, want := cfg.Agents[0].Global, "No skills yet"
 			panel := 1
 			switch kind {
 			case "missing library":
@@ -349,7 +349,7 @@ func TestUnavailableRoots(t *testing.T) {
 				}
 				libraryPath += "-saved"
 				library = removeSnapshot(t, libraryPath)
-				panel, want = 0, "Unavailable: library missing"
+				panel, want = 0, "Library folder missing"
 			case "unreadable library", "unreadable destination":
 				if kind == "unreadable library" {
 					panel, path = 0, cfg.Library
@@ -379,13 +379,13 @@ func TestUnavailableRoots(t *testing.T) {
 					if err := os.Remove(path); err != nil {
 						t.Fatal(err)
 					}
-					want = "Not created"
+					want = "Folder not created"
 				}
 			}
 			m, refresh := press(m, 'r')
 			m = finishMutationRefresh(t, m, refresh)
 			p := m.panels[panel]
-			if view := panelView(p, panel == 0, 500, 10); !strings.Contains(view, want) {
+			if view := (uiStyles{}).panelView(p, panel == 0, true, 500, 10); !strings.Contains(view, want) {
 				t.Fatalf("%s not distinguished: %s", kind, view)
 			}
 			if len(p.entries) != 0 || p.selectedName != "" || p.safetyErr != nil {

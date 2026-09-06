@@ -362,7 +362,7 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 				await("Root relations checked; every mutation revalidates.")
 				from = screen.Len()
 				send("?", "?")
-				await("Configured folders")
+				await("PROJECT")
 				if operation == "copy" {
 					send("0", "0")
 					send("a", "a")
@@ -395,7 +395,7 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 					t.Fatal(err)
 				}
 				ack("resize:240x40")
-				await("Configured folders")
+				await("PROJECT")
 				from = screen.Len()
 				send("\x1b[B", "down")
 				send("?", "?")
@@ -404,7 +404,7 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 				// may retain that same line while scrolling into help.
 				from = screen.Len()
 				send("?", "?")
-				await("Configured folders")
+				await("PROJECT")
 				// Exercise valid add and remove contexts while busy, then change focus.
 				for _, key := range []string{"0", "a", "A", "1", "x", "r", "g", "1"} {
 					send(key, key)
@@ -414,7 +414,7 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 				await("Focused: Agent / Global")
 				from = screen.Len()
 				send("?", "?")
-				await("Configured folders")
+				await("PROJECT")
 				switch quit {
 				case "later-q":
 					// Release and observe the recoverable error before requesting quit.
@@ -510,7 +510,7 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 				wantCode := 0
 				if fail && quit != "later-q" {
 					wantCode = 1
-					for _, text := range []string{"Add", displayText(fmt.Sprintf("%q", name)), "Agent / Local", displayText(filepath.Dir(target)), `injected copy failure\x1b[31m\nunsafe`} {
+					for _, text := range []string{"Add", displayText(fmt.Sprintf("%q", name)), "Agent / Project", displayText(filepath.Dir(target)), `injected copy failure\x1b[31m\nunsafe`} {
 						if !strings.Contains(stderr.String(), text) {
 							t.Errorf("missing persistent diagnostic %q: %q", text, stderr.String())
 						}

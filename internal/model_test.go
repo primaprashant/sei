@@ -201,7 +201,7 @@ func TestBrowseCommandsAndGenerations(t *testing.T) {
 	}
 	m.width = 143 // All three agents are visible at the owner's smaller geometry.
 	view := m.View().Content
-	for _, text := range []string{"Unavailable", "Not created", "Error:", "global-only", "local-only"} {
+	for _, text := range []string{"Library folder missing", "Folder not created", "Error:", "global-only", "local-only"} {
 		if !strings.Contains(view, text) {
 			t.Errorf("view missing %q", text)
 		}
@@ -234,14 +234,14 @@ func TestBrowseDisplay(t *testing.T) {
 		}
 		p := browsePanel{label: raw, path: raw, selectedName: raw, entries: []skillEntry{{name: raw, blocked: true}}}
 		for width := 1; width <= 40; width++ {
-			for _, line := range strings.Split(panelView(p, true, width, 4), "\n") {
+			for _, line := range strings.Split((uiStyles{}).panelView(p, true, true, width, 4), "\n") {
 				if ansi.StringWidth(line) != width || !utf8.ValidString(line) || strings.ContainsRune(line, '\x1b') {
 					t.Fatalf("width %d: unsafe or wrong cell width: %q (%d)", width, line, ansi.StringWidth(line))
 				}
 			}
 		}
 		p.err = fmt.Errorf("read %s", raw)
-		if view := panelView(p, true, 100, 4); strings.ContainsAny(view, "\x1b\r\t\x00\x7f\u009b\u202e") || !strings.Contains(view, "Error:") {
+		if view := (uiStyles{}).panelView(p, true, true, 100, 6); strings.ContainsAny(view, "\x1b\r\t\x00\x7f\u009b\u202e") || !strings.Contains(view, "Error:") {
 			t.Fatalf("unsafe error display: %q", view)
 		}
 	}
@@ -256,17 +256,15 @@ func TestBrowseDisplay(t *testing.T) {
 		m := newBrowseModel(cfg)
 		m.width, m.height = 180, 60
 		view := m.View().Content
-		lastLocal := 0
-		for i := range count {
-			global := strings.Index(view, fmt.Sprintf("Agent%d / Global", i))
-			local := strings.Index(view, fmt.Sprintf("Agent%d / Local", i))
-			if local < lastLocal || global < local || !strings.Contains(view, fmt.Sprintf("/local%d", i)) {
-				t.Fatalf("configured order/scope missing for %d agents: %s", count, view)
-			}
-			lastLocal = local
+		projectAt, globalAt := strings.Index(view, "PROJECT"), strings.Index(view, "GLOBAL")
+		if projectAt < 0 || globalAt < projectAt || strings.Index(view, "Library") > projectAt {
+			t.Fatal("scope order lost")
 		}
-		if strings.Index(view, "Agent0 / Global") < lastLocal || strings.Index(view, "Library") > strings.Index(view, "Agent0") {
-			t.Fatal("library-left / locals-above-globals organization lost")
+		for i := range count {
+			name := fmt.Sprintf("Agent%d", i)
+			if !strings.Contains(view[projectAt:globalAt], name) || !strings.Contains(view[globalAt:], name) {
+				t.Fatalf("missing agent %s", name)
+			}
 		}
 	}
 }

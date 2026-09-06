@@ -68,7 +68,7 @@ func TestNavigation(t *testing.T) {
 			}
 			m.width, m.height = 100, 30
 			view := m.View().Content
-			if !strings.Contains(view, "> line\\nb") || !strings.Contains(view, "* "+m.panels[id].label) {
+			if !strings.Contains(view, "> line\\nb") || !strings.Contains(view, "* "+strings.TrimSuffix(strings.TrimSuffix(m.panels[id].label, " / Project"), " / Global")) {
 				t.Fatalf("focused selection hidden: %s", view)
 			}
 		}
@@ -134,6 +134,7 @@ func TestKeySequence(t *testing.T) {
 			// reason, but cannot mutate or alter navigation. Help ignores them.
 			if !help {
 				updated.status = m.status
+				updated.statusFailed = m.statusFailed
 			}
 			if cmd != nil || !reflect.DeepEqual(m, updated) {
 				t.Fatalf("mutation %c enabled", key)
@@ -167,7 +168,7 @@ func TestHelp(t *testing.T) {
 	}
 	for i, key := range "abcdefhio" {
 		text := strings.Join(m.helpLines(), "")
-		want := fmt.Sprintf("%c: Agent%d / Local; %s: Agent%d / Global", key, i+1, strings.ToUpper(string(key)), i+1)
+		want := fmt.Sprintf("%c: Agent%d / Project; %s: Agent%d / Global", key, i+1, strings.ToUpper(string(key)), i+1)
 		if !strings.Contains(text, want) {
 			t.Fatalf("wrong mapping: %s", want)
 		}

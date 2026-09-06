@@ -261,7 +261,7 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 		}
 	}
 	finishBrowse := func() {
-		await("Configured folders")
+		await("PROJECT")
 		raw, err := term.GetState(slave.Fd())
 		if err != nil || reflect.DeepEqual(before, raw) {
 			t.Fatalf("terminal did not enter raw mode: %v", err)
@@ -403,7 +403,7 @@ waiting:
 			t.Errorf("missing terminal restoration %q", pair)
 		}
 	}
-	if scenario != "complete-restart" && scenario != "complete-flow" && strings.Contains(screen.String(), "Configured folders") {
+	if scenario != "complete-restart" && scenario != "complete-flow" && strings.Contains(screen.String(), "PROJECT") {
 		t.Fatal("cancel entered browse")
 	}
 	return screen.String()
@@ -432,7 +432,7 @@ func testPTYFreshUser(t *testing.T, binary string) {
 	var persisted map[string]removeSnapshotEntry
 	for _, restart := range []bool{false, true} {
 		runSetupPTY(t, binary, root, path, "complete-flow", restart, func(send func(string), await func(...string), resize func(uint16, uint16)) {
-			closeHelp := func() { send("?"); await("Configured folders") }
+			closeHelp := func() { send("?"); await("PROJECT") }
 			help := func(focus, selected, listing string) {
 				send("?")
 				await("sei | Help", "Focused: "+focus, "Selected name: "+selected, "Listing: "+listing, "Root relations checked; every mutation revalidates.")
@@ -453,7 +453,7 @@ func testPTYFreshUser(t *testing.T, binary string) {
 				closeHelp()
 				for i, key := range "abc" {
 					send(string(key) + "?")
-					await("Result: " + displayText(fmt.Sprintf("Add %q to %s / Local (%s): complete", "sample", setupPresets[i].Name, filepath.Join(project, setupPresets[i].Local))))
+					await("Result: " + displayText(fmt.Sprintf("Add %q to %s / Project (%s): complete", "sample", setupPresets[i].Name, filepath.Join(project, setupPresets[i].Local))))
 					closeHelp()
 				}
 			}
@@ -466,11 +466,11 @@ func testPTYFreshUser(t *testing.T, binary string) {
 						selected, listing = "external", "ready (1 entries)"
 					}
 				}
-				help(a.Name+" / Local", selected, listing)
+				help(a.Name+" / Project", selected, listing)
 				closeHelp()
 				if !restart && i < 2 {
 					send("x?")
-					await("Result: " + displayText(fmt.Sprintf("Remove %q from %s / Local (%s): complete", "sample", a.Name, filepath.Join(project, a.Local))))
+					await("Result: " + displayText(fmt.Sprintf("Remove %q from %s / Project (%s): complete", "sample", a.Name, filepath.Join(project, a.Local))))
 					closeHelp()
 				}
 			}
@@ -478,7 +478,7 @@ func testPTYFreshUser(t *testing.T, binary string) {
 				// An external destination change proves r actually rescans.
 				browseMkdir(t, filepath.Join(project, ".agents/skills/external"))
 				send("2r")
-				help("Codex / Local", "external", "ready (1 entries)")
+				help("Codex / Project", "external", "ready (1 entries)")
 				closeHelp()
 				send("g1")
 				help("Claude Code / Global", "(none)", "not created")
@@ -486,7 +486,7 @@ func testPTYFreshUser(t *testing.T, binary string) {
 				resize(79, 24)
 				await("Resize to at least 80x24")
 				resize(200, 40)
-				await("Configured folders", "Focused: Claude Code / Global")
+				await("PROJECT", "Claude Code / Global ·")
 			}
 		})
 		if !restart {

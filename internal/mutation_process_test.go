@@ -124,16 +124,19 @@ func runMutationPTY(t *testing.T, binary, root, path, scope string, restart bool
 		}
 	}()
 	var screen strings.Builder
-	from := 0
+	terminal := newPTYScreen(t, 240, 40)
 	await := func(text string) {
 		t.Helper()
-		for !strings.Contains(ansi.Strip(screen.String()[from:]), text) {
+		for !performanceScreenMatches(terminal, text) {
 			select {
 			case chunk, ok := <-chunks:
 				if !ok {
 					t.Fatalf("PTY closed waiting for %q: %s", text, screen.String())
 				}
 				screen.WriteString(chunk)
+				if _, err := terminal.WriteString(chunk); err != nil {
+					t.Fatal(err)
+				}
 			case <-ctx.Done():
 				t.Fatalf("timeout waiting for %q: %s", text, screen.String())
 			}
@@ -145,7 +148,7 @@ func runMutationPTY(t *testing.T, binary, root, path, scope string, restart bool
 			t.Fatal(err)
 		}
 	}
-	await("Configured folders")
+	await("PROJECT")
 	await("Ready")
 	await("> remove-me")
 	raw, err := term.GetState(slave.Fd())
@@ -158,7 +161,6 @@ func runMutationPTY(t *testing.T, binary, root, path, scope string, restart bool
 	} else {
 		send("1")
 	}
-	from = screen.Len()
 	send("?")
 	await("Help ")
 	await("Root relations checked; every mutation revalidates.")
@@ -166,23 +168,18 @@ func runMutationPTY(t *testing.T, binary, root, path, scope string, restart bool
 		await("Selected name: survivor")
 	} else {
 		await("Selected name: remove-me")
-		from = screen.Len()
 		send("?")
-		await("Configured folders")
+		await("PROJECT")
 		before := removeSnapshot(t, filepath.Join(root, scope))
 		// Opening help after X confirms input was processed without relying on a delay.
-		from = screen.Len()
 		send("X?")
 		await("Selected name: remove-me")
 		await("Root relations checked; every mutation revalidates.")
 		assertRemoveSnapshot(t, filepath.Join(root, scope), before)
-		from = screen.Len()
 		send("?")
-		await("Configured folders")
-		from = screen.Len()
+		await("PROJECT")
 		send("x")
-		await("complete")
-		from = screen.Len()
+		await("Removed remove-me")
 		send("?")
 		await("Selected name: survivor")
 	}
@@ -195,6 +192,9 @@ waiting:
 				chunks = nil
 			} else {
 				screen.WriteString(chunk)
+				if _, err := terminal.WriteString(chunk); err != nil {
+					t.Fatal(err)
+				}
 			}
 		case <-wait:
 			break waiting
@@ -216,6 +216,9 @@ waiting:
 				chunks = nil
 			} else {
 				screen.WriteString(chunk)
+				if _, err := terminal.WriteString(chunk); err != nil {
+					t.Fatal(err)
+				}
 			}
 		case <-ctx.Done():
 			t.Fatal("timeout draining PTY")

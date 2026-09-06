@@ -45,7 +45,7 @@ func TestRepresentativeReadiness(t *testing.T) {
 		m = next.(browseModel)
 		next, _ = m.Update(rootSafetyMsg{m.safetyGeneration, resolveRoots(cfg)})
 		m = next.(browseModel)
-		m.status = `Add "previous" to Agent1 / Local (/target): complete`
+		m.status = `Add "previous" to Agent1 / Project (/target): complete`
 		if representativeHelpMatches(m.View().Content, ready...) {
 			t.Fatal("safety completion accepted a still-loading listing")
 		}
@@ -54,11 +54,11 @@ func TestRepresentativeReadiness(t *testing.T) {
 		if !representativeHelpMatches(m.View().Content, ready...) {
 			t.Fatal("completed listing not recognized")
 		}
-		want := "Result: " + displayText(`Add "first" to Agent1 / Local (/target): complete`) + "Help 1/"
-		for _, status := range []string{m.status, `Add "first" to Agent1 / Local (/other): complete`, `Remove "first" from Agent1 / Local (/target): complete`, `Add "first" to Agent1 / Global (/target): complete`, `Add "first" to Agent1 / Local (/target): working`, `Add "first" to Agent1 / Local (/target): complete`} {
+		want := "Result: " + displayText(`Add "first" to Agent1 / Project (/target): complete`) + "Help 1/"
+		for _, status := range []string{m.status, `Add "first" to Agent1 / Project (/other): complete`, `Remove "first" from Agent1 / Project (/target): complete`, `Add "first" to Agent1 / Global (/target): complete`, `Add "first" to Agent1 / Project (/target): working`, `Add "first" to Agent1 / Project (/target): complete`} {
 			m.status = status
 			got := representativeHelpMatches(m.View().Content, want)
-			if got != (status == `Add "first" to Agent1 / Local (/target): complete`) {
+			if got != (status == `Add "first" to Agent1 / Project (/target): complete`) {
 				t.Fatalf("wrong completion match: %q", status)
 			}
 		}
@@ -312,7 +312,7 @@ func runRepresentativePrototype(t *testing.T, measured bool) {
 								t.Fatal(err)
 							}
 						}
-						closeHelp := func() { send("?"); await("Configured folders") }
+						closeHelp := func() { send("?"); await("PROJECT") }
 						// Match current cells, including retained text and scroll operations,
 						// never concatenated differential output or a prior help surface.
 						helpUntil := func(wants ...string) {
@@ -322,7 +322,7 @@ func runRepresentativePrototype(t *testing.T, measured bool) {
 						}
 						await("> " + entries[0].name)
 						await("Ready")
-						await("Not created")
+						await("Folder not created")
 						measure := func(kind string) {
 							ms := float64(time.Since(start).Microseconds()) / 1000
 							if measured {
@@ -358,19 +358,19 @@ func runRepresentativePrototype(t *testing.T, measured bool) {
 								if i > 0 {
 									name, listing = entries[0].name, fmt.Sprintf("ready (%d entries)", i)
 								}
-								ready(label+" / Local", local, name, listing)
+								ready(label+" / Project", local, name, listing)
 								send("0")
 								ready("Library", library, entries[i].name, "ready (25 entries)")
 								send("a")
 								actionStart := start
-								helpUntil("Result: " + displayText(fmt.Sprintf("Add %q to %s / Local (%s): complete", entries[i].name, label, local)) + "\nHelp 1/")
+								helpUntil("Result: " + displayText(fmt.Sprintf("Add %q to %s / Project (%s): complete", entries[i].name, label, local)) + "\nHelp 1/")
 								start = actionStart
 								measure("add")
 								closeHelp()
 								if i < 2 {
 									ready("Library", library, entries[i].name, "ready (25 entries)")
 									send("\x1b[B")
-									await("Focused: Library | Selected: " + entries[i+1].name)
+									await("> " + entries[i+1].name)
 									measure("input")
 								}
 							}
@@ -382,7 +382,7 @@ func runRepresentativePrototype(t *testing.T, measured bool) {
 								writeTestFile(t, filepath.Join(local, entries[0].name, "destination-only"), "must be deleted")
 								send("a")
 								actionStart := start
-								helpUntil("Result: " + displayText(fmt.Sprintf("Add %q to %s / Local (%s): complete", entries[0].name, label, local)) + "\nHelp 1/")
+								helpUntil("Result: " + displayText(fmt.Sprintf("Add %q to %s / Project (%s): complete", entries[0].name, label, local)) + "\nHelp 1/")
 								start = actionStart
 								measure("replace")
 								setupAbsent(t, filepath.Join(local, entries[0].name, "destination-only"))
@@ -390,10 +390,10 @@ func runRepresentativePrototype(t *testing.T, measured bool) {
 							}
 							send("1")
 							for i := range 2 {
-								ready(label+" / Local", local, entries[i].name, fmt.Sprintf("ready (%d entries)", 3-i))
+								ready(label+" / Project", local, entries[i].name, fmt.Sprintf("ready (%d entries)", 3-i))
 								send("x")
 								actionStart := start
-								helpUntil("Result: " + displayText(fmt.Sprintf("Remove %q from %s / Local (%s): complete", entries[i].name, label, local)) + "\nHelp 1/")
+								helpUntil("Result: " + displayText(fmt.Sprintf("Remove %q from %s / Project (%s): complete", entries[i].name, label, local)) + "\nHelp 1/")
 								start = actionStart
 								measure("remove")
 								closeHelp()
@@ -401,7 +401,7 @@ func runRepresentativePrototype(t *testing.T, measured bool) {
 						}
 						for i, keys := range []string{fmt.Sprint(count), "g" + fmt.Sprint(count)} {
 							send(keys)
-							helpUntil(fmt.Sprintf("Focused: %s / %s", cfg.Agents[count-1].Name, []string{"Local", "Global"}[i]), "Selected name: (none)\nListing: not created", "Root relations checked; every mutation revalidates.")
+							helpUntil(fmt.Sprintf("Focused: %s / %s", cfg.Agents[count-1].Name, []string{"Project", "Global"}[i]), "Selected name: (none)\nListing: not created", "Root relations checked; every mutation revalidates.")
 							closeHelp()
 						}
 						writeTestFile(t, filepath.Join(root, "global1"), "Supplemental test-only failure: root is a file")

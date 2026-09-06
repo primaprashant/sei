@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/charmbracelet/x/ansi"
 	"github.com/creack/pty"
 	"golang.org/x/sys/unix"
 )
@@ -142,49 +141,40 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 						}
 					}()
 					var screen strings.Builder
-					from := 0
-					await := func(text string) {
+					terminal := newPTYScreen(t, 240, 40)
+					await := func(texts ...string) {
 						t.Helper()
-						for !strings.Contains(ansi.Strip(screen.String()[from:]), text) {
+						for !performanceScreenMatches(terminal, texts...) {
 							select {
 							case chunk, ok := <-chunks:
 								if !ok {
-									t.Fatalf("PTY closed waiting for %q: %s", text, screen.String())
+									t.Fatalf("PTY closed waiting for %q: %s", texts, terminal.String())
 								}
 								screen.WriteString(chunk)
+								if _, err := terminal.WriteString(chunk); err != nil {
+									t.Fatal(err)
+								}
 							case <-ctx.Done():
-								t.Fatalf("timeout waiting for %q: %s", text, screen.String())
+								t.Fatalf("timeout waiting for %q: %s", texts, terminal.String())
 							}
 						}
 					}
 					send := func(text string) {
 						t.Helper()
-						from = screen.Len()
 						if _, err := io.WriteString(master, text); err != nil {
 							t.Fatal(err)
 						}
 					}
-					// Read a complete help redraw, not a history of terminal diffs.
-					// If refresh is still pending, toggle views for a fresh acknowledgment.
+					// Match current cells, including operation completion across partial redraws.
 					awaitHelp := func(texts ...string) {
 						t.Helper()
-						for {
-							await("q quit")
-							output := ansi.Strip(screen.String()[from:])
-							ready := strings.Contains(output, "Root relations checked; every mutation revalidates.")
-							for _, text := range texts {
-								ready = ready && strings.Contains(output, text)
-							}
-							if ready {
-								return
-							}
-							send("?")
-							await("Configured folders")
-							send("?")
-						}
+						await(append([]string{"sei | Help", "Root relations checked; every mutation revalidates."}, texts...)...)
 					}
 					scopeLabel := strings.ToUpper(scope[:1]) + scope[1:]
-					await("Configured folders")
+					if scope == "local" {
+						scopeLabel = "Project"
+					}
+					await("PROJECT")
 					await("Ready")
 					await("> replace-me")
 					if !restart {
@@ -198,7 +188,7 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 							assertCopy(t, targets[i])
 							assertUnchanged(t)
 							send("?")
-							await("Configured folders")
+							await("PROJECT")
 						}
 					}
 					for i := range 3 {
@@ -214,7 +204,7 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 						}
 						awaitHelp(fmt.Sprintf("Focused: Agent%d / %s", i+1, scopeLabel), "Selected name: "+selected)
 						send("?")
-						await("Configured folders")
+						await("PROJECT")
 						if !restart && i < 2 {
 							send("x?")
 							awaitHelp("Selected name: survivor",
@@ -222,7 +212,7 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 							setupAbsent(t, targets[i])
 							assertUnchanged(t)
 							send("?")
-							await("Configured folders")
+							await("PROJECT")
 						}
 					}
 					send("q")
@@ -233,6 +223,9 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 								chunks = nil
 							} else {
 								screen.WriteString(chunk)
+								if _, err := terminal.WriteString(chunk); err != nil {
+									t.Fatal(err)
+								}
 							}
 						case <-ctx.Done():
 							t.Fatalf("timeout draining PTY: %s", screen.String())

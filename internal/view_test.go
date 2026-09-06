@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"image/color"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -13,6 +14,7 @@ import (
 	"unicode/utf8"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/colorprofile"
 	"github.com/charmbracelet/x/ansi"
 )
 
@@ -39,18 +41,18 @@ func TestLayout(t *testing.T) {
 						t.Fatalf("%d agents %v: overflow %q", count, size, line)
 					}
 				}
-				for _, want := range []string{"* " + m.panels[id].label, m.labeledPanel(id).hint, "> a", "Agents ", "Ready"} {
+				for _, want := range []string{"* " + strings.TrimSuffix(strings.TrimSuffix(m.panels[id].label, " / Project"), " / Global"), m.labeledPanel(id).hint, "> a", "Agents ", "Ready"} {
 					if !strings.Contains(view, want) {
 						t.Fatalf("%d agents %v focus %d missing %q:\n%s", count, size, id, want, view)
 					}
 				}
-				if strings.Index(view, " / Local") > strings.Index(view, " / Global") || strings.Contains(view, "Root relations checked") {
+				if strings.Index(view, "PROJECT") > strings.Index(view, "GLOBAL") || strings.Contains(view, "Root relations checked") {
 					t.Fatal("scope order or quiet status regressed")
 				}
 				if id > 0 {
 					slot := (id-1)%count + 1
 					var first, last, total int
-					if _, err := fmt.Sscanf(lines[0], "sei | Configured folders | Agents %d-%d / %d", &first, &last, &total); err != nil || slot < first || slot > last || total != count {
+					if _, err := fmt.Sscanf(lines[0][strings.Index(lines[0], "Agents "):], "Agents %d-%d / %d", &first, &last, &total); err != nil || slot < first || slot > last || total != count {
 						t.Fatalf("focused slot hidden: %q", lines[0])
 					}
 				}
@@ -190,7 +192,7 @@ func TestViewSnapshots(t *testing.T) {
 				p := &m.panels[id]
 				scope, path := "Global", fmt.Sprintf("/home/example/.agent%d/skills", i+1)
 				if id > 3 {
-					scope, path = "Local", fmt.Sprintf("/project/.agent%d/skills", i+1)
+					scope, path = "Project", fmt.Sprintf("/project/.agent%d/skills", i+1)
 				}
 				p.label, p.path = name+" / "+scope, path
 				p.entries, p.selectedName, p.missing = nil, "", true
@@ -210,7 +212,7 @@ func TestViewSnapshots(t *testing.T) {
 			m.panels[1].safetyErr = errors.New("unverifiable root")
 		case "busy-help", "busy-quit":
 			m.width, m.height = 80, 24
-			m.active = &mutationRequest{id: 1, name: "look-safe\x1b[2J\r\nspoof", label: "Claude Code / Local", path: "/project/" + strings.Repeat("long-path/", 8), add: true}
+			m.active = &mutationRequest{id: 1, name: "look-safe\x1b[2J\r\nspoof", label: "Claude Code / Project", path: "/project/" + strings.Repeat("long-path/", 8), add: true}
 			m.status = m.active.target() + ": working"
 			m.showHelp = scenario == "busy-help"
 			m.pendingQuit, m.pendingGlobal = !m.showHelp, m.showHelp
@@ -307,26 +309,49 @@ func TestDisplaySafety(t *testing.T) {
 func TestViewProfiles(t *testing.T) {
 	m := navigationModel(3)
 	m.width, m.height = 80, 24
+	var dark, light string
 	for _, profile := range []string{"light", "dark", "no-color"} {
 		t.Run(profile, func(t *testing.T) {
-			t.Setenv("NO_COLOR", "")
-			t.Setenv("COLORFGBG", "0;15")
-			if profile == "dark" {
-				t.Setenv("COLORFGBG", "15;0")
+			m := m
+			next, _ := m.Update(tea.ColorProfileMsg{Profile: colorprofile.TrueColor})
+			m = next.(browseModel)
+			bg := color.Black
+			if profile == "light" {
+				bg = color.White
 			}
+			next, _ = m.Update(tea.BackgroundColorMsg{Color: bg})
+			m = next.(browseModel)
 			if profile == "no-color" {
-				t.Setenv("NO_COLOR", "1")
+				next, _ = m.Update(tea.EnvMsg{"NO_COLOR=please"})
+				m = next.(browseModel)
 			}
 			view := m.View().Content
-			if strings.ContainsRune(view, '\x1b') {
-				t.Fatal("text presentation depends on fixed colors or control sequences")
+			if strings.ContainsRune(view, '\x1b') != (profile != "no-color") {
+				t.Fatal("wrong color profile")
 			}
-			for _, want := range []string{"* Library", "> a", "focus 1 | add a", "Local", "Global", "q / ctrl+c quit"} {
-				if !strings.Contains(view, want) {
-					t.Fatalf("%s missing no-color cue %q", profile, want)
+			for _, want := range []string{"* Library", "> a", "focus 1 · copy a", "PROJECT", "GLOBAL", "q quit"} {
+				if !strings.Contains(ansi.Strip(view), want) {
+					t.Fatalf("missing cue %q", want)
 				}
 			}
+			if strings.Count(ansi.Strip(view), "> a") != 1 {
+				t.Fatal("multiple active selections")
+			}
+			for _, line := range strings.Split(view, "\n") {
+				if ansi.StringWidth(line) > m.width {
+					t.Fatal("styled overflow")
+				}
+			}
+			if profile == "dark" {
+				dark = view
+			}
+			if profile == "light" {
+				light = view
+			}
 		})
+	}
+	if light == dark {
+		t.Fatal("light and dark palettes are identical")
 	}
 }
 

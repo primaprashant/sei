@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/charmbracelet/x/ansi"
 	"github.com/creack/pty"
 	"golang.org/x/sys/unix"
 )
@@ -107,16 +106,19 @@ func runAddPTY(t *testing.T, binary, root, path, scope string, restart bool) {
 		}
 	}()
 	var screen strings.Builder
-	from := 0
+	terminal := newPTYScreen(t, 240, 40)
 	await := func(text string) {
 		t.Helper()
-		for !strings.Contains(ansi.Strip(screen.String()[from:]), text) {
+		for !performanceScreenMatches(terminal, text) {
 			select {
 			case chunk, ok := <-chunks:
 				if !ok {
 					t.Fatalf("PTY closed waiting for %q: %s", text, screen.String())
 				}
 				screen.WriteString(chunk)
+				if _, err := terminal.WriteString(chunk); err != nil {
+					t.Fatal(err)
+				}
 			case <-ctx.Done():
 				t.Fatalf("timeout waiting for %q: %s", text, screen.String())
 			}
@@ -128,32 +130,28 @@ func runAddPTY(t *testing.T, binary, root, path, scope string, restart bool) {
 			t.Fatal(err)
 		}
 	}
-	await("Configured folders")
+	await("PROJECT")
 	await("Ready")
 	await("> add-me")
 	if !restart {
-		from = screen.Len()
 		if scope == "global" {
 			send("A")
 		} else {
 			send("a")
 		}
-		await("complete")
-		from = screen.Len()
+		await("Copied add-me")
 		send("?")
 		await("Root relations checked; every mutation revalidates")
 		await("Selected name: add-me")
 		await("Focused: Library")
-		from = screen.Len()
 		send("?")
-		await("Configured folders")
+		await("PROJECT")
 	}
 	if scope == "global" {
 		send("g1")
 	} else {
 		send("1")
 	}
-	from = screen.Len()
 	send("?")
 	await("Root relations checked; every mutation revalidates")
 	if restart {
@@ -169,6 +167,9 @@ func runAddPTY(t *testing.T, binary, root, path, scope string, restart bool) {
 				chunks = nil
 			} else {
 				screen.WriteString(chunk)
+				if _, err := terminal.WriteString(chunk); err != nil {
+					t.Fatal(err)
+				}
 			}
 		case <-ctx.Done():
 			t.Fatalf("timeout draining PTY: %s", screen.String())

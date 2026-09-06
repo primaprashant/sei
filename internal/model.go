@@ -24,6 +24,9 @@ type browsePanel struct {
 
 type browseModel struct {
 	config           config
+	theme            uiTheme
+	statusFailed     bool
+	lastResult       *mutationRequest
 	safetyGeneration uint64
 	panels           []browsePanel // Library, configured globals, then corresponding locals.
 	agents           int
@@ -74,7 +77,7 @@ func newBrowseModel(cfg config) browseModel {
 		m.panels = append(m.panels, browsePanel{label: agent.Name + " / Global", path: agent.Global, loading: true})
 	}
 	for _, agent := range cfg.Agents {
-		m.panels = append(m.panels, browsePanel{label: agent.Name + " / Local", path: agent.Local, loading: true})
+		m.panels = append(m.panels, browsePanel{label: agent.Name + " / Project", path: agent.Local, loading: true})
 	}
 	return m
 }
@@ -84,6 +87,9 @@ func (browseModel) Init() tea.Cmd {
 }
 
 func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if handled, cmd := m.theme.update(msg); handled {
+		return m, cmd
+	}
 	switch msg := msg.(type) {
 	case exitRequestMsg:
 		if m.active != nil {
@@ -116,6 +122,8 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		r := *m.active
 		m.active = nil
 		m.status = r.target() + ": complete"
+		m.statusFailed = msg.err != nil
+		m.lastResult = &r
 		if msg.err != nil {
 			m.status = r.target() + ": " + msg.err.Error()
 		} else if !r.add {
@@ -252,12 +260,14 @@ func (m browseModel) startMutation(destination panelID, add bool) (tea.Model, te
 	}
 	d := m.panels[destination]
 	if !p.safetyChecked || p.safetyErr != nil || !d.safetyChecked || d.safetyErr != nil {
+		m.statusFailed = true
+		m.lastResult = nil
 		m.status = "Mutation blocked: root safety is unchecked or unsafe; ? for details"
 		return m, nil
 	}
 	m.nextOperation++
 	r := mutationRequest{id: m.nextOperation, destination: destination, name: p.selectedName, label: d.label, path: d.path, selected: p.selected, add: add}
-	m.active, m.status = &r, r.target()+": working"
+	m.active, m.status, m.statusFailed = &r, r.target()+": working", false
 	m.safetyGeneration++
 	m.panels = append([]browsePanel(nil), m.panels...)
 	for i := range m.panels {

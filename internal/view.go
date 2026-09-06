@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"charm.land/bubbles/v2/help"
-	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -19,58 +17,72 @@ func displayText(raw string) string {
 	return quoted[1 : len(quoted)-1]
 }
 
-func panelView(p browsePanel, library bool, width, height int) string {
-	lines := []string{displayText(p.label)}
-	if p.hint != "" {
-		lines = append(lines, p.hint)
+func (s uiStyles) panelView(p browsePanel, library, focused bool, width, height int) string {
+	title := strings.TrimSuffix(strings.TrimSuffix(p.label, " / Project"), " / Global")
+	lines := []string{}
+	if library {
+		lines = append(lines, s.muted.Render(displayText(p.path)))
+	} else if p.hint != "" {
+		lines = append(lines, s.accent.Render(p.hint))
 	}
-	lines = append(lines, displayText(p.path))
 	if !p.safetyChecked {
-		lines = append(lines, "Root safety: checking")
+		lines = append(lines, s.warning.Render("Checking folder safety"))
 	} else if p.safetyErr != nil {
-		lines = append(lines, "Root safety: blocked (? reason)")
+		lines = append(lines, s.warning.Render("Blocked folder · ? details"))
+	}
+	footer := fmt.Sprintf("%d skills", len(p.entries))
+	if len(p.entries) == 1 {
+		footer = "1 skill"
 	}
 	switch {
 	case p.loading:
-		lines = append(lines, "Loading...")
+		lines = append(lines, s.muted.Render("Loading..."))
 	case p.err != nil:
-		lines = append(lines, "Error: "+displayText(p.err.Error()))
+		lines = append(lines, s.danger.Render("Error: "+displayText(p.err.Error())))
 	case p.missing && library:
-		lines = append(lines, "Unavailable: library missing")
+		lines = append(lines, s.warning.Render("Library folder missing"))
 	case p.missing:
-		lines = append(lines, "Not created")
+		lines = append(lines, s.muted.Render("Folder not created"))
 	case len(p.entries) == 0:
-		lines = append(lines, "Empty")
+		lines = append(lines, s.muted.Render("No skills yet"))
 	default:
-		available := max(1, height-len(lines))
+		available := max(0, height-2-len(lines))
 		visible := min(len(p.entries), available)
-		if visible < len(p.entries) && visible > 1 {
-			visible--
-		}
 		start := max(0, p.selected-visible+1)
-		for _, entry := range p.entries[start : start+visible] {
-			marker := "  "
-			if entry.name == p.selectedName {
-				marker = "> "
+		if visible > 0 {
+			for _, entry := range p.entries[start : start+visible] {
+				marker, style := "  ", lipgloss.NewStyle()
+				label := displayText(entry.name)
+				if entry.blocked {
+					label = "[blocked] " + label
+					style = s.warning
+				}
+				if entry.name == p.selectedName && focused {
+					marker, style = "> ", s.selected
+				}
+				lines = append(lines, style.Render(fit(marker+label, width-4)))
 			}
-			label := displayText(entry.name)
-			if entry.blocked {
-				label = "[blocked: symlink] " + label
+			if visible < len(p.entries) {
+				footer = fmt.Sprintf("%d–%d / %d", start+1, start+visible, len(p.entries))
 			}
-			lines = append(lines, marker+label)
-		}
-		if visible < len(p.entries) {
-			lines = append(lines, fmt.Sprintf("Rows %d-%d / %d", start+1, start+visible, len(p.entries)))
 		}
 	}
-	for i, line := range lines {
-		line = ansi.Truncate(line, width, "~")
-		lines[i] = line + strings.Repeat(" ", max(0, width-ansi.StringWidth(line)))
+	if library {
+		footer = "focus 0 · " + footer
 	}
-	for len(lines) < height {
-		lines = append(lines, strings.Repeat(" ", width))
+	return s.frame(displayText(title), footer, lines, width, height, focused)
+}
+
+// Agent IDs remain globals then projects; only their presentation is reordered.
+func (m browseModel) layout() (left, columns, rows, visible, first int) {
+	left = min(38, max(26, m.width/3))
+	columns = min(max(1, (m.width-left-1)/30), 3, m.agents)
+	rows = (m.agents + columns - 1) / columns
+	visible = min(rows, max(1, (m.height-7)/14))
+	if m.focused > 0 {
+		first = max(0, (m.focused-1)%m.agents/columns-visible+1)
 	}
-	return strings.Join(lines, "\n")
+	return
 }
 
 func (m browseModel) View() tea.View {
@@ -100,19 +112,19 @@ func (m browseModel) View() tea.View {
 		v.AltScreen = true
 		return v
 	}
-	leftWidth := min(38, max(26, m.width/3))
-	columns := min(max(1, (m.width-leftWidth-2)/30), 3, m.agents)
-	rows := (m.agents + columns - 1) / columns
-	visibleRows := min(rows, max(1, (m.height-7)/17))
-	firstRow := 0
-	if m.focused > 0 {
-		firstRow = max(0, (m.focused-1)%m.agents/columns-visibleRows+1)
-	}
-	panelWidth := max(1, (m.width-leftWidth-3)/columns-1)
-	panelHeight := max(4, (m.height-7)/(2*visibleRows)-1)
+	s := m.theme.styles()
+	leftWidth, columns, rows, visibleRows, firstRow := m.layout()
+	rightWidth := m.width - leftWidth - 1
+	panelWidth := (rightWidth - columns + 1) / columns
+	workspaceHeight := m.height - 5
+	panelHeight := (workspaceHeight - 2) / (2 * visibleRows)
 	var rightRows []string
-	// Keep target IDs unchanged: presentation order is local, then global.
 	for _, scope := range []int{1, 0} {
+		label := "GLOBAL"
+		if scope == 1 {
+			label = "PROJECT"
+		}
+		rightRows = append(rightRows, s.section.Render(label))
 		for row := firstRow; row < min(rows, firstRow+visibleRows); row++ {
 			var cells []string
 			for col := range columns {
@@ -122,48 +134,84 @@ func (m browseModel) View() tea.View {
 						cells = append(cells, " ")
 					}
 					id := 1 + scope*m.agents + i
-					cells = append(cells, panelView(m.labeledPanel(id), false, panelWidth, panelHeight))
+					cells = append(cells, s.panelView(m.labeledPanel(id), false, id == m.focused, panelWidth, panelHeight))
 				}
 			}
 			rightRows = append(rightRows, lipgloss.JoinHorizontal(lipgloss.Top, cells...))
 		}
 	}
-	right := strings.Join(rightRows, "\n\n")
-	left := panelView(m.labeledPanel(0), true, leftWidth, lipgloss.Height(right))
-	status := m.status
-	if status == "" {
-		status = "Ready"
-		for _, p := range m.panels {
-			if p.loading || !p.safetyChecked {
-				status = "Checking folders..."
-				break
-			}
-			if p.err != nil || p.safetyErr != nil {
-				status = "Check panel errors; ? for details"
-			}
-		}
+	right := strings.Join(rightRows, "\n")
+	left := s.panelView(m.labeledPanel(0), true, m.focused == 0, leftWidth, workspaceHeight)
+	workspace := lipgloss.JoinHorizontal(lipgloss.Top, left, " ", right)
+	// Keep header context and the status/controls anchored as lists change.
+	agentRange := fmt.Sprintf("Agents %d-%d / %d", firstRow*columns+1, min(m.agents, (firstRow+visibleRows)*columns), m.agents)
+	header := s.accent.Render("sei") + "  " + s.muted.Render(ansi.Truncate(displayText(m.config.Project), max(0, m.width-len(agentRange)-8), "~"))
+	header = fit(header, m.width-len(agentRange)-1) + " " + s.muted.Render(agentRange)
+	p := m.labeledPanel(m.focused)
+	detail := displayText(p.label) + " · " + displayText(p.path)
+	if p.selectedName != "" {
+		detail += " · " + displayText(p.selectedName)
 	}
-	h := help.New()
-	// Inherit terminal foreground/background instead of fixed low-contrast grays.
-	h.Styles = help.Styles{}
-	state := h.ShortHelpView([]key.Binding{key.NewBinding(key.WithKeys("q", "ctrl+c"), key.WithHelp("q / ctrl+c", "quit"))})
-	if m.pendingQuit {
-		state = "Exit requested; waiting for work"
-	} else if m.active != nil {
-		state = "Working; q waits for completion"
+	status, style := m.browserStatus(s)
+	controls := "↑↓ select  0 library  1-9 project  g global  r refresh  ? help  q quit"
+	if m.focused > 0 {
+		controls = "↑↓ select  0 library  x remove permanently  g global  ? help  q quit"
 	}
 	if m.pendingGlobal {
-		state += m.sequenceHint()
+		controls = "g pending: 1-9 global, Esc cancel | ? help | q quit"
 	}
-	v := tea.NewView(fmt.Sprintf("sei | Configured folders | Agents %d-%d / %d\n", firstRow*columns+1, min(m.agents, (firstRow+visibleRows)*columns), m.agents) +
-		lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right) +
-		"\n" + ansi.Truncate("Focused: "+displayText(m.panels[m.focused].label)+" | Selected: "+displayText(m.panels[m.focused].selectedName), m.width, "~") +
-		"\n0 library | 1-9 local | g 1-9 global | up/down | r refresh | ? full targets/help" +
-		"\nAdd from library using header keys; x permanently removes." +
-		"\n" + ansi.Truncate(displayText(status), m.width, "~") +
-		"\n" + state)
-	v.AltScreen = true
-	return v
+	return boundedView(header+"\n"+workspace+"\n"+s.muted.Render(ansi.Truncate(detail, m.width, "~"))+"\n"+
+		style.Render(ansi.Truncate(status, m.width, "~"))+"\n"+s.muted.Render(controls)+"\n"+s.warning.Render(m.operationHint()), m.width, m.height)
+}
+
+func (m browseModel) operationHint() string {
+	if m.pendingQuit {
+		return "Exit requested; waiting for work"
+	}
+	if m.active != nil {
+		return "Working; q waits for completion"
+	}
+	if m.focused == 0 {
+		return "Copy using panel keys · Replaces existing folders; no undo"
+	}
+	return "Removal is permanent · No confirmation or undo"
+}
+
+func (m browseModel) browserStatus(s uiStyles) (string, lipgloss.Style) {
+	if m.active != nil {
+		verb := "Copying"
+		if !m.active.add {
+			verb = "Removing"
+		}
+		return verb + " " + displayText(m.active.name) + " → " + displayText(m.active.label), s.section
+	}
+	if m.lastResult != nil {
+		verb, style := "Copied", s.success
+		if !m.lastResult.add {
+			verb = "Removed"
+		}
+		if m.statusFailed {
+			verb, style = "Failed", s.danger
+		}
+		return verb + " " + displayText(m.lastResult.name) + " → " + displayText(m.lastResult.label) + " · ? details", style
+	}
+	if m.status != "" {
+		style := s.success
+		if m.statusFailed {
+			style = s.danger
+		}
+		return displayText(m.status), style
+	}
+
+	for _, p := range m.panels {
+		if p.err != nil || p.safetyErr != nil {
+			return "Check panel errors; ? for details", s.warning
+		}
+		if p.loading || !p.safetyChecked {
+			return "Checking folders...", s.muted
+		}
+	}
+	return "Ready", s.muted
 }
 
 const addKeys = "abcdefhio"
@@ -177,7 +225,7 @@ func (m browseModel) sequenceHint() string {
 
 func (m browseModel) labeledPanel(id int) browsePanel {
 	p := m.panels[id]
-	p.hint = "focus 0 | ? full target"
+	p.hint = "focus 0"
 	if id > 0 {
 		slot := (id - 1) % m.agents
 		shortcut := strconv.Itoa(slot + 1)
@@ -186,7 +234,10 @@ func (m browseModel) labeledPanel(id int) browsePanel {
 			shortcut = "g " + shortcut
 			add = strings.ToUpper(add)
 		}
-		p.hint = "focus " + shortcut + " | add " + add
+		p.hint = "focus " + shortcut
+		if m.focused == 0 {
+			p.hint += " · copy " + add
+		}
 	}
 	base, prefix := m.config.Home, "~"
 	if id > m.agents {
@@ -197,9 +248,6 @@ func (m browseModel) labeledPanel(id int) browsePanel {
 		if prefix == "." {
 			p.path = strings.TrimPrefix(p.path, "./")
 		}
-	}
-	if id == m.focused {
-		p.label = "* " + p.label
 	}
 	return p
 }

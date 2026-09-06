@@ -85,7 +85,7 @@ func BenchmarkSkill(b *testing.B) {
 			b.StopTimer()
 			cfg := benchmarkConfig(b, 1)
 			const name = "synthetic-skill"
-			const destination panelID = 2 // Claude Code / Local.
+			const destination panelID = 2 // Claude Code / Project.
 			for _, file := range []struct {
 				path string
 				size int

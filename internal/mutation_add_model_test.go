@@ -62,7 +62,7 @@ func TestAddFlow(t *testing.T) {
 				}
 				m, _ = press(m, tea.KeyDown)
 				destination := 10 + slot
-				wantPath, wantLabel := cfg.Agents[slot].Local, cfg.Agents[slot].Name+" / Local"
+				wantPath, wantLabel := cfg.Agents[slot].Local, cfg.Agents[slot].Name+" / Project"
 				if global {
 					destination = 1 + slot
 					wantPath, wantLabel = cfg.Agents[slot].Global, cfg.Agents[slot].Name+" / Global"
@@ -186,6 +186,7 @@ func TestAddGuards(t *testing.T) {
 				want := m
 				want.pendingGlobal = false
 				if strings.HasPrefix(kind, "unchecked") || strings.HasPrefix(kind, "unsafe") {
+					want.statusFailed = true
 					want.status = "Mutation blocked: root safety is unchecked or unsafe; ? for details"
 				}
 				next, cmd := m.Update(msg)
