@@ -117,7 +117,7 @@ func configTokens(decoder *json.Decoder, shape string) error {
 }
 
 // absolutePath deliberately avoids Join/Abs: cleaning link/.. changes filesystem
-// traversal. Keep these paths intact for physical root validation in Task 8.
+// traversal. Keep these paths intact for physical root validation.
 func absolutePath(base, path string) string {
 	if filepath.IsAbs(path) {
 		return path

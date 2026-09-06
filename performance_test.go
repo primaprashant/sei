@@ -101,7 +101,7 @@ func runRepresentativePrototype(t *testing.T, measured bool) {
 		t.Fatal("measurement requires a built binary, not fixture preparation")
 	}
 	if archive == "" || (binary == "" && prepare == "") {
-		t.Skip("set SEI_TEST_ARCHIVE and SEI_TEST_BINARY; see docs/prototype.md")
+		t.Skip("set SEI_TEST_ARCHIVE and SEI_TEST_BINARY; see docs/development.md#optional-performance-checks")
 	}
 	if prepare == "" && !filepath.IsAbs(binary) {
 		t.Fatal("SEI_TEST_BINARY must be absolute")
