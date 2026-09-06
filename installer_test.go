@@ -173,8 +173,8 @@ func TestInstallerFresh(t *testing.T) {
 				if got, err := cmd.CombinedOutput(); err != nil || string(got) != "sei 0.1.0\n" {
 					t.Fatalf("follow-up: %s, %v", got, err)
 				}
-				if out, err := f.run(t, "--install-dir", f.dest); err == nil || !strings.Contains(out, "existing sei or receipt") {
-					t.Fatalf("reinstall not refused: %v %s", err, out)
+				if out, err := f.run(t, "--version", "v0.1.0", "--install-dir", f.dest); err != nil {
+					t.Fatalf("reinstall failed: %v %s", err, out)
 				}
 			})
 		}
@@ -306,7 +306,7 @@ func TestInstallerSafety(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if out, err := f.run(t, "--install-dir", f.dest); err == nil || !strings.Contains(out, "existing sei or receipt") {
+				if out, err := f.run(t, "--install-dir", f.dest); err == nil || !strings.Contains(out, "unrecognized sei or receipt") {
 					t.Fatalf("%v: %s", err, out)
 				}
 				after, err := os.Lstat(path)
@@ -326,6 +326,254 @@ func TestInstallerSafety(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestInstallerUpgrade(t *testing.T) {
+	for _, point := range []string{"before-receipt", "before-binary"} {
+		t.Run("recheck/"+point, func(t *testing.T) {
+			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+			if out, err := f.run(t, "--version", "v0.1.0", "--install-dir", f.dest); err != nil {
+				t.Fatalf("setup: %v: %s", err, out)
+			}
+			tool := "chmod"
+			body := "exec \"$REAL_TOOL\" \"$@\""
+			if point == "before-binary" {
+				tool = "mv"
+				body = "\"$REAL_TOOL\" \"$@\"\n"
+			}
+			realTool, err := exec.LookPath(tool)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Simulate an observable external path replacement, not a hostile
+			// writer inside the final check/rename window (which is not promised).
+			mutation := "\"$REAL_MV\" \"$DEST/sei\" \"$FIXTURE/old\"\nln -s \"$FIXTURE/old\" \"$DEST/sei\"\n"
+			if point == "before-binary" {
+				body += mutation
+			} else {
+				body = mutation + body
+			}
+			f.env = append(f.env, "REAL_TOOL="+realTool, "DEST="+f.dest)
+			if err := os.WriteFile(filepath.Join(f.root, "tools", tool), []byte("#!/bin/sh\nset -eu\n"+body), 0755); err != nil {
+				t.Fatal(err)
+			}
+			out, err := f.run(t, "--version", "v0.1.0", "--install-dir", f.dest)
+			if err == nil || !strings.Contains(out, "install paths changed") {
+				t.Fatalf("missed path change: %v: %s", err, out)
+			}
+			if target, err := os.Readlink(filepath.Join(f.dest, "sei")); err != nil || target != filepath.Join(f.root, "old") {
+				t.Fatalf("observable symlink clobbered: %q, %v", target, err)
+			}
+			if got, err := os.ReadFile(filepath.Join(f.root, "old")); err != nil || !bytes.Equal(got, f.binary) {
+				t.Fatalf("old bytes changed: %q, %v", got, err)
+			}
+		})
+	}
+	for _, problem := range []string{"success", "download", "partial", "stage-write", "permissions", "candidate-write", "candidate-version", "candidate-exit", "candidate-empty", "checksum", "receipt-write", "receipt", "binary"} {
+		t.Run(problem, func(t *testing.T) {
+			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+			if err := os.MkdirAll(f.dest, 0700); err != nil {
+				t.Fatal(err)
+			}
+			binaryPath := filepath.Join(f.dest, "sei")
+			receiptPath := filepath.Join(f.dest, ".sei-install-receipt")
+			marker := filepath.Join(f.root, "executed")
+			old := []byte("#!/bin/sh\n: > '" + marker + "'\nprintf 'sei 0.0.9\\n'\n")
+			if err := os.WriteFile(binaryPath, old, 0755); err != nil {
+				t.Fatal(err)
+			}
+			oldReceipt := fmt.Sprintf("sei-install-receipt-v1\nv0.0.9 %x\n", sha256.Sum256(old))
+			writeTestFile(t, receiptPath, oldReceipt)
+			prepared := oldReceipt + fmt.Sprintf("v0.1.0 %x\n", sha256.Sum256(f.binary))
+			cleanEnv := append([]string(nil), f.env...)
+			tool, body := "", ""
+			switch problem {
+			case "stage-write":
+				tool, body = "mktemp", "exit 1"
+			case "permissions":
+				tool, body = "chmod", "exit 1"
+			case "receipt-write":
+				tool, body = "chmod", "mkdir \"${2%/*}/receipt\"\nexec \"$REAL_TOOL\" \"$@\""
+			case "candidate-write":
+				tool, body = "tar", "case $1 in -xOzf) printf partial; exit 1 ;; *) exec \"$REAL_TOOL\" \"$@\" ;; esac"
+			case "candidate-version", "candidate-exit", "candidate-empty":
+				candidate := "#!/bin/sh\nprintf wrong"
+				switch problem {
+				case "candidate-exit":
+					candidate = "#!/bin/sh\nexit 1"
+				case "candidate-empty":
+					candidate = ""
+				}
+				tool, body = "tar", "case $1 in -xOzf) printf '%s' '"+candidate+"' ;; *) exec \"$REAL_TOOL\" \"$@\" ;; esac"
+			case "checksum":
+				writeTestFile(t, filepath.Join(f.root, "manifest"), strings.Repeat("0", 64)+"  "+f.asset+"\n")
+			default:
+				f.env = append(f.env, "MOCK_FAIL="+problem)
+			}
+			if tool != "" {
+				realTool, err := exec.LookPath(tool)
+				if err != nil {
+					t.Fatal(err)
+				}
+				f.env = append(f.env, "REAL_TOOL="+realTool)
+				if err := os.WriteFile(filepath.Join(f.root, "tools", tool), []byte("#!/bin/sh\nset -eu\n"+body+"\n"), 0755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			out, err := f.run(t, "--version", "v0.1.0", "--install-dir", f.dest)
+			if (err == nil) != (problem == "success") {
+				t.Fatalf("unexpected result: %v: %s", err, out)
+			}
+			if _, err := os.Lstat(marker); !os.IsNotExist(err) {
+				t.Fatal("old executable used for identification", err)
+			}
+			wantBinary, wantReceipt := old, oldReceipt
+			if problem == "success" {
+				wantBinary = f.binary
+			}
+			if problem == "success" || problem == "binary" {
+				wantReceipt = prepared
+			}
+			got, err := os.ReadFile(binaryPath)
+			if err != nil || !bytes.Equal(got, wantBinary) {
+				t.Fatalf("binary changed: %q, %v", got, err)
+			}
+			got, err = os.ReadFile(receiptPath)
+			if err != nil || string(got) != wantReceipt {
+				t.Fatalf("receipt: %q, %v; want %q", got, err, wantReceipt)
+			}
+			if problem == "success" {
+				if got, err := exec.Command(binaryPath, "--version").CombinedOutput(); err != nil || string(got) != "sei 0.1.0\n" {
+					t.Fatalf("new binary unusable: %q, %v", got, err)
+				}
+				for path, mode := range map[string]os.FileMode{binaryPath: 0755, receiptPath: 0600} {
+					info, err := os.Stat(path)
+					if err != nil || info.Mode().Perm() != mode {
+						t.Fatalf("incorrect installed permissions: %s, %v", path, err)
+					}
+				}
+				if out, err := f.run(t, "--version", "v0.1.0", "--install-dir", f.dest); err != nil {
+					t.Fatalf("two-record receipt not recognized: %v: %s", err, out)
+				}
+				got, err := os.ReadFile(receiptPath)
+				if err != nil || string(got) != fmt.Sprintf("sei-install-receipt-v1\nv0.1.0 %x\n", sha256.Sum256(f.binary)) {
+					t.Fatalf("same-version receipt not deduplicated: %q, %v", got, err)
+				}
+				return
+			}
+			if got, err := exec.Command(binaryPath, "--version").CombinedOutput(); err != nil || string(got) != "sei 0.0.9\n" {
+				t.Fatalf("old binary unusable: %q, %v", got, err)
+			}
+			if err := os.Remove(marker); err != nil {
+				t.Fatal(err)
+			}
+			if tool != "" {
+				if err := os.Remove(filepath.Join(f.root, "tools", tool)); err != nil {
+					t.Fatal(err)
+				}
+			}
+			f.env = cleanEnv
+			writeTestFile(t, filepath.Join(f.root, "manifest"), fmt.Sprintf("%x  %s\n", sha256.Sum256(f.archive), f.asset))
+			if out, err := f.run(t, "--version", "v0.1.0", "--install-dir", f.dest); err != nil {
+				t.Fatalf("retry through retained receipt: %v: %s", err, out)
+			}
+			got, err = os.ReadFile(binaryPath)
+			if err != nil || !bytes.Equal(got, f.binary) {
+				t.Fatal("retry did not install candidate", err)
+			}
+			if _, err := os.Lstat(marker); !os.IsNotExist(err) {
+				t.Fatal("retry executed old binary", err)
+			}
+		})
+	}
+	for _, problem := range []string{"missing", "mismatch", "header", "version", "prerelease", "nul", "digest", "extra-field", "tab", "blank", "duplicate", "ambiguous", "duplicate-version", "no-newline", "receipt-symlink", "binary-symlink", "receipt-directory", "binary-directory", "receipt-fifo", "binary-fifo"} {
+		t.Run("refuse/"+problem, func(t *testing.T) {
+			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+			if err := os.MkdirAll(f.dest, 0700); err != nil {
+				t.Fatal(err)
+			}
+			binaryPath, receiptPath := filepath.Join(f.dest, "sei"), filepath.Join(f.dest, ".sei-install-receipt")
+			old := "#!/bin/sh\n: > '" + filepath.Join(f.root, "executed") + "'\n"
+			if err := os.WriteFile(binaryPath, []byte(old), 0755); err != nil {
+				t.Fatal(err)
+			}
+			record := fmt.Sprintf("v0.0.9 %x\n", sha256.Sum256([]byte(old)))
+			receipt := "sei-install-receipt-v1\n" + record
+			switch problem {
+			case "mismatch":
+				receipt = "sei-install-receipt-v1\nv0.0.9 " + strings.Repeat("0", 64) + "\n"
+			case "header":
+				receipt = strings.Replace(receipt, "v1", "v2", 1)
+			case "version":
+				receipt = strings.Replace(receipt, "v0.0.9", "v00.0.9", 1)
+			case "prerelease":
+				receipt = strings.Replace(receipt, "v0.0.9", "v0.0.9-01", 1)
+			case "nul":
+				receipt = strings.Replace(receipt, "v0.0.9", "v0.0.9\x00", 1)
+			case "digest":
+				receipt = strings.Replace(receipt, " ", " z", 1)
+			case "extra-field":
+				receipt = strings.TrimSuffix(receipt, "\n") + " extra\n"
+			case "tab":
+				receipt = strings.Replace(receipt, " ", "\t", 1)
+			case "blank":
+				receipt += "\n"
+			case "duplicate":
+				receipt += record
+			case "ambiguous":
+				receipt += strings.Replace(record, "v0.0.9", "v0.0.8", 1)
+			case "duplicate-version":
+				receipt += "v0.0.9 " + strings.Repeat("0", 64) + "\n"
+			case "no-newline":
+				receipt = strings.TrimSuffix(receipt, "\n")
+			}
+			if problem != "missing" {
+				writeTestFile(t, receiptPath, receipt)
+			}
+			if prefix, kind, ok := strings.Cut(problem, "-"); ok && (prefix == "binary" || prefix == "receipt") {
+				path := receiptPath
+				if prefix == "binary" {
+					path = binaryPath
+				}
+				outside := filepath.Join(f.root, "outside")
+				if err := os.Rename(path, outside); err != nil {
+					t.Fatal(err)
+				}
+				var err error
+				switch kind {
+				case "symlink":
+					err = os.Symlink(outside, path)
+				case "directory":
+					err = os.Mkdir(path, 0700)
+				case "fifo":
+					err = exec.Command("mkfifo", path).Run()
+				}
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			beforeBinary, _ := os.Lstat(binaryPath)
+			beforeReceipt, _ := os.Lstat(receiptPath)
+			if out, err := f.run(t, "--version", "v0.1.0", "--install-dir", f.dest); err == nil || !strings.Contains(out, "inspect and relocate") {
+				t.Fatalf("unsafe ownership accepted: %v: %s", err, out)
+			}
+			for path, before := range map[string]os.FileInfo{binaryPath: beforeBinary, receiptPath: beforeReceipt} {
+				after, err := os.Lstat(path)
+				if before == nil {
+					if !os.IsNotExist(err) {
+						t.Fatal("absent path created", err)
+					}
+				} else if err != nil || !os.SameFile(before, after) {
+					t.Fatal("refused path changed", err)
+				}
+			}
+			for _, name := range []string{"requests", "executed"} {
+				if _, err := os.Lstat(filepath.Join(f.root, name)); !os.IsNotExist(err) {
+					t.Fatalf("unexpected %s", name)
+				}
+			}
+		})
 	}
 }
 

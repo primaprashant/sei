@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase J local/CI implementation complete; fresh installer and clean snapshot checks pass on Linux. Native archive/installer CI, minimum-OS/support approval and Mac trust evidence remain release blockers; owner approved implementation continuation only.
+**Status:** Phase J native CI verified; Task 31 upgrades pass local standard/race and GNU/BSD tar checks. Tasks 32-33 are next; support-floor and Mac trust gates remain open.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -808,7 +808,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Verification:** `sh -n scripts/install.sh`; `shellcheck -s sh scripts/install.sh` using the pinned binary; `go test -count=1 -run 'TestInstallerFresh' .` with local release fixtures/mock download tools on Linux and macOS.
 
-**Evidence (2026-09-06):** Fresh installer, receipt/safety tests and native ShellCheck CI implemented. Linux standard/race/offline fixtures pass with GNU/BSD tar; review fixed BSD options and quoted PATH guidance. [Contract/evidence](docs/release.md#task-30-fresh-installer). Native CI, floor/support and Mac trust gates remain open; upgrades/broader faults stay Tasks 31-32. No public release.
+**Evidence (2026-09-06):** Fresh installer, receipt/safety tests and native ShellCheck CI implemented. Linux standard/race/offline fixtures pass with GNU/BSD tar; review fixed BSD options and quoted PATH guidance. [Contract/evidence](docs/release.md#task-30-fresh-installer). Phase J native CI subsequently passed at `54fbfb9`; floor/support and Mac trust gates remain open. No public release.
 
 **Dependencies:** Tasks 27 and 29.
 
@@ -824,6 +824,8 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Evidence (2026-09-06):** At `f809d10`, Linux standard/full/race, shell syntax/ShellCheck and four clean snapshot checks pass, including extracted native PTY. GNU/BSD tar fixtures pass. Tasks 28-29 external acceptance remains open; no push/tag/publication or credential grants.
 
+**CI follow-up:** `gh run view 34021805952` verified head `54fbfb9` and all seven jobs successful, including exact producer archive transfer/native execution on all four runners. [Details](docs/release.md#phase-j-hosted-evidence). Floors and Mac Gatekeeper are not closed by CI.
+
 ### Phase K: Upgrade And Document
 
 ### Task 31: Upgrade Without Losing A Working Binary
@@ -831,9 +833,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Add upgrade support while deliberately using a safer replacement contract than skill-folder copying.
 
 **Acceptance criteria:**
-- [ ] Refuse unrelated existing files and symlink/directory targets. Match the existing executable digest to the Task 30 installer-owned receipt without executing that file; missing/mismatched receipts, manual installs, and ambiguous ownership are refused with manual guidance.
-- [ ] Finish download, checksum/archive checks, extraction, permission checks, and new-binary validation in a temporary location on the installation filesystem before same-directory replacement of a recognized sei binary.
-- [ ] Commit a receipt retaining both old and candidate digest records before replacing the binary; test failure between those commits. Any pre-binary-commit failure leaves the old binary byte-for-byte usable and recognizable; cleanup traps do not remove it, and post-commit messaging cannot falsely claim it was preserved.
+- [x] Refuse unrelated existing files and symlink/directory targets. Match the existing executable digest to the Task 30 installer-owned receipt without executing that file; missing/mismatched receipts, manual installs, and ambiguous ownership are refused with manual guidance.
+- [x] Finish download, checksum/archive checks, extraction, permission checks, and new-binary validation in a temporary location on the installation filesystem before same-directory replacement of a recognized sei binary.
+- [x] Commit a receipt retaining both old and candidate digest records before replacing the binary; test failure between those commits. Any pre-binary-commit failure leaves the old binary byte-for-byte usable and recognizable; cleanup traps do not remove it, and post-commit messaging cannot falsely claim it was preserved.
+
+**Evidence (2026-09-06):** Receipt-v1 ownership/rechecks and receipt-first upgrades pass focused, GNU/BSD, standard/race and ShellCheck tests. [Contract](docs/release.md#task-31-verified-upgrades). New native execution pending; no push/tag.
 
 **Verification:** `go test -count=1 -run 'TestInstallerUpgrade' .`; run lint/syntax checks and injected failures for write, permissions, validation, and final rename. Execute the old binary after each failed upgrade.
 

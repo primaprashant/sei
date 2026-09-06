@@ -6,8 +6,9 @@ Checkpoint J (2026-09-06): clean `f809d10` snapshots now occupy `dist/` as
 `0.0.0-snapshot.f809d10`, replacing historical artifacts recorded below.
 All four archive checks pass with the exact producer revision and clean-source
 assertion; native Linux amd64 help/version/PTY and full standard/race/installer
-checks pass. Remote native execution, all minimum-OS hosts, support approval and
-Mac download trust remain release blockers. Nothing was pushed or published.
+checks pass. Subsequent [Phase J hosted evidence](#phase-j-hosted-evidence) closes
+native CI execution at `54fbfb9`, not minimum-OS hosts, support approval or Mac
+download trust. Task 31 upgrades are verified locally below; no public release.
 
 Task 4 establishes ordinary PR/push CI. Task 27 adds local snapshot packaging
 with GoReleaser Community v2.18.0, not signing, tagging, uploading or publishing.
@@ -590,6 +591,10 @@ Task 29 added no installer. Task 30 implementation follows below.
 
 ## Task 30 Fresh Installer
 
+Historical Task 30 baseline: the fresh-only replacement rules below are superseded
+by [Task 31 verified upgrades](#task-31-verified-upgrades). Other input/download
+and archive validation contracts still apply.
+
 Implemented locally after `b822902`, with owner approval to continue local/CI
 work despite the separate Task 28 floors/support approval and Task 29 Mac
 Gatekeeper blockers. **No public release exists.** No installer asset is uploaded,
@@ -636,7 +641,7 @@ the directory without adding a leading empty component and preserves the user's
 existing PATH value. Relative or differently spelled aliases are not treated as
 exact matches. The installer never edits profiles or claims PATH already changed.
 
-### Validation And Ownership
+### Historical Fresh-Only Ownership
 
 1. Refuse **any** existing `sei` or `.sei-install-receipt` entry before download,
    including directories, symlinks and dangling links. Never run an existing
@@ -679,7 +684,7 @@ authentication; the Task 29 attestation policy remains separate. No hostile
 concurrent-writer isolation, crash durability, forced-kill cleanup, or automatic
 rollback is promised. Both final moves are on the installation filesystem.
 
-### Tests And Evidence
+### Historical Tests And Evidence
 
 `installer_test.go` uses Go `testing`/`os/exec`, disposable HOME/config/paths,
 local Go-generated tar/gzip fixtures and PATH-local curl/uname/mv mocks. Shell
@@ -729,3 +734,76 @@ Review verification: syntax and pinned ShellCheck, module tidy diff, lint
 config/format/run (zero issues), vet, full uncached tests (`22.578s`) and full
 CGO-enabled race (`116.626s`) pass. The complete installer suite also passes
 inside an isolated Linux network namespace with each tar implementation.
+
+## Phase J Hosted Evidence
+
+On 2026-09-06, `gh run view 34021805952 --json headSha,conclusion,jobs,url`
+verified [run 34021805952](https://github.com/primaprashant/sei/actions/runs/34021805952)
+at exact head `54fbfb95daf5e39b04e8b16354e8624db4b5289c`: all seven jobs passed.
+These are the archive producer, both fuzz targets, and native checks on
+`ubuntu-24.04`, `ubuntu-24.04-arm`, `macos-15-intel`, and `macos-15`.
+Producer steps `Build once and verify archive contract` and
+`Transfer only the four archives and checksum manifest` succeeded. On every
+native runner, `Standard checks`, native ShellCheck installation/lint,
+`Download identical producer archives`, and
+`Execute exact native archive including PTY restoration` succeeded. The workflow
+transfers the producer's artifact ID and verifies its version/commit, rather than
+rebuilding native test archives. Linux amd64 race and coverage steps passed;
+those two steps were intentionally skipped on the other three native runners.
+This is Phase J evidence, not hosted verification of the uncommitted Task 31 work.
+Minimum-OS/support approval and Mac quarantine/Gatekeeper/signing decisions remain
+release blockers; successful CI extraction does not establish download trust.
+
+## Task 31 Verified Upgrades
+
+Implemented sequentially from clean `54fbfb9`. The same installer invocation now
+replaces an existing executable only when its SHA-256 matches a strictly valid
+Task 30 `.sei-install-receipt`; it never executes old bytes to identify them.
+Manual installs, modified bytes, missing/mismatched/malformed receipts, and
+symlink (including dangling), directory or special-file executable/receipt paths
+are refused with manual inspection/relocation guidance. An existing binary must
+be executable. There is no broad overwrite option or new user runtime dependency.
+
+Receipt-v1 remains the persisted format: exact `sei-install-receipt-v1` header
+followed by one or two newline-terminated `vVERSION SHA256` records, with exactly
+one ASCII space, validated versions and lowercase 64-hex digests. Extra fields,
+blank lines, duplicate versions or duplicate digests are rejected. Identical
+old/candidate records are emitted only once; conflicting version/digest pairs
+are refused. Older unused records are dropped when preparing the next receipt.
+
+All downloads, archive checks, extraction, chmod 0755 and candidate `--version`
+validation finish in a private same-filesystem stage. Before committing, the
+installer rechecks the live executable type, executable permission and digest,
+and receipt type and digest. It writes a private 0600 receipt retaining the
+recognized old record plus verified candidate record, then renames that receipt
+into place **before** renaming the candidate binary. It rechecks both live paths
+again between these commits. No second metadata write is needed after the binary
+rename. Predictable observed path changes abort; this is not hostile concurrent
+writer isolation or a guarantee across the final check/rename window.
+
+Every installer failure before binary commit leaves valid old bytes untouched
+and recognized by either the original receipt or the retained two-record receipt.
+A failed final rename can be retried normally without executing old bytes for
+identification. A same-version/same-digest reinstall also succeeds. A failed
+**fresh** install with only a prepared receipt and no binary still requires manual
+inspection/relocation; it is not inferred to be an owned installation. Cleanup
+only removes private staging. No rollback, crash durability, forced-kill cleanup,
+publisher authentication or hostile-local-user protection is promised. Success
+guidance is printed only after the binary commit, with no preservation claim.
+
+`TestInstallerUpgrade` covers a working `0.0.9` marker executable upgraded to
+`0.1.0`, exact bytes/permissions/receipts, same-version deduplication, strict
+ownership refusal, observed path replacements, and injected download, partial
+write, staging, chmod, candidate output/exit/empty, checksum, receipt preparation,
+receipt rename and binary rename failures. Every failed upgrade in that fault
+table executes the preserved old binary and then retries through its retained
+receipt. Faults exist only in test PATH tools, not installer flags or endpoints.
+
+Local Linux checks pass: POSIX syntax, pinned ShellCheck v0.11.0, module tidy diff,
+lint config/format/run (zero issues), vet, full uncached tests (`23.541s`), full
+CGO-enabled race (`119.692s`), and the complete installer suite with GNU tar and
+isolated BSD tar/libarchive 3.7.4 using the Task 30 wrapper above. These fixtures
+also pass with both tar implementations in isolated network namespaces. Module
+verification and a local build/help/version smoke pass. These fixtures are not
+native Mac Task 31 execution. Tasks 32-33 remain separate follow-ups;
+no push, tag, credentials or publication in this task.

@@ -6,11 +6,32 @@ At clean `f809d10` (2026-09-06), Linux standard/full/race, POSIX syntax and
 pinned ShellCheck pass. Rebuilt `0.0.0-snapshot.f809d10` archives pass all four
 checksum/content/architecture/producer checks with `CI=true` and
 `vcs.modified=false`; extracted Linux amd64 help/version and PTY pass.
-Earlier GNU/BSD tar installer fixtures pass, but native hosted archive/installer
-jobs remain unexecuted. Owner-approved continuation does not waive support-floor
-or Mac Gatekeeper/signing decisions. No credentials, push or publication.
+Subsequently, `gh` verified all seven jobs of [run 34021805952](https://github.com/primaprashant/sei/actions/runs/34021805952)
+at exact head `54fbfb9`, including producer transfer and exact-archive execution
+on all four native runners. [Step evidence](release.md#phase-j-hosted-evidence).
+This does not waive support-floor or Mac Gatekeeper/signing decisions.
 
-## Task 30 Installer
+## Task 31 Upgrades
+
+From clean `54fbfb9`: [current receipt-v1 contract](release.md#task-31-verified-upgrades).
+`TestInstallerUpgrade` passes version-changing upgrade, no old execution for
+identification, strict malformed/ambiguous/mismatched ownership refusal, symlink/
+directory/FIFO refusal, observed path-change rechecks, exact permissions/bytes,
+and same-version deduplication. Injected staging/write/chmod/download/checksum/
+candidate/receipt preparation/receipt rename/final binary rename failures preserve
+old bytes; each fault case executes the old binary and retries successfully.
+`TestInstallerFresh` now accepts a second explicit same-version install. Existing
+unrelated-path safety assertions remain intact. A receipt without a binary still
+requires manual inspection/relocation.
+
+Local syntax/pinned ShellCheck, tidy/format/lint (zero issues)/vet, uncached full
+tests (`23.541s`), full CGO race (`119.692s`) and complete GNU/BSD tar installer
+suites pass. Task 31 native hosted results are pending, not implied by Phase J
+CI. Tasks 32-33 and external floor/Mac trust gates remain open. No push/tag.
+Both tar suites also pass with networking disabled; module verification and local
+build/help/version smoke pass.
+
+## Task 30 Installer (Historical)
 
 2026-09-06, sequentially after `b822902`: fresh-only installer and native CI
 ShellCheck pins implemented. [Contract and limits](release.md#task-30-fresh-installer).
@@ -40,9 +61,9 @@ through the test parent's PATH; [reproduction details](release.md#task-30-review
 Both tar fixture runs also pass in an isolated network namespace. Review rerun:
 syntax/pinned ShellCheck, tidy/format/lint/vet, full tests (`22.578s`), full race
 (`116.626s`) and whitespace checks pass; lint reports zero issues.
-Task 31 upgrades and Task 32 broader missing-utility/permission/interruption
-tests remain open. Native Linux arm64/macOS installer execution remains pending
-remote CI, not established by Linux BSD tar tests, uname mocks or cross-builds.
+At that checkpoint, Tasks 31-32 and native CI remained open; the Task 31 and
+Checkpoint J sections above record subsequent upgrades and hosted results.
+Linux BSD tar tests, uname mocks and cross-builds alone are not native evidence.
 Task 28 floors/support approval and Task 29 Mac Gatekeeper remain release blockers.
 
 ## Task 29 Trust Gate

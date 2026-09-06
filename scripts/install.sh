@@ -19,6 +19,22 @@ valid_version() {
         END { exit bad || NR != 1 }'
 }
 absent() { [ ! -e "$1" ] && [ ! -L "$1" ]; }
+regular() { [ ! -L "$1" ] && [ -f "$1" ]; }
+conflict() { fail 'unrecognized sei or receipt path; inspect and relocate existing paths manually before retrying.'; }
+unchanged_binary() {
+    if [ -z "$old_record" ]; then absent "$install_dir/sei"
+    else
+        regular "$install_dir/sei" && [ -x "$install_dir/sei" ] &&
+            [ "$(digest "$install_dir/sei")" = "$old_digest" ]
+    fi
+}
+unchanged_receipt() {
+    if [ -z "$receipt_digest" ]; then absent "$install_dir/.sei-install-receipt"
+    else
+        regular "$install_dir/.sei-install-receipt" &&
+            [ "$(digest "$install_dir/.sei-install-receipt")" = "$receipt_digest" ]
+    fi
+}
 digest() {
     if [ "$sha_tool" = sha256sum ]; then
         sum_output=$(sha256sum < "$1") || return 1
@@ -70,15 +86,36 @@ if [ "$dir_set" = false ]; then
 fi
 case "$install_dir" in /*) ;; *) install_dir=$PWD/$install_dir ;; esac
 printf '%s\n' "$install_dir" | awk 'NR != 1 || /[[:cntrl:]]/ { bad=1 } END { exit bad }' || fail 'install directory contains control characters'
-if ! absent "$install_dir/sei" || ! absent "$install_dir/.sei-install-receipt"; then
-    fail 'existing sei or receipt path; automatic replacement is unavailable. Inspect and relocate existing paths manually before retrying.'
-fi
 mkdir -p "$install_dir" || fail 'cannot create install directory; choose a user-writable --install-dir (no sudo)'
 # Keep a sentinel so command substitution cannot hide trailing path newlines.
 install_dir=$(CDPATH='' cd -P "$install_dir" && pwd -P && printf '.') || fail 'cannot resolve install directory'
 install_dir=${install_dir%.}
 install_dir=${install_dir%?}
 printf '%s\n' "$install_dir" | awk 'NR != 1 || /[[:cntrl:]]/ { bad=1 } END { exit bad }' || fail 'resolved install directory contains control characters'
+old_record='' old_digest='' receipt_digest=''
+if ! absent "$install_dir/sei" || ! absent "$install_dir/.sei-install-receipt"; then
+    if ! regular "$install_dir/sei" || [ ! -x "$install_dir/sei" ] ||
+        ! regular "$install_dir/.sei-install-receipt"; then conflict; fi
+    receipt_digest=$(digest "$install_dir/.sei-install-receipt") || conflict
+    # Accept only canonical v1 records, with no duplicate version or digest.
+    awk '
+        NR == 1 { if ($0 != "sei-install-receipt-v1") bad=1; next }
+        $1 !~ /^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/ { bad=1 }
+        NF != 2 || $0 != $1 " " $2 || length($2) != 64 || $2 ~ /[^0-9a-f]/ { bad=1 }
+        versions[$1]++ || digests[$2]++ { bad=1 }
+        END { exit bad || NR < 2 || NR > 3 }' "$install_dir/.sei-install-receipt" || conflict
+    {
+        IFS= read -r header || conflict
+        [ "$header" = sei-install-receipt-v1 ] || conflict
+        while IFS= read -r record; do
+            valid_version "${record% *}" || conflict
+        done
+        [ -z "$record" ] || conflict
+    } < "$install_dir/.sei-install-receipt"
+    old_digest=$(digest "$install_dir/sei") || conflict
+    old_record=$(awk -v sum="$old_digest" 'NR > 1 && $2 == sum { print }' "$install_dir/.sei-install-receipt") || conflict
+    [ -n "$old_record" ] || conflict
+fi
 stage=$(mktemp -d "$install_dir/.sei-install.XXXXXXXX") || fail 'cannot create private install stage'
 trap 'rm -rf "$stage"' 0
 trap 'exit 1' HUP INT TERM
@@ -117,14 +154,19 @@ chmod 755 "$stage/sei" || fail 'cannot make candidate executable'
 binary_digest=$(digest "$stage/sei") || fail 'cannot hash candidate'
 case "$binary_digest" in ''|*[!0-9a-f]*) fail 'invalid candidate digest' ;; esac
 [ "${#binary_digest}" -eq 64 ] || fail 'invalid candidate digest length'
-printf 'sei-install-receipt-v1\n%s %s\n' "$tag" "$binary_digest" > "$stage/receipt" || fail 'cannot prepare receipt'
-if ! absent "$install_dir/sei" || ! absent "$install_dir/.sei-install-receipt"; then
-    fail 'install paths appeared during preparation'
+candidate_record="$tag $binary_digest"
+if [ -n "$old_record" ] && [ "$old_record" != "$candidate_record" ]; then
+    [ "${old_record% *}" != "$tag" ] && [ "$old_digest" != "$binary_digest" ] || fail 'ambiguous candidate version/digest'
+    printf 'sei-install-receipt-v1\n%s\n%s\n' "$old_record" "$candidate_record" > "$stage/receipt" || fail 'cannot prepare receipt'
+else
+    printf 'sei-install-receipt-v1\n%s\n' "$candidate_record" > "$stage/receipt" || fail 'cannot prepare receipt'
 fi
+if ! unchanged_binary || ! unchanged_receipt; then fail 'install paths changed during preparation'; fi
+receipt_digest=$(digest "$stage/receipt") || fail 'cannot hash prepared receipt'
 # No hostile concurrent-writer or crash-durability guarantee. Receipt first:
 # a failed final rename may leave a prepared record, never an unowned binary.
 mv "$stage/receipt" "$install_dir/.sei-install-receipt" || fail 'cannot commit receipt; binary not installed'
-absent "$install_dir/sei" || fail 'executable path appeared; prepared receipt retained'
+if ! unchanged_binary || ! unchanged_receipt; then fail 'install paths changed; prepared receipt retained'; fi
 mv "$stage/sei" "$install_dir/sei" || fail 'cannot commit binary; prepared receipt retained'
 quoted_dir=$(printf '%s' "$install_dir" | sed "s/'/'\\\\''/g")
 printf 'Installed sei %s at %s/sei\n' "$version" "$install_dir"
