@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Task 19 implemented; Linux verified. Phase F native checks pass; Task 19 native execution and human acceptance remain pending.
+**Status:** Task 20 implemented; Linux verified. Phase F native checks pass; Tasks 19-20 native execution and human acceptance remain pending. Task 21 untouched.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -275,7 +275,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 - [x] Show headers and exact `a b c d e f h i o` / uppercase destination mappings, persistent pending `g` without timeout, consumed invalid continuations, and effective Esc/quit behavior. Ignore recognized paste input.
 - [x] `?` exposes full sanitized name/path and the shared-discovery disclaimer; focus/scope/agent are readable without color, and navigation does not erase a displayed error. All 1-9 slots are addressable even while final layout dimensions remain provisional.
 
-**Verification:** `go test -count=1 -run 'Test(Navigation|KeySequence|Help|Refresh)' .`; manual one/three/nine-agent navigation and long-name inspection, including `g` then a would-be action key.
+**Verification:** `go test -count=1 -run 'Test(Navigation|KeySequence|Help|SelectionRefresh)' .`; manual one/three/nine-agent navigation and long-name inspection, including `g` then a would-be action key.
 
 **Verified (2026-09-05):** Focused/standard/build/race checks and disposable 1/3/9-agent Linux PTY smoke pass (100x30, xterm-256color, no-color): navigation, long-name help, consumed `ga`, paste, pending quit, restored termios, destinations absent. Layout provisional; mutations disabled; native macOS/SSH and lifecycle proof deferred.
 
@@ -566,11 +566,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Audit the integrated state machine now that every action exists, filling interaction regressions in the owning code rather than adding a separate input layer.
 
 **Acceptance criteria:**
-- [ ] Cover every configured/unconfigured focus/add key, uppercase distinction, removal context, empty/blocked row, pending `g` with consumed continuation, Esc, help, and paste using table-driven model tests.
-- [ ] Test cross-state precedence: help/busy/pending-quit reject mutations, quit remains effective during a pending sequence, refresh is deferred, and no input captured while busy is later replayed.
-- [ ] Confirm initial first-row focus, independent panel selections, post-add stability, post-delete following/preceding selection, raw-name refresh preservation, and persistence only in the filesystem/config.
+- [x] Cover every configured/unconfigured focus/add key, uppercase distinction, removal context, empty/blocked row, pending `g` with consumed continuation, Esc, help, and paste using table-driven model tests.
+- [x] Test cross-state precedence: help/busy/pending-quit reject mutations, quit remains effective during a pending sequence, refresh is deferred, and no input captured while busy is later replayed.
+- [x] Confirm initial first-row focus, independent panel selections, post-add stability, post-delete following/preceding selection, raw-name refresh preservation, and persistence only in the filesystem/config.
 
 **Verification:** `go test -count=1 -run 'Test(KeyContract|InputPrecedence|Selection)' .`; complete the primary flow with one, three, and nine configured agents in isolated projects.
+
+**Evidence (2026-09-06):** Audit required no production fix. Added all-count (1-9) key/context and cross-state tables; reused existing removal/guard tests and renamed raw-refresh coverage to `TestSelectionRefresh`. Real-filesystem 1/3/9-agent model flows add three to one local destination, remove middle/last, quit/reload config, and snapshot all disposable paths to exclude session persistence. Go 1.27.1 standard/full/race/build and both macOS test cross-builds pass; focused 10x/race 5x and existing add/restart/replacement PTY 10x pass. Exact 1/3/9 primary flows are model integration, not PTY; native Task 20, human terminal/SSH acceptance remain pending. No Task 21 work.
 
 **Dependencies:** Task 19.
 

@@ -178,7 +178,7 @@ func TestHelp(t *testing.T) {
 	}
 }
 
-func TestRefresh(t *testing.T) {
+func TestSelectionRefresh(t *testing.T) {
 	for _, names := range [][]string{{"0", "a", "line\nb", "z"}, {"a", "z"}, {"a"}, nil} {
 		m := navigationModel(3)
 		for i := range m.panels {
