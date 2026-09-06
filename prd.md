@@ -411,7 +411,7 @@ Time the add-three/remove-two/quit task against the user's current shell workflo
 7. Filesystem work does not block navigation. Busy mutation inputs are rejected, not queued or replayed against a later selection. Normal quit waits for active work and restores the terminal; partial work after forced termination is a documented limitation.
 8. Unit, integration, terminal smoke, lint/format, module-hygiene, and race checks pass at their documented scope. All destructive/error scenarios have regression coverage, and no test touches the developer's real library or destination folders.
 9. A three-agent prototype and reproducible performance/usability report are reviewed by the owner. The workflow must improve on the existing shell process in real use; if it does not, revise the interaction before release rather than claim success from benchmark numbers alone.
-10. The prototype review resolves terminal minimum/overflow behavior and quantitative performance/artifact budgets, followed by measurement against those agreed targets. These are release-readiness decisions still open below, not already demonstrated results.
+10. The prototype review resolves terminal minimum/overflow behavior and quantitative performance/artifact budgets, followed by measurement against those agreed targets. Phase H records the approved layout and scoped Linux budgets; human workflow and native terminal acceptance remain release gates.
 
 ## Open Questions
 
@@ -420,8 +420,8 @@ These are intentional implementation/prototype follow-ups, not invitations to re
 | Question | When To Resolve |
 | --- | --- |
 | What repository/module path, license, initial release tag, and public installer URL will be used? | Before module initialization and distribution setup. |
-| What three-agent layout looks good with the user's actual folder names, and what terminal size/overflow behavior supports one through nine agents safely? | Visual prototype review before finalizing layout tests. |
-| What measured startup, navigation, filesystem latency, artifact-size budgets, and repeatable measurement protocol become release gates? | After the first representative release-build baseline. |
+| What three-agent layout and terminal minimum/overflow support one through nine agents safely? | Approved September 6, 2026: local above global, 80x24 minimum, focus-following windows; [decisions/evidence](docs/prototype.md#approved-layout-task-22). Native/human rendering acceptance pending. |
+| What measured latency/artifact budgets and protocol become release gates? | [Scoped Linux warm-fixture budgets](docs/performance.md#budget-decision) approved and passing; owner shell comparison and other environments remain open. |
 | What exact rooted filesystem operations and preflight algorithm enforce no-links/overlap rules, including missing ancestors and observed concurrent changes? | Filesystem implementation plan and platform-specific tests. |
 | How will strict JSON duplicate-key detection and configuration-save failure handling be implemented with minimal standard-library code? | Configuration implementation plan; parser acceptance rules are already fixed. |
 | What Linux floor, native architecture runners, terminal emulators, and SSH environments form the release support matrix? | CI/release plan; Linux/macOS amd64/arm64 scope is fixed. |

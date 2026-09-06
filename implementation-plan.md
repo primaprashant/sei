@@ -678,9 +678,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Checkpoint H: Tasks 22-24
 
-- [ ] Standard checks and approved-size view tests pass; undersized windows cannot start mutations.
+- [x] Standard checks and approved-size view tests pass; undersized windows cannot start mutations.
 - [ ] Owner approves the layout and quantitative gates, with measured evidence of workflow improvement.
 - [ ] Any observed usability/performance failure has a resolved follow-up before this checkpoint is marked complete.
+
+**Evidence:** Linux standard/race, both Mac cross-builds, 36-case PTY matrix, and 42-trial scoped budgets pass through `da8beca`. Layout/budgets approved; owner shell comparison and native theme/SSH acceptance remain open. No push or publication performed.
 
 ### Phase I: Release Verification Coverage
 
@@ -958,12 +960,12 @@ Repository identity, MIT licensing, and the release-version policy are confirmed
 | Gate | Recommendation / Question | Resolve Before |
 | --- | --- | --- |
 | Copyright and tag execution | Confirm copyright attribution and record the approved `v0.1.0` onward / first-usable `v1.0.0` policy. | Task 1 metadata; individual tags still need explicit execution authorization. |
-| New test tooling | Approve test-only PTY dependency and resolved terminal helper; approve pinned ShellCheck. No new application framework or installed-user runtime. | Task 9 / Task 29 respectively. |
+| New test tooling | PTY/terminal helper and Task 23 pinned test-only VT emulator approved; ShellCheck remains pending. No installed-user runtime added. | Tasks 9/23 approved; Task 29 pending. |
 | Unverifiable root safety | Keep inspection usable; allow removal with unavailable library contents if root relationships remain provable. Block only affected mutations when aliases/permissions make safety unknowable. | Task 8 safety review. |
 | Config write placement | Recommend rejecting config-file symlinks for writes and config saves inside any managed library/destination root; preserve read-only loading where safe. Config-parent creation must not create skill destinations. Clarify before implementing because PRD does not specify config symlink/placement semantics. | Task 10 saving, verified in Task 12. |
 | Non-key interruptions | Recommend wait-and-restore for catchable SIGINT/SIGTERM, with documented best-effort SIGHUP/disconnected-terminal behavior; SIGKILL remains forced termination. Ctrl+C wait behavior is already fixed. | Task 9 lifecycle implementation. |
-| Layout and minimum | Approve exact three-agent dimensions/overflow and behavior for 1-9 agents using actual prototype evidence. No number is assumed here. | Task 22. |
-| Quantitative budgets | Approve measurement protocol, sample counts, latency/artifact limits, and observed improvement over shell workflow. | Task 23. |
+| Layout and minimum | Approved local-above-global, 80x24 minimum, 143x35/148x39 checks and focus-following 1-9 overflow. Human/native acceptance open. | Task 22 implemented; Checkpoint H acceptance pending. |
+| Quantitative budgets | [Scoped Linux protocol/limits](docs/performance.md) approved and passing; owner shell comparison and other environments open. | Task 23 partial; owner permits Task 24 sequencing. |
 | Native support floor access | Approve/test proposed Ubuntu 22.04/5.15 floor; arrange macOS 13 amd64/arm64 access or explicitly revise an unsupported claim. | Task 28, begin arranging during Task 4. |
 | Signing/notarization/provenance | Decide using clean-machine evidence; approve credentials/permissions and enumerate small implementation follow-ups if needed. | Task 29; blocks Task 34. |
 | Public remote actions | Confirm repository creation/push, candidate publication, and final publication separately. This plan itself grants none of those actions. | Tasks 1, 35, 36 as applicable. |
