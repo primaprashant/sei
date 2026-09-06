@@ -1,12 +1,29 @@
 # sei
 
-A small terminal tool for copying skill folders from a personal library to
-configured agent destinations and removing installed copies. Not a marketplace,
-agent launcher, or skill runner. Normal use has no network access, telemetry,
-or automatic updates.
+A small terminal UI for copying skills from your personal library into coding
+agents' project or global folders, and removing them when you're done.
 
-**Replacement and removal are permanent, with no confirmation or undo.** Try
-disposable folders first.
+## Purpose
+
+Skills are useful, but you may not want every skill available for every task.
+An agent reading an unwanted skill can introduce irrelevant instructions and
+steer its work in an unexpected direction.
+
+Keeping a separate collection lets you choose which skills to make available.
+sei makes the repeated copying and removing easier, especially when you use
+several coding agents.
+
+### Is this for you?
+
+sei is useful when all three sound familiar:
+
+- You maintain your own collection of skills you've found useful.
+- You prefer to make only task-relevant skills available to your agents.
+- You find copying and removing skills across projects or agents tedious.
+
+If you're happy leaving your skills installed, you may not need sei.
+It manages configured folders; it cannot tell you everything an agent discovers
+or control what it has already loaded.
 
 ## Install
 
@@ -50,115 +67,83 @@ Remove any PATH entry you added only if no longer needed.
 
 ## Setup
 
-1. Prepare a library of skill folders, separate from destination roots.
-2. Run `sei` from the intended project directory. The launch directory is the project; sei does not search for a Git root.
-3. First-run setup asks for the library and agent destinations. Review paths and order before saving.
+1. Keep your skill folders in a separate library, such as `~/skill-library`.
+2. Run `sei` from your project directory.
+3. First-run setup asks for your library and agent destinations. Choose your paths
+   and save to start browsing.
+
+Setup offers Claude Code, Codex, OpenCode, Pi, and Cursor presets, plus custom
+agents. All names and paths are editable.
 
 ```sh
-sei setup
-sei --project "$HOME/work/example"
-sei --config "$HOME/sei-test.json" --project "$HOME/work/example"
-sei --help
-sei --version
+sei setup                         # Change your configuration
+sei --project ~/work/my-project    # Use a different project directory
 ```
 
-Global options go before `setup`. Explicit setup edits valid existing config and
-exits after saving; malformed config fails instead of being silently replaced.
-Setup creates config parents/files, never the library or destinations.
+The launch directory is the default project directory; sei does not search for
+a Git root. Setup saves configuration but does not create your library or
+agent destinations.
 
-In setup, Tab/Up/Down selects fields; Ctrl+U clears. Ctrl+A adds a preset/custom
-agent, Ctrl+D removes it, and Ctrl+K/J reorders it. Enter previews and saves;
-`e` returns to editing and `y` confirms replacing config. Esc/Ctrl+C cancels.
-Recognized paste is ignored.
+## Configuration
 
-### Configuration
+Setup writes the configuration for you. To edit it manually, use:
 
-Linux uses `$XDG_CONFIG_HOME/sei/config.json` or `~/.config/sei/config.json`.
-macOS uses `~/Library/Application Support/sei/config.json`, ignoring XDG.
+- **Linux:** `$XDG_CONFIG_HOME/sei/config.json`, or `~/.config/sei/config.json`.
+- **macOS:** `~/Library/Application Support/sei/config.json`.
 
 ```json
 {
   "library": "~/skill-library",
   "agents": [
     {"name": "Claude Code", "global": "~/.claude/skills", "local": ".claude/skills"},
-    {"name": "Codex", "global": "~/.agents/skills", "local": ".agents/skills"},
-    {"name": "OpenCode", "global": "~/.config/opencode/skills", "local": ".opencode/skills"}
+    {"name": "Codex", "global": "~/.agents/skills", "local": ".agents/skills"}
   ]
 }
 ```
 
-Configure 1-9 ordered agents with unique, nonempty names and nonempty paths.
-Setup also offers Pi and Cursor presets; all names and paths are editable.
-JSON is strict: unknown/duplicate keys, wrong types, nulls, and trailing values
-are rejected. There is no config merging.
+`library` is your source collection. Each agent's `global` folder serves all
+projects; its `local` folder is relative to the current project.
+Library and global paths must be absolute or start with `~/`. Local paths must
+stay inside the project, and all library and destination roots must be separate.
 
-Library/global paths must be absolute or begin with `~/`; no other shell expansion
-is performed. Local paths must stay inside the project, including through aliases.
-Roots cannot overlap each other or the library; the config is also protected.
-Relative `--config`/`--project` paths resolve from launch cwd; relative Linux
-`XDG_CONFIG_HOME` is rejected. Restart after editing JSON; refresh does not reload it.
+Configure 1–9 agents; their order determines the keyboard slots below.
+Restart sei after editing the file. Use `sei --config /path/to/config.json`
+to choose a different config, or `sei --help` for all options.
 
 ## Controls
 
-The library is on the left, locals above globals on the right. Config order sets
-agent slots. Minimum terminal size is **80x24**; smaller windows disable new
-mutations but allow quitting and completion of active work.
+The library is on the left, project folders at the top right, and global folders
+below them. Use a terminal of at least **80×24**.
 
-| Input | Action |
+A **slot** is an agent's position in your configuration: the first agent is slot 1,
+the second is slot 2, and so on.
+
+| Key | Action |
 | --- | --- |
-| Up / Down | Move selection; scroll expanded help. |
-| `0` | Focus library. |
-| `1` ... `9` | Focus local agent slot. |
-| `g`, then `1` ... `9` | Focus global agent slot. |
-| `x` | Permanently remove selected destination folder. Uppercase `X` does nothing. |
-| `r` | Refresh listings, not config. |
-| `?` | Toggle help, including full escaped names, paths, and errors. |
-| Esc | Close help or cancel pending `g`. |
-| `q` / Ctrl+C | Quit after any active mutation finishes. |
+| Up / Down | Move selection, or scroll help. |
+| `0` | Focus the library. |
+| `1`–`9` | Focus an agent's project folder. |
+| `g`, then `1`–`9` | Focus an agent's global folder. |
+| `x` | Permanently remove the selected skill from a destination. |
+| `r` | Refresh folder listings. |
+| `?` | Show help, full names, paths, and errors. |
+| Esc | Close help or cancel a pending `g`. |
+| `q` / Ctrl+C | Quit after any active copy or removal finishes. |
 
-Add keys work only from library focus:
+With a skill selected in the library, use these keys to copy it:
 
-| Slot | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+| Agent slot | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Local | `a` | `b` | `c` | `d` | `e` | `f` | `h` | `i` | `o` |
+| Project | `a` | `b` | `c` | `d` | `e` | `f` | `h` | `i` | `o` |
 | Global | `A` | `B` | `C` | `D` | `E` | `F` | `H` | `I` | `O` |
 
-Unconfigured slots do nothing. Add retains library focus. Help and recognized
-paste cannot trigger mutations. Navigation stays responsive during work, but
-additional mutations are rejected, not queued. Focus and selections are not saved.
+For example, `a` copies to the first agent's project folder; `A` copies to its
+global folder. Selection stays in the library so you can keep adding skills.
 
-## Filesystem Behavior
+## How changes work
 
-- **Add deletes the entire same-named destination before copying.** No merge, backup, Git check, trash, or rollback. Local edits and destination-only files are lost.
-- Preflight failures preserve the old tree; later failures can leave missing or partial output. Inspect the reported target before retrying.
-- The library is read-only. Immediate ordinary directories, including dotfolders such as `.git`, are listed without parsing `SKILL.md`; loose files are ignored.
-- Skill symlinks and internal links/special files block mutation. Configured-root symlinks are allowed only when boundary checks pass.
-- Copies include nested/hidden files and executable bits, subject to umask, but not ownership, timestamps, ACLs, or xattrs.
-- Only add creates missing destinations. Missing and inaccessible roots are shown differently.
-- Quit and SIGINT/SIGTERM/SIGHUP wait for active work. Forced termination can leave partial changes. There is no multi-process lock, source snapshot, crash recovery, or hostile-writer guarantee.
-
-sei shows configured folder contents, not everything an agent discovers or loads.
-Other agents may load skills from the same folders.
-
-Setup and browsing require terminal stdin/stdout; help/version do not. Exit status
-is `0` for ordinary quit/cancel, `1` for startup/save/runtime failure (including
-active work failing after quit was requested), and `2` for invalid CLI syntax.
-A recoverable in-TUI error followed by a later ordinary quit returns `0`.
-
-## Development
-
-This is a personal tool, not an enterprise platform. Keep changes and process small.
-
-- [Product vision](https://github.com/primaprashant/sei/blob/main/docs/product-vision.md): original motivation and wording, preserved as written; its PRD reference is historical.
-- [Development guide](https://github.com/primaprashant/sei/blob/main/docs/development.md): build/tests, source map, and UI changes.
-- [Filesystem safety](https://github.com/primaprashant/sei/blob/main/docs/filesystem-safety.md): constraints to preserve when changing destructive operations.
-- [Release guide](https://github.com/primaprashant/sei/blob/main/docs/release.md): existing automation and installer behavior.
-
-CI exercises Linux/macOS on both architectures; this is not an all-distro or
-minimum-OS guarantee. Windows, Homebrew, and self-update are not provided.
-For bugs, include version, OS/CPU, terminal size, reproduction steps, and the full
-error. Use disposable data and redact private paths/content.
-
-## License
-
-MIT. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
+- Your source library stays unchanged.
+- Adding replaces the entire same-named destination, including local edits.
+- **Replacement and removal are immediate, with no confirmation or undo.**
+- Changes persist after quitting. Failed operations can leave missing or partial
+  output; inspect the reported destination before retrying.

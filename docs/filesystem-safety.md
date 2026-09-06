@@ -2,6 +2,12 @@
 
 ## Paths And Boundaries
 
+Configuration uses strict JSON: unknown/duplicate keys, wrong types, nulls, and
+trailing values are rejected, with no merging. Agents need unique, nonempty names
+and nonempty paths. Only `~/` expansion is supported for library/global paths.
+Relative `--config`/`--project` paths resolve from launch cwd. Linux rejects
+relative `XDG_CONFIG_HOME`; macOS ignores XDG. Refresh does not reload config.
+
 - `config.go` preserves raw absolute paths: cleaning `link/..` before traversal
   changes its meaning. `roots.go` walks components before normalization; configured
   directory symlinks are allowed, but dangling links, loops, non-directories and
@@ -24,6 +30,13 @@
   and no-skill-symlink checks. Only explicit adds create missing destination parents.
 
 ## Two Replacement Behaviors
+
+Listings include immediate ordinary directories, including dotfolders such as
+`.git`, without parsing `SKILL.md`; loose files are ignored. Missing and
+inaccessible roots are shown differently. Copies include nested/hidden files and
+executable bits, but not ownership, timestamps, ACLs, or xattrs. Skill symlinks and
+internal links/special files block mutation; configured-root symlinks are subject
+to the boundary checks above.
 
 **Skills (`mutation_fs.go`, `mutation_copy.go`):** inventory source and destination
 before replacement deletion, including reading/closing source files in preflight.

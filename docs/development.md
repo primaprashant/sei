@@ -52,6 +52,13 @@ Try add/replace/remove, help, resize and quit; rerun to inspect persistence. Nev
 
 ## UI Invariants
 
+In setup, Tab/Up/Down selects fields; Ctrl+U clears. Ctrl+A adds a preset/custom
+agent, Ctrl+D removes it, and Ctrl+K/J reorders it. Enter previews and saves;
+`e` returns to editing and `y` confirms replacing config. Esc/Ctrl+C cancels.
+Recognized paste is ignored. Explicit `sei setup` edits valid config and exits
+after saving; malformed config fails rather than being replaced. Global CLI
+options must precede `setup`.
+
 Panel IDs are **library, configured globals, corresponding locals**; rendering puts library left,
 **locals above globals**, with up to three agent columns. Never reorder IDs to match rendering:
 slot/key mappings depend on config order. Focus windows retain access to all nine agents.
@@ -74,6 +81,10 @@ without repeating renderer cleanup. Errors reach escaped stderr after restoratio
 pending-quit operation failure exits 1, later idle quit after recoverable failure 0.
 SIGKILL cannot clean up; disconnected terminals may reject restoration. See
 [filesystem safety](filesystem-safety.md) for mutation guarantees and limits.
+
+Setup and browsing require terminal stdin/stdout; help/version do not. Exit status
+is `0` for ordinary quit/cancel, `1` for startup/save/runtime failure, and `2` for
+invalid CLI syntax. Focus and selections are not saved between runs.
 
 ## Tests
 
