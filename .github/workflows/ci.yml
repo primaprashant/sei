@@ -183,6 +183,9 @@ jobs:
           sh -n scripts/install.sh
           ./.bin/shellcheck -s sh scripts/install.sh
 
+      - name: Offline installer failure matrix (native POSIX shells)
+        run: go test -count=1 -run '^TestInstaller' -v .
+
       - name: Standard checks
         env:
           HOME: ${{ runner.temp }}/sei-home

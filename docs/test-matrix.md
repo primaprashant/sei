@@ -11,7 +11,35 @@ at exact head `54fbfb9`, including producer transfer and exact-archive execution
 on all four native runners. [Step evidence](release.md#phase-j-hosted-evidence).
 This does not waive support-floor or Mac Gatekeeper/signing decisions.
 
-## Task 31 Upgrades
+## Task 32 Installer Matrix
+
+Implemented after `abdb967`. `go test -count=1 -run '^TestInstaller' -v .`
+runs the shared matrix under `sh`, Bash `--posix`, and `dash` when available
+(explicit skip otherwise). CI now has a named verbose installer step on every
+native runner; existing pinned ShellCheck remains unchanged.
+
+| Subtest Under `TestInstaller/<shell>` | Current Coverage |
+| --- | --- |
+| `Fresh`, `PATH`, `Invalid` | Eight OS/architecture alias mappings; latest resolved once even when its next response changes; exact tag-pinned downloads; quoted custom/default/relative paths and executable PATH guidance; colon-plus-quotes paths print no export and run absolutely, even with false-matching PATH fragments; unsupported hosts/options/controls. |
+| `Utilities`, `Directory` | Each required external utility missing; actual shasum fallback and neither hash utility; real non-root unwritable stage, file parent, direct/resolved control-character paths. Permission test explicitly skips root. |
+| `BrokenInputs` | Missing/duplicate/non-exact/malformed checksum entries, mismatch; unavailable latest/tag, invalid latest URL/tag including trailing newline; failed/partial archive and manifest; malformed tar/gzip, truncated gzip and concatenated archives. |
+| `ArchiveSafety`, `Fresh/metadata` | Exact four ordinary members; duplicate executable/documentation, traversal/absolute/nested/control/backslash names, links/FIFO/character/block devices; unsafe PAX/GNU long paths/links; harmless metadata accepted without filesystem extraction. Inherited tar/gzip controls cannot alter validation. |
+| `Upgrade` | Original ownership/failure/retry cases plus receipt and binary symlink/byte rechecks at both boundaries; exact candidate newline and empty-stderr contract; guidance failure before commit and truthful post-commit cleanup failure output. |
+| `Interruption` | Separate `installer_signal_test.go`: pipe-acknowledged HUP/INT/TERM before receipt, after receipt, after binary, fresh and upgrade. Exact retained bytes/receipts, usable live executable, retry/refusal contract, private-stage cleanup, unrelated files/links/similarly named stages preserved; process-group timeout cleanup, no sleeps. |
+
+Local Linux verification passes: repeated GNU tar 1.35 and BSD tar/libarchive
+3.7.4 suites, including network-namespace-isolated runs with module downloads
+disabled; sh/dash/bash POSIX syntax, pinned ShellCheck 0.11.0, module verify/tidy,
+format/lint/vet, uncached full and CGO race suites. BSD tools remain isolated under
+`/tmp/opencode`, selected through the test parent's PATH, not production switches.
+Local build/help/version, both Darwin test cross-builds, workflow YAML/run-block
+syntax and whitespace checks pass; `actionlint` is unavailable. Cross-builds are
+compilation checks only.
+These are shell fixtures, not foreign binary execution or native macOS evidence.
+Task 32 hosted/native execution, minimum-OS/support approval, Mac download trust,
+and live public release verification remain pending. Task 33 is not completed here.
+
+## Task 31 Upgrades (Historical)
 
 From clean `54fbfb9`: [current receipt-v1 contract](release.md#task-31-verified-upgrades).
 `TestInstallerUpgrade` passes version-changing upgrade, no old execution for
@@ -27,7 +55,7 @@ requires manual inspection/relocation.
 Local syntax/pinned ShellCheck, tidy/format/lint (zero issues)/vet, uncached full
 tests (`23.541s`), full CGO race (`119.692s`) and complete GNU/BSD tar installer
 suites pass. Task 31 native hosted results are pending, not implied by Phase J
-CI. Tasks 32-33 and external floor/Mac trust gates remain open. No push/tag.
+CI. Task 32 results are above; Task 33 and external floor/Mac trust gates remain open.
 Both tar suites also pass with networking disabled; module verification and local
 build/help/version smoke pass.
 

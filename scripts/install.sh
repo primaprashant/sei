@@ -66,7 +66,7 @@ while [ "$#" -gt 0 ]; do
         *) fail "unknown option: $1" ;;
     esac
 done
-for tool in awk cat chmod curl gzip mkdir mktemp mv rm sed tar uname; do
+for tool in awk chmod cmp curl gzip mkdir mktemp mv rm sed tar uname; do
     command -v "$tool" >/dev/null 2>&1 || fail "required utility missing: $tool"
 done
 if command -v sha256sum >/dev/null 2>&1; then sha_tool=sha256sum
@@ -74,10 +74,10 @@ elif command -v shasum >/dev/null 2>&1; then sha_tool=shasum
 else fail 'required utility missing: sha256sum or shasum'; fi
 [ "$tag" = latest ] || valid_version "$tag" || fail 'invalid version; expected vMAJOR.MINOR.PATCH[-PRERELEASE]'
 case "$(uname -s)/$(uname -m)" in
-    Linux/x86_64) target=linux_amd64 ;;
-    Linux/aarch64) target=linux_arm64 ;;
-    Darwin/x86_64) target=darwin_amd64 ;;
-    Darwin/arm64) target=darwin_arm64 ;;
+    Linux/x86_64|Linux/amd64) target=linux_amd64 ;;
+    Linux/aarch64|Linux/arm64) target=linux_arm64 ;;
+    Darwin/x86_64|Darwin/amd64) target=darwin_amd64 ;;
+    Darwin/arm64|Darwin/aarch64) target=darwin_arm64 ;;
     *) fail 'unsupported host; expected Linux x86_64/aarch64 or Darwin x86_64/arm64' ;;
 esac
 if [ "$dir_set" = false ]; then
@@ -122,7 +122,8 @@ trap 'exit 1' HUP INT TERM
 base=https://github.com/primaprashant/sei/releases
 if [ "$tag" = latest ]; then
     resolved=$(curl -q --fail --silent --show-error --location --proto '=https' \
-        --proto-redir '=https' --tlsv1.2 --output /dev/null --write-out '%{url_effective}' "$base/latest") || fail 'cannot resolve latest release'
+        --proto-redir '=https' --tlsv1.2 --output /dev/null --write-out '%{url_effective}' "$base/latest" && printf '.') || fail 'cannot resolve latest release'
+    resolved=${resolved%.}
     case "$resolved" in "$base/tag/"*) tag=${resolved#"$base/tag/"} ;; *) fail 'unexpected latest release URL' ;; esac
     valid_version "$tag" || fail 'invalid resolved release tag'
 fi
@@ -150,7 +151,8 @@ tar -xOzf "$stage/archive.tar.gz" sei > "$stage/sei" || fail 'cannot extract sei
 [ -s "$stage/sei" ] || fail 'empty executable'
 chmod 755 "$stage/sei" || fail 'cannot make candidate executable'
 "$stage/sei" --version > "$stage/version" 2> "$stage/stderr" || fail 'candidate --version failed'
-[ ! -s "$stage/stderr" ] && [ "$(cat "$stage/version")" = "sei $version" ] || fail 'candidate version mismatch'
+printf 'sei %s\n' "$version" > "$stage/expected-version" || fail 'cannot prepare version check'
+if [ -s "$stage/stderr" ] || ! cmp -s "$stage/version" "$stage/expected-version"; then fail 'candidate version mismatch'; fi
 binary_digest=$(digest "$stage/sei") || fail 'cannot hash candidate'
 case "$binary_digest" in ''|*[!0-9a-f]*) fail 'invalid candidate digest' ;; esac
 [ "${#binary_digest}" -eq 64 ] || fail 'invalid candidate digest length'
@@ -161,19 +163,23 @@ if [ -n "$old_record" ] && [ "$old_record" != "$candidate_record" ]; then
 else
     printf 'sei-install-receipt-v1\n%s\n' "$candidate_record" > "$stage/receipt" || fail 'cannot prepare receipt'
 fi
+quoted_dir=$(printf '%s' "$install_dir" | sed "s/'/'\\\\''/g") || fail 'cannot prepare invocation guidance'
 if ! unchanged_binary || ! unchanged_receipt; then fail 'install paths changed during preparation'; fi
 receipt_digest=$(digest "$stage/receipt") || fail 'cannot hash prepared receipt'
 # No hostile concurrent-writer or crash-durability guarantee. Receipt first:
 # a failed final rename may leave a prepared record, never an unowned binary.
 mv "$stage/receipt" "$install_dir/.sei-install-receipt" || fail 'cannot commit receipt; binary not installed'
-if ! unchanged_binary || ! unchanged_receipt; then fail 'install paths changed; prepared receipt retained'; fi
+if ! unchanged_binary || ! unchanged_receipt; then fail 'install paths changed after receipt commit; inspect paths before retrying'; fi
 mv "$stage/sei" "$install_dir/sei" || fail 'cannot commit binary; prepared receipt retained'
-quoted_dir=$(printf '%s' "$install_dir" | sed "s/'/'\\\\''/g")
 printf 'Installed sei %s at %s/sei\n' "$version" "$install_dir"
-case ":${PATH:-}:" in
-    *:"$install_dir":*) ;;
+case "$install_dir" in
+    *:*) printf 'Cannot add a directory containing : to PATH; use the absolute invocation below.\n' ;;
     *)
-        printf 'To add sei to PATH in your current shell, run:\n'
-        printf "export PATH='%s':\"\$PATH\"\n" "$quoted_dir" ;;
+        case ":${PATH:-}:" in
+            *:"$install_dir":*) ;;
+            *)
+                printf 'To add sei to PATH in your current shell, run:\n'
+                printf "export PATH='%s':\"\$PATH\"\n" "$quoted_dir" ;;
+        esac ;;
 esac
 printf "Run:\n'%s/sei'\n" "$quoted_dir"

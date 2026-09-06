@@ -8,13 +8,13 @@ All four archive checks pass with the exact producer revision and clean-source
 assertion; native Linux amd64 help/version/PTY and full standard/race/installer
 checks pass. Subsequent [Phase J hosted evidence](#phase-j-hosted-evidence) closes
 native CI execution at `54fbfb9`, not minimum-OS hosts, support approval or Mac
-download trust. Task 31 upgrades are verified locally below; no public release.
+download trust. Tasks 31-32 are verified locally below; their new native execution
+remains pending. No public release.
 
 Task 4 establishes ordinary PR/push CI. Task 27 adds local snapshot packaging
 with GoReleaser Community v2.18.0, not signing, tagging, uploading or publishing.
 Commits, pushes, credentials, branch protection, tags, and publication require
-explicit owner authorization. Task commits are authorized; pushing and publication
-are not.
+explicit owner authorization.
 
 ## Native CI
 
@@ -610,14 +610,14 @@ URL separators/query/fragment characters, empty values and repeated options
 are rejected. Control characters in install paths are rejected; ordinary spaces,
 apostrophes and relative paths are supported. `--help` prints usage only.
 
-Exactly these uname pairs are accepted, with no guessed aliases or emulation:
+Current uname mappings (Task 32 adds explicit aliases, not emulation):
 
 | uname -s / uname -m | Asset Target |
 | --- | --- |
-| Linux / x86_64 | linux_amd64 |
-| Linux / aarch64 | linux_arm64 |
-| Darwin / x86_64 | darwin_amd64 |
-| Darwin / arm64 | darwin_arm64 |
+| Linux / x86_64 or amd64 | linux_amd64 |
+| Linux / aarch64 or arm64 | linux_arm64 |
+| Darwin / x86_64 or amd64 | darwin_amd64 |
+| Darwin / arm64 or aarch64 | darwin_arm64 |
 
 Latest is resolved in one curl invocation against the fixed repository's
 `/releases/latest`, requiring the effective URL to be its `/releases/tag/<tag>`
@@ -627,7 +627,7 @@ curl disables curlrc loading with `-q`, fails HTTP errors, and permits only HTTP
 initial/redirect URLs with TLS 1.2 or later. No fake endpoint or application
 network configuration override exists.
 
-Prerequisites are POSIX shell/core utilities (`awk`, `cat`, `chmod`, `mkdir`,
+Prerequisites are POSIX shell/core utilities (`awk`, `chmod`, `cmp`, `mkdir`,
 `mv`, `rm`, `sed`, `uname`, shell `printf`/`pwd`/`test`), plus `curl`, GNU/BSD
 `tar`, `gzip`, `mktemp`, and either `sha256sum` or macOS's `shasum -a 256`.
 No sudo, shell-profile edits, package manager, Go, agent, Node or Python runtime
@@ -639,7 +639,10 @@ component. If absent, it prints `export PATH='<dir>':"$PATH"`, with the director
 shell-quoted and `$PATH` left literal for the user's current shell. It prepends
 the directory without adding a leading empty component and preserves the user's
 existing PATH value. Relative or differently spelled aliases are not treated as
-exact matches. The installer never edits profiles or claims PATH already changed.
+exact matches. Colon-containing directories remain valid install destinations,
+but cannot be a single PATH component: the installer prints that limitation and
+the absolute invocation, never an export. The installer never edits profiles or
+claims PATH already changed.
 
 ### Historical Fresh-Only Ownership
 
@@ -675,9 +678,8 @@ The concrete tag and digest are validated before recording. A receipt commit
 failure installs no binary; final binary-move failure retains the valid prepared
 receipt. Retrying currently refuses that receipt too, with manual inspection and
 relocation guidance. No cleanup trap deletes committed receipt/binary paths.
-Task 31 will validate these records against existing executable bytes and retain
-old plus candidate records before upgrades. There is no replacement/broad
-overwrite switch in Task 30, even for a recognized prior install.
+Task 31 now validates these records against existing executable bytes and retains
+old plus candidate records before upgrades. There is still no broad overwrite switch.
 
 Same-publisher checksums and local receipts are not independent publisher
 authentication; the Task 29 attestation policy remains separate. No hostile
@@ -701,8 +703,8 @@ approved [platform hashes](#shellcheck-provenance) before extraction/execution,
 assert its exact version, and run `sh -n` plus `shellcheck -s sh`. Ordinary native
 Go tests include the installer suite, using each host's own tar and shell. No
 permissions, secrets or publication capabilities changed. Native hosted execution
-of these new changes remains pending; Task 32 still broadens utility failures,
-permissions, interruption and upgrade coverage.
+at that checkpoint was pending; Phase J evidence below records the later run.
+Task 32 coverage and its separate pending native gate are recorded below.
 
 Local Linux amd64 verification: installer syntax/pinned ShellCheck and focused
 offline fixtures pass; module tidy diff, linter config/format/lint (zero issues),
@@ -805,5 +807,36 @@ CGO-enabled race (`119.692s`), and the complete installer suite with GNU tar and
 isolated BSD tar/libarchive 3.7.4 using the Task 30 wrapper above. These fixtures
 also pass with both tar implementations in isolated network namespaces. Module
 verification and a local build/help/version smoke pass. These fixtures are not
-native Mac Task 31 execution. Tasks 32-33 remain separate follow-ups;
+native Mac Task 31 execution. Task 32 results follow; Task 33 remains pending;
 no push, tag, credentials or publication in this task.
+
+## Task 32 Broken Inputs
+
+Implemented sequentially after `abdb967`; [current test matrix](test-matrix.md#task-32-installer-matrix)
+records the offline checks. The installer accepts explicit amd64/arm64 uname
+aliases, preserves trailing newlines while validating the resolved latest URL,
+and compares candidate stdout byte-for-byte to `sei <version>\n` with empty
+stderr. Missing or extra trailing newlines are failures, not normalized output.
+Invocation quoting is prepared before either commit. An observed receipt/path
+change after receipt commit asks for inspection rather than falsely claiming the
+prepared receipt remains intact. Post-binary-commit diagnostics never claim the
+old binary was preserved. Colon-containing install paths retain a quoted absolute
+invocation but get an explicit cannot-add-to-PATH notice and no export, even when
+existing PATH fragments would otherwise falsely match the directory.
+
+Receipt-v1 ownership and receipt-first ordering are unchanged. PAX/GNU extension
+metadata is interpreted by the host tar: effective names and ordinary-file types
+must still satisfy the exact four-member contract. Only executable member bytes
+are streamed into installer-selected staging; archive paths, links, metadata and
+documentation are never extracted onto live paths. Checksums do not sandbox
+candidate execution or independently authenticate the publisher.
+
+Run `go test -count=1 -run '^TestInstaller' -v .` for all available shell cases,
+or `go test -count=1 -run '^TestInstaller/[^/]+/Upgrade' .` for upgrades.
+Signal cases use explicit pipes at each commit boundary, not sleeps; timeouts
+kill the fixture process group. All host/download/failure controls are test-only
+PATH mocks with no live-curl fallback, public flags or production environment hooks.
+Repeated GNU/BSD suites (also network-disabled), standard/full/race, syntax and
+pinned lint pass locally. CI visibly schedules these tests on all four native
+runners; no Task 32 hosted/native macOS result is claimed. Minimum-OS/support,
+Mac quarantine/Gatekeeper/signing decisions and live release gates remain open.

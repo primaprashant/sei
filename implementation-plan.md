@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase J native CI verified; Task 31 upgrades pass local standard/race and GNU/BSD tar checks. Tasks 32-33 are next; support-floor and Mac trust gates remain open.
+**Status:** Phase J native CI verified; Tasks 31-32 pass local standard/race and offline GNU/BSD tar checks. Task 33 and new native execution are pending; support-floor and Mac trust gates remain open.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -839,7 +839,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Evidence (2026-09-06):** Receipt-v1 ownership/rechecks and receipt-first upgrades pass focused, GNU/BSD, standard/race and ShellCheck tests. [Contract](docs/release.md#task-31-verified-upgrades). New native execution pending; no push/tag.
 
-**Verification:** `go test -count=1 -run 'TestInstallerUpgrade' .`; run lint/syntax checks and injected failures for write, permissions, validation, and final rename. Execute the old binary after each failed upgrade.
+**Verification:** `go test -count=1 -run '^TestInstaller/[^/]+/Upgrade' .`; run lint/syntax checks and injected failures for write, permissions, validation, and final rename. Execute the old binary after each failed upgrade.
 
 **Dependencies:** Task 30.
 
@@ -852,9 +852,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Close the installer failure cases with local reproducible tests before exposing it to public download conditions.
 
 **Acceptance criteria:**
-- [ ] Test supported architecture aliases, unsupported OS/CPU, invalid options/version, missing utilities, failed/partial download, checksum mismatch/missing/duplicate entries, unavailable release, and changing latest pointers.
-- [ ] Reject unsafe archive paths, links, special files, unexpected/duplicate executable entries, and malformed archives before installing; extraction never writes over live data or outside disposable staging.
-- [ ] Cover custom paths with spaces/quotes, PATH present/absent, unwritable directories, unrelated existing files, cleanup/interruption, and failed upgrades on Linux/macOS POSIX shells. Do not add network overrides to the application config for test convenience.
+- [x] Test supported architecture aliases, unsupported OS/CPU, invalid options/version, missing utilities, failed/partial download, checksum mismatch/missing/duplicate entries, unavailable release, and changing latest pointers.
+- [x] Reject unsafe archive paths, links, special files, unexpected/duplicate executable entries, and malformed archives before installing; extraction never writes over live data or outside disposable staging.
+- [x] Cover custom paths with spaces/quotes, PATH present/absent, unwritable directories, unrelated existing files, cleanup/interruption, and failed upgrades on Linux/macOS POSIX shells. Do not add network overrides to the application config for test convenience.
+
+**Evidence (2026-09-06, after `abdb967`):** Offline GNU/BSD suites repeat under sh/dash/bash POSIX; deterministic signal/receipt checks, full/race and lint pass. Colon-path review adds absolute-only guidance and false-PATH-match regression. [Matrix](docs/test-matrix.md#task-32-installer-matrix). Native Task 32 execution remains pending.
 
 **Verification:** `go test -count=1 -run 'TestInstaller' .`, `sh -n scripts/install.sh`, pinned ShellCheck; run tests against local/mocked downloads with no live GitHub dependency.
 
