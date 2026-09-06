@@ -260,6 +260,10 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 	}
 	finishBrowse := func() {
 		await("Configured folders")
+		raw, err := term.GetState(slave.Fd())
+		if err != nil || reflect.DeepEqual(before, raw) {
+			t.Fatalf("terminal did not enter raw mode: %v", err)
+		}
 		for _, flow := range browse {
 			flow(send, await, func(cols, rows uint16) {
 				t.Helper()

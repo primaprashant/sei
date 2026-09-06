@@ -46,7 +46,7 @@ fixtures and must never execute skill scripts.
 Reviewed on 2026-09-05 using read-only `gh api` queries and primary upstream
 sources:
 
-- The only action is [actions/checkout v7.0.1](https://github.com/actions/checkout/releases/tag/v7.0.1),
+- The checkout action is [actions/checkout v7.0.1](https://github.com/actions/checkout/releases/tag/v7.0.1),
   pinned to `3d3c42e5aac5ba805825da76410c181273ba90b1`. The upstream
   [tag ref](https://api.github.com/repos/actions/checkout/git/ref/tags/v7.0.1)
   resolves directly to that commit, not an unresolved annotated-tag object.
@@ -230,8 +230,10 @@ go mod download
 go mod verify
 ./.bin/goreleaser check
 GOPROXY=off ./.bin/goreleaser release --snapshot --clean
-# At the Task 27 base; use the actual metadata version on later commits.
-export SEI_RELEASE_DIST=dist SEI_RELEASE_VERSION=0.0.0-snapshot.c09ad3a
+export SEI_RELEASE_DIST=dist
+export SEI_RELEASE_VERSION=$(jq -er .version dist/metadata.json)
+export SEI_RELEASE_COMMIT=$(git rev-parse HEAD)
+test "$(jq -er .commit dist/metadata.json)" = "$SEI_RELEASE_COMMIT"
 go test -count=1 -run TestRelease -v .
 # Build the checker first, then run it with networking disabled. Its extracted
 # native child gets only PATH=, disposable HOME and XDG_CONFIG_HOME.
@@ -306,3 +308,135 @@ Checkpoint I rebuilt all four archives from clean commit `049000d` as
 `0.0.0-snapshot.049000d`; those now replace the earlier Task 27 artifacts in
 `dist/`. All checksums, archive/metadata tests and native help/version passed
 again. The earlier hashes above describe only the recorded Task 27 run.
+
+## Task 28 Exact Native Archives
+
+Phase J implementation and logical commits are authorized sequentially, without pushes or
+tags. Support-floor access and macOS Gatekeeper are **release blockers**, not
+waivers or support claims. Task 28 acceptance remains open until native evidence
+and owner support-table approval exist.
+
+CI now has one Linux amd64 producer using the verified Go 1.27.1 and Community
+GoReleaser v2.18.0 archives above. It builds the four snapshots once, validates
+them, and transfers only those four tarballs and their checksum manifest.
+The existing native matrix depends on that producer and downloads its exact
+artifact ID in the same workflow run. Ordinary source builds still test source;
+they are never substituted for release executables. Producer outputs supply the
+full checkout commit and metadata version, including PR merge commits. Each
+consumer asserts its checkout matches, verifies all archive hashes and embedded
+`vcs.revision`, rejects dirty CI binaries, and checks the snapshot commit suffix.
+Logs identify archive hashes and `vcs.modified`; local dirty snapshots are honest
+worktree evidence, not clean-commit release evidence.
+
+`TestReleaseArchives/<native-os>/<native-arch>/PTY` passes the checksum-verified,
+extracted executable directly to `runSetupPTY`. Disposable config/project/HOME,
+empty tool directory PATH, xterm-256color/no-color and a 200x40 real PTY are used.
+It waits for the browser, asserts raw mode, sends q, requires zero status and
+empty stderr, compares restored termios and checks ordered alternate-screen and
+cursor restoration with bounded deadlines. No application or wrapper is built
+by this test. The Go toolchain/modules are harness prerequisites only. Help and
+version still execute with literal `PATH=`. Existing ELF static/no-interpreter
+checks and Linux offline/no-runtime commands above are retained; empty PATH by
+itself is not network isolation. This is an early enter/quit gate, not the full
+final-artifact feature/PTY rehearsal required in Tasks 34-36.
+
+### Transfer Action Review
+
+Read-only `gh api` review on 2026-09-06 resolved upstream release/tag refs directly
+to commits and inspected each pinned `action.yml` plus upload/download source:
+
+| Action | Full Commit | Reviewed Behavior |
+| --- | --- | --- |
+| `actions/upload-artifact` v7.0.1 | `043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | Node 24; explicit file allowlist, missing files fail, default no overwrite/hidden files, artifact ID output; seven-day retention. |
+| `actions/download-artifact` v8.0.1 | `3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c` | Node 24; current-run artifact ID lookup without a supplied GitHub token; expected digest passed to client and mismatch fails. |
+
+Sources: upstream `repos/actions/{upload-artifact,download-artifact}/git/ref/tags/`
+and `contents/action.yml`, `src/upload/upload-artifact.ts`,
+`src/download-artifact.ts` at the listed SHAs. This is targeted source review,
+not a bundled-dependency audit. GoReleaser release API digests were rechecked;
+local tool archive checksums, executable byte comparison, and installed Go tree
+comparison passed. Existing tool provenance limitations still apply.
+Artifact transfer uses GitHub's scoped Actions runtime service, not a new
+publisher credential. `contents: read`, nonpersistent checkout credentials and
+all other disabled permissions remain unchanged; no security/write permission,
+release secret, signing, attestation or publication was added.
+
+### Support Table
+
+These are proposed floors, **not supported-platform claims**:
+
+| Environment | amd64 | arm64 | Disposition |
+| --- | --- | --- | --- |
+| Ubuntu 22.04, actual 5.15-series host kernel | Untested | Untested | Release blocker; newer kernel/container userspace does not qualify. |
+| macOS 13 | Untested | Untested | Release blocker; no Rosetta substitution. |
+| Ubuntu 24.04 CI labels | Pending remote archive run | Pending remote archive run | Newer-host evidence only, even when successful. |
+| macOS 15 CI labels | Pending remote archive run | Pending remote archive run | Not macOS 13 or Gatekeeper evidence. |
+| Local Debian, kernel 6.12.90+deb13.1-cloud-amd64 | Local verification below | Unavailable | Not an Ubuntu floor. |
+
+macOS quarantine/download/extraction/Gatekeeper validation remains Task 29's
+release blocker. CI extraction cannot establish the end-user trust path; do not
+remove quarantine or disable security checks to turn it green. No remote run of
+this change was available or initiated. Earlier native source CI success does
+not establish exact-archive execution for this worktree.
+
+### Floor Host Runbook
+
+1. Acquire native Ubuntu 22.04 machines/VMs actually booted into 5.15.x and macOS
+   13 machines/VMs on both architectures. Record image/provider/build identity,
+   CPU model/architecture, filesystem type/case behavior, terminal app/version,
+   TERM, dimensions, local versus SSH and `ssh -V`. Save `uname -a`, Linux
+   `/etc/os-release` and `findmnt -T .`, or `sw_vers`, `sysctl -n machdep.cpu.brand_string`,
+   `diskutil info .` and `sysctl -in sysctl.proc_translated` on Macs. Reject
+   translated execution, wrong architecture or newer floor kernels/OS versions.
+2. Preserve producer run URL, full commit, version, artifact ID/digest and the
+   four tarball hashes. Transfer that exact five-file bundle to each host. Check
+   out the producer commit and use its harness/docs, not a newer source checkout.
+   Do not run GoReleaser or rebuild sei on consumers. Prepare pinned Go/modules
+   for the harness separately, recording tool versions; never install a runtime
+   into the application's isolated environment.
+3. From that checkout, set `SEI_RELEASE_DIST` to the bundle's absolute directory,
+   `SEI_RELEASE_COMMIT` to the recorded full producer commit and
+   `SEI_RELEASE_VERSION` to the recorded producer version (not values guessed
+   from filenames). Run `go test -count=1 -run '^TestRelease' -v .` and retain
+   full output/status, hashes and environment capture. Require the matching PTY
+   subtest to execute, not only foreign metadata subtests. Missing host/tool/PTY
+   access is a blocker, never a skip-to-pass. Fixtures are disposable.
+4. On Linux, build only the checker with `go test -c -o bin/release.test .`, then
+   use the isolated-network checker command above. Repeat the four-file chroot
+   help/version proof with the recorded version/native archive filename and a
+   fresh directory. Record namespace availability and status separately; no
+   network isolation is inferred on macOS. Preserve actual downloaded macOS
+   quarantine/trust-path evidence separately for Task 29.
+5. Submit all four floor-host results and limitations for owner support-table
+   approval. Keep the floors and Gatekeeper blocked until resolved; schedule
+   full final-artifact feature/PTY tests again in Tasks 34-36.
+
+### Task 28 Local Evidence
+
+2026-09-06: Debian Linux x86_64, kernel `6.12.90+deb13.1-cloud-amd64`, ext4,
+Go `1.27.1`, OpenSSH `10.0p2 Debian-7+deb13u4`. Automated local PTY is
+200x40, `TERM=xterm-256color`, `NO_COLOR=1`; no human terminal or new SSH
+acceptance is claimed. Producer base is
+`afe864f4b1d4a699b03774abae82194de852f07e` plus uncommitted Task 28 changes;
+all four binaries honestly record `vcs.modified=true`.
+
+| Check | Result |
+| --- | --- |
+| Tool integrity/tree comparison, module verify/tidy diff, lint config/format/lint, vet, uncached full tests, application build | PASS; zero lint issues. |
+| Full CGO-enabled race suite | PASS, 115.194s; extracted release children themselves are not race-instrumented. |
+| Existing complete-restart PTY 5x; exact archive checks 5x; focused archive race | PASS, including native Linux amd64 PTY. Other three targets received metadata inspection only. |
+| Verified GoReleaser schema check and four-target snapshot | PASS, version `0.0.0-snapshot.afe864f`; no tags warning expected. |
+| Prebuilt archive checker inside isolated network namespace | PASS, including exact native help/version and PTY restoration. |
+| Fresh four-file chroot with empty PATH and no network/runtime/loader/shell | PASS, native help/version; PTY was tested separately outside the chroot. |
+| Both macOS test-harness cross-builds | PASS compilation only. |
+| Ruby/Psych YAML parse, every run block `bash -n`, diff whitespace | PASS; actionlint and ShellCheck unavailable. Hosted workflow validation/execution still open. |
+
+Current `dist/sei_0.0.0-snapshot.afe864f_checksums.txt` identifies these local
+artifacts, replacing Checkpoint I output, not promising reproducible rebuilds:
+
+| Target | SHA-256 |
+| --- | --- |
+| linux/amd64 | `6859a5eabd6fdeabe1de7b4df986f11c660bf52a953c092ce8b081136c1ee848` |
+| linux/arm64 | `68586fa85c7222552d3ba58b98da221035b889d2a4a79847d1bcfff44c41f9de` |
+| darwin/amd64 | `f37d34ed12a70e319be072b811f523b5de02aa84326c6ce339f76e0004b648c9` |
+| darwin/arm64 | `97ab4a28a6ac789e8b3c0838df73d11f35c7f5d998c4a24833268a6f046310f4` |

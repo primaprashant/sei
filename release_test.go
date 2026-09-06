@@ -9,6 +9,7 @@ import (
 	"debug/buildinfo"
 	"debug/elf"
 	"debug/macho"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -57,11 +58,18 @@ func TestReleaseConfig(t *testing.T) {
 func TestReleaseArchives(t *testing.T) {
 	dist := os.Getenv("SEI_RELEASE_DIST")
 	if dist == "" {
-		t.Skip("opt in with SEI_RELEASE_DIST and SEI_RELEASE_VERSION after a verified GoReleaser snapshot")
+		t.Skip("opt in with SEI_RELEASE_DIST, SEI_RELEASE_VERSION and SEI_RELEASE_COMMIT after a verified GoReleaser snapshot")
 	}
 	v := os.Getenv("SEI_RELEASE_VERSION")
 	if v == "" || strings.ContainsAny(v, "/\\ \n\t") || strings.HasPrefix(v, "v") {
 		t.Fatal("SEI_RELEASE_VERSION must be the expected version without v")
+	}
+	commit := os.Getenv("SEI_RELEASE_COMMIT")
+	if decoded, err := hex.DecodeString(commit); err != nil || len(decoded) != 20 {
+		t.Fatal("SEI_RELEASE_COMMIT must be the full producer commit")
+	}
+	if strings.Contains(v, "-snapshot.") && !strings.HasSuffix(v, "-snapshot."+commit[:7]) {
+		t.Fatal("snapshot version does not identify the producer commit")
 	}
 	manifest, err := os.ReadFile(filepath.Join(dist, "sei_"+v+"_checksums.txt"))
 	if err != nil {
@@ -151,10 +159,14 @@ func TestReleaseArchives(t *testing.T) {
 				if arch == "arm64" {
 					baselineKey, baseline = "GOARM64", "v8.0"
 				}
-				for key, want := range map[string]string{"GOOS": goos, "GOARCH": arch, "CGO_ENABLED": "0", "-trimpath": "true", baselineKey: baseline} {
+				for key, want := range map[string]string{"GOOS": goos, "GOARCH": arch, "CGO_ENABLED": "0", "-trimpath": "true", "vcs.revision": commit, baselineKey: baseline} {
 					if settings[key] != want {
-						t.Errorf("%s = %q, want %q", key, settings[key], want)
+						t.Fatalf("%s = %q, want %q", key, settings[key], want)
 					}
+				}
+				t.Logf("archive=%s sha256=%s producer=%s vcs.modified=%s", name, sums[name], commit, settings["vcs.modified"])
+				if os.Getenv("CI") == "true" && settings["vcs.modified"] != "false" {
+					t.Fatal("CI release source must be clean")
 				}
 				notices, err := os.ReadFile("THIRD_PARTY_NOTICES")
 				if err != nil {
@@ -228,6 +240,16 @@ func TestReleaseArchives(t *testing.T) {
 						t.Fatalf("%s: %v, stdout=%q, stderr=%q", flag, err, out, stderr.String())
 					}
 				}
+				t.Run("PTY", func(t *testing.T) {
+					root := t.TempDir()
+					if err := os.Mkdir(filepath.Join(root, "project"), 0700); err != nil {
+						t.Fatal(err)
+					}
+					path := filepath.Join(root, "config.json")
+					writeTestFile(t, path, validConfig)
+					// Pass the checksum-verified extracted bytes, never a go build substitute.
+					runSetupPTY(t, exe, root, path, "complete-restart", true)
+				})
 			})
 		}
 	}

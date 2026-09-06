@@ -19,7 +19,67 @@ env:
   GOSUMDB: sum.golang.org
 
 jobs:
+  archives:
+    name: Produce exact snapshot archives
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      commit: ${{ steps.snapshot.outputs.commit }}
+      version: ${{ steps.snapshot.outputs.version }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install verified producer tools
+        run: |
+          uname -a
+          test "$(uname -s)/$(uname -m)" = Linux/x86_64
+          tools=$(mktemp -d "$RUNNER_TEMP/sei-release-tools.XXXXXX")
+          curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            -o "$tools/go.tar.gz" https://go.dev/dl/go1.27.1.linux-amd64.tar.gz
+          curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            -o "$tools/goreleaser.tar.gz" https://github.com/goreleaser/goreleaser/releases/download/v2.18.0/goreleaser_Linux_x86_64.tar.gz
+          printf '%s  %s\n' \
+            63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445 "$tools/go.tar.gz" \
+            41cdf49b653784b03a08013dd99e382cd5d463049e915c2d818eaed182ae6197 "$tools/goreleaser.tar.gz" | shasum -a 256 --check -
+          tar -xzf "$tools/go.tar.gz" -C "$tools"
+          tar -xzf "$tools/goreleaser.tar.gz" -C "$tools" goreleaser
+          printf '%s\n' "$tools/go/bin" "$tools" >> "$GITHUB_PATH"
+          printf 'GOROOT=%s\n' "$tools/go" >> "$GITHUB_ENV"
+      - name: Build once and verify archive contract
+        id: snapshot
+        run: |
+          test "$(go env GOVERSION)" = go1.27.1
+          goreleaser --version
+          goreleaser --version | grep -Eq '^GitVersion: +2\.18\.0$'
+          go mod download
+          go mod verify
+          goreleaser check
+          GOPROXY=off goreleaser release --snapshot --clean
+          SEI_RELEASE_COMMIT=$(git rev-parse HEAD)
+          SEI_RELEASE_VERSION=$(jq -er .version dist/metadata.json)
+          export SEI_RELEASE_COMMIT SEI_RELEASE_VERSION
+          test "$(jq -er .commit dist/metadata.json)" = "$SEI_RELEASE_COMMIT"
+          SEI_RELEASE_DIST=dist go test -count=1 -run '^TestRelease' -v .
+          printf 'commit=%s\nversion=%s\n' "$SEI_RELEASE_COMMIT" "$SEI_RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+      - name: Transfer only the four archives and checksum manifest
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sei-archives-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            dist/*.tar.gz
+            dist/*_checksums.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - name: Reject tracked-file changes
+        if: always()
+        run: git diff --exit-code HEAD -- .
+
   checks:
+    needs: archives
     name: Native checks (${{ matrix.runner }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
@@ -130,6 +190,25 @@ jobs:
           XDG_CONFIG_HOME: ${{ runner.temp }}/sei-config
           CGO_ENABLED: '1'
         run: go test -race -count=1 ./...
+
+      - name: Download identical producer archives
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.archives.outputs.artifact-id }}
+          merge-multiple: true
+          path: dist
+          digest-mismatch: error
+
+      - name: Execute exact native archive including PTY restoration
+        env:
+          SEI_RELEASE_DIST: dist
+          SEI_RELEASE_VERSION: ${{ needs.archives.outputs.version }}
+          SEI_RELEASE_COMMIT: ${{ needs.archives.outputs.commit }}
+          HOME: ${{ runner.temp }}/sei-home
+          XDG_CONFIG_HOME: ${{ runner.temp }}/sei-config
+        run: |
+          test "$(git rev-parse HEAD)" = "$SEI_RELEASE_COMMIT"
+          go test -count=1 -run '^TestRelease' -v .
 
       - name: Linux amd64 coverage report
         if: matrix.runner == 'ubuntu-24.04'

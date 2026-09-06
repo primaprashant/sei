@@ -1,5 +1,33 @@
 # Destructive And Failure Test Matrix
 
+## Task 28 Archive Gate
+
+`TestReleaseArchives` checks all four exact producer archives, hashes, embedded
+commit/architecture/CPU baseline and dependencies; only the native target runs
+exact help/version and `/PTY` against its extracted executable. The reused
+`runSetupPTY` harness verifies raw entry, browser frame, q, zero status/empty
+stderr, termios and ordered cursor/alternate-screen restoration. It does not
+rebuild the application. Go/modules are harness-only; the application uses
+isolated HOME/config/project and empty PATH. Linux offline/four-file no-runtime
+proof remains separate from empty-PATH tests.
+
+CI builds once on Linux and transfers the same four tarballs/checksum manifest
+by producer artifact ID to the four existing native jobs. This workflow has not
+run remotely for Task 28. Local Linux evidence, action/tool review, exact-host
+capture commands and the floor-host runbook are in
+[release evidence](release.md#task-28-exact-native-archives).
+
+| Required Floor | amd64 | arm64 |
+| --- | --- | --- |
+| Ubuntu 22.04 with actual 5.15.x host kernel | Untested, release blocker | Untested, release blocker |
+| macOS 13, native execution | Untested, release blocker | Untested, release blocker |
+
+Newer CI hosts and local Debian are not floor evidence. Owner support-table
+approval and macOS download/quarantine/Gatekeeper remain release blockers, with
+no support claim or security bypass. Task 34-36 full final-artifact feature/PTY
+verification is still required; this early test intentionally exercises no
+copy/remove flow. No push, tag or remote run was initiated.
+
 ## Phase I Acceptance
 
 2026-09-06: [CI 34014725152](https://github.com/primaprashant/sei/actions/runs/34014725152)

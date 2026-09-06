@@ -772,6 +772,8 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Dependencies:** Task 27; complete workflow verification converges with Task 26 in Task 34 rather than blocking this early environment check.
 
+**Progress (2026-09-06):** Exact-archive PTY/commit checks and build-once native CI transfer implemented; Linux standard/race/offline archive checks pass. [Runbook](docs/release.md#task-28-exact-native-archives). Remote/floor execution and support approval remain blockers; owner permits following tasks without waiving these gates. No push/tag.
+
 **Files likely touched:** `release_test.go`, `.github/workflows/ci.yml`, `docs/release.md`, `docs/test-matrix.md`.
 
 **Estimated scope:** Medium, 4 files plus environment access; scheduling risk is not hidden in a code estimate.
