@@ -729,11 +729,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Package the working binary into the four actual release artifacts, without granting publication permission yet.
 
 **Acceptance criteria:**
-- [ ] Configure pinned GoReleaser Community for exactly Linux/macOS amd64/arm64, `CGO_ENABLED=0`, baseline CPU targets, stripped binaries, embedded version, `.tar.gz` archives, and SHA-256 checksums.
-- [ ] Use a stable asset contract: `sei_<version-without-v>_<os>_<arch>.tar.gz` and `sei_<version-without-v>_checksums.txt`; archives contain `sei`, README, MIT license, and any required third-party notices, not user config or fixtures.
-- [ ] Validate snapshot archives/checksums and run the extracted native binary's help/version; record exact tool/dependency provenance and verify runtime independence from Go/agent tools.
+- [x] Configure pinned GoReleaser Community for exactly Linux/macOS amd64/arm64, `CGO_ENABLED=0`, baseline CPU targets, stripped binaries, embedded version, `.tar.gz` archives, and SHA-256 checksums.
+- [x] Use a stable asset contract: `sei_<version-without-v>_<os>_<arch>.tar.gz` and `sei_<version-without-v>_checksums.txt`; archives contain `sei`, README, MIT license, and any required third-party notices, not user config or fixtures.
+- [x] Validate snapshot archives/checksums and run the extracted native binary's help/version; record exact tool/dependency provenance and verify runtime independence from Go/agent tools.
 
 **Verification:** `goreleaser check`; `goreleaser release --snapshot --clean`; inspect archive contents/checksums and execute the matching extracted binary. `dist/` is disposable generated output only.
+
+**Evidence (2026-09-06):** Verified Community v2.18.0 check/snapshot, four archive/checksum/metadata gates, standard/race checks pass; notices audited. Linux amd64 help/version pass in an offline four-file chroot. [Provenance/reproduction](docs/release.md#task-27-archive-contract). Other native/floor gates remain Task 28; no tag/push/publication.
 
 **Dependencies:** Tasks 3, 4, and 9; may proceed on a packaging branch before UI polish completes.
 
@@ -744,7 +746,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 ### Checkpoint I: Tasks 25-27
 
 - [ ] Standard, fuzz, race, coverage-audit, and full PTY checks pass at their documented scope.
-- [ ] Four snapshot artifacts exist with verified checksums and no unexpected archive content.
+- [x] Four snapshot artifacts exist with verified checksums and no unexpected archive content.
 - [ ] Test matrix links every destructive/failure requirement to evidence; unresolved mandatory coverage is a blocker.
 
 ### Phase J: Install A Verified Release

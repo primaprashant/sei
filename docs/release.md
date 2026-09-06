@@ -2,11 +2,11 @@
 
 ## Scope
 
-Task 4 establishes ordinary PR/push CI only. It does not package, sign, tag,
-upload, or publish releases. GoReleaser Community v2.18.0 remains reserved for
-Task 27. Commits, pushes, credentials, branch protection, tags, and publication
-still require explicit owner authorization. Task commits are authorized for this
-implementation; pushing and publication are not.
+Task 4 establishes ordinary PR/push CI. Task 27 adds local snapshot packaging
+with GoReleaser Community v2.18.0, not signing, tagging, uploading or publishing.
+Commits, pushes, credentials, branch protection, tags, and publication require
+explicit owner authorization. Task commits are authorized; pushing and publication
+are not.
 
 ## Native CI
 
@@ -127,3 +127,177 @@ floor or macOS 13. Native machines/VMs on both architectures still need to be
 arranged for Task 28; access and support-floor claims are unverified. Actual
 release archive execution, terminal lifecycle, signing/notarization, provenance,
 installer verification, and publishing remain their later tasks.
+
+## Task 27 Archive Contract
+
+Implemented sequentially after `c09ad3ade1f7d709c934c73cfa5dfd292aa8c6f5`.
+`.goreleaser.yaml` uses the JSON subset of YAML so ordinary Go tests can validate
+the complete small contract without a YAML/tool dependency. GoReleaser's own
+`check` remains the authoritative schema check. Use **Community v2.18.0 only**,
+not Pro, a package-manager build, `go install`, or another version.
+
+- Exactly `linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`.
+- Go `1.27.1`, `CGO_ENABLED=0`, `GOAMD64=v1`, `GOARM64=v8.0`, `-trimpath`,
+  `-s -w`, and `-X main.version={{ .Version }}`. Existing CLI version handling
+  needs no change. Module repair is disabled with `GOFLAGS=-mod=readonly`.
+- `sei_<version-without-v>_<os>_<arch>.tar.gz` and
+  `sei_<version-without-v>_checksums.txt` (SHA-256). An eventual authorized
+  `v0.1.0` tag maps to `sei_0.1.0_linux_amd64.tar.gz`, for example.
+- Each tar has exactly four regular root members: executable `sei` (0755),
+  `README.md`, `LICENSE`, `THIRD_PARTY_NOTICES`. The explicit file allowlist
+  replaces default globs; no config, fixtures, source, tools, or test binaries.
+- Snapshot version is `<base-version>-snapshot.<short-commit>`. Without tags,
+  GoReleaser reports its synthetic `v0.0.0` base. This is not an initial release
+  tag and does not alter the owner's version policy. Dirty snapshots are allowed
+  by GoReleaser; embedded Go build metadata truthfully records `vcs.modified=true`.
+- `release.disable: true` is an additional publication guard; no publisher,
+  signing, installer, or release workflow was added. `dist/` is ignored,
+  disposable generated output, including GoReleaser's JSON/YAML metadata.
+
+### Tool Provenance
+
+Reviewed 2026-09-06 using HTTPS primary sources. `.bin` initially contained only
+the pinned linter and its archive; `goreleaser` was absent from PATH. Downloaded
+the approved upstream Community baseline, verified **before extraction/execution**:
+
+| Upstream v2.18.0 asset | SHA-256 |
+| --- | --- |
+| `goreleaser_Linux_x86_64.tar.gz` | `41cdf49b653784b03a08013dd99e382cd5d463049e915c2d818eaed182ae6197` |
+| `checksums.txt` | `5cde70ff710a88df1c6a21980400884712451b096b53815717ad8d535ca14888` |
+
+Both hashes match [GitHub release asset digests](https://api.github.com/repos/goreleaser/goreleaser/releases/tags/v2.18.0);
+the archive hash also matches the upstream [checksum manifest](https://github.com/goreleaser/goreleaser/releases/download/v2.18.0/checksums.txt).
+The extracted executable reports `GitVersion: 2.18.0`, commit
+`a38ac3174c591f95049234d25bb326104d3ca820`, build date
+`2026-08-23T16:54:22Z`, Go `1.27.0`, linux/amd64. Reviewed the
+[versioned config source](https://github.com/goreleaser/goreleaser/blob/v2.18.0/pkg/config/config.go)
+and upstream [Go build options](https://goreleaser.com/customization/builds/go/).
+No fallback or remote installer script was used. Sigstore verification was not
+performed; same-publisher hashes are integrity evidence, not independent
+publisher authentication or release attestations.
+
+The existing Go installation reports `go1.27.1 linux/amd64`. Downloaded official
+`go1.27.1.linux-amd64.tar.gz`, verified SHA-256
+`63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445`
+against [Go download metadata](https://go.dev/dl/?mode=json&include=all), and
+`tar --compare --gzip --file .bin/go1.27.1.linux-amd64.tar.gz --directory /usr/local`
+passed against the installed tree. No toolchain was replaced. The installed
+linter archive again matched the README's `2277d43b...021d6` pin and its extracted
+executable byte-compared equal to `.bin/golangci-lint`; it reports v2.13.2.
+
+### Dependency And License Audit
+
+`go.mod` and `go.sum` remain unchanged. `go mod verify` passed. For **each** of
+the four targets, `CGO_ENABLED=0 go list -deps` produced the same 18 external
+runtime modules, all listed with exact versions in `THIRD_PARTY_NOTICES`.
+Their checked module-cache `LICENSE` files (`LICENSE.txt` for uniseg) were
+reviewed: 16 MIT modules and two BSD-3-Clause modules (`x/sys`, `x/sync`).
+Identical license bodies are consolidated while retaining every copyright.
+The Go runtime/standard-library BSD license is included too. uniseg's generated
+property-table headers explicitly reference the Unicode license; the notice
+includes the current [Unicode License V3](https://www.unicode.org/license.txt)
+for Unicode-derived tables, rather than assuming MIT alone covers the data.
+
+`github.com/creack/pty v1.1.24`, `github.com/charmbracelet/x/vt
+v0.0.0-20260906004030-3986e9119cf9`, and `github.com/charmbracelet/x/exp/ordered
+v0.1.0` are test-only graph members and absent from all release executable build
+metadata. Their code and development tools are not shipped. Package-level
+`x/windows` is in the runtime graph even on these targets, so its notice is
+retained. Archive tests reject replaced/unlisted dependencies and check embedded
+module sums against `go.sum`. Dependency changes require repeating this audit;
+the tests enforce inventory, not legal interpretation.
+
+### Reproduction
+
+From the repository root on Linux amd64, after preparing the pinned Go/linter
+and modules as documented in README. Stop on any failed verification; do not
+substitute another tool/version. Other hosts need their own reviewed upstream
+v2.18.0 archive digest, not the Linux amd64 digest below.
+
+```sh
+set -eu
+mkdir -p .bin
+curl --fail --location --proto '=https' --tlsv1.2 \
+  -o .bin/goreleaser_Linux_x86_64.tar.gz \
+  https://github.com/goreleaser/goreleaser/releases/download/v2.18.0/goreleaser_Linux_x86_64.tar.gz
+printf '%s\n' '41cdf49b653784b03a08013dd99e382cd5d463049e915c2d818eaed182ae6197  .bin/goreleaser_Linux_x86_64.tar.gz' | sha256sum --check -
+tar -xzf .bin/goreleaser_Linux_x86_64.tar.gz -C .bin goreleaser
+./.bin/goreleaser --version
+# Assert the exact version even when reusing an existing verified .bin tool.
+./.bin/goreleaser --version | grep -Eq '^GitVersion: +2\.18\.0$'
+export GOTOOLCHAIN=go1.27.1 GOFLAGS=-mod=readonly
+go mod download
+go mod verify
+./.bin/goreleaser check
+GOPROXY=off ./.bin/goreleaser release --snapshot --clean
+# At the Task 27 base; use the actual metadata version on later commits.
+export SEI_RELEASE_DIST=dist SEI_RELEASE_VERSION=0.0.0-snapshot.c09ad3a
+go test -count=1 -run TestRelease -v .
+# Build the checker first, then run it with networking disabled. Its extracted
+# native child gets only PATH=, disposable HOME and XDG_CONFIG_HOME.
+go test -c -o bin/release.test .
+unshare --user --map-root-user --net \
+  ./bin/release.test -test.run '^TestRelease' -test.v
+```
+
+The opt-in test reads all four actual tarballs, rejects extra/duplicate/nonregular
+members, compares documentation bytes, verifies SHA-256 and gzip trailers,
+checks Go provenance/CPU baseline/CGO metadata and ELF/Mach-O headers, rejects
+ELF dynamic linking/symbol/debug sections and Mach-O DWARF, then extracts and
+executes only the native binary by absolute path. Exact help/version stdout,
+empty stderr, zero status and a five-second deadline are required. It never
+invokes Go, a shell, or agent tooling in the application child. Ordinary tests
+only validate the configuration; they do not download tools or create releases.
+Network namespace isolation is an explicit Linux verification command, not a
+portable assertion made by the test. If unavailable, record that limitation
+rather than claiming offline execution from `GOPROXY=off` or empty PATH alone.
+
+### Local Evidence
+
+2026-09-06, Linux amd64, kernel `6.12.90+deb13.1-cloud-amd64`. Snapshot source is
+`c09ad3a` plus the uncommitted Task 27 files, not a clean published revision.
+Tool integrity checks, module verify/tidy diff, linter config/fmt/lint (zero
+issues), vet, uncached ordinary tests (including PTY), build and full CGO-enabled
+race tests passed. Final snapshot/archive/offline evidence is recorded below.
+
+`goreleaser check` and `goreleaser release --snapshot --clean` passed with the
+verified Community binary. The only Git warning was the expected absence of
+tags in snapshot mode. Four tar listings showed precisely the allowlisted
+members; all four manifest checks passed. `TestReleaseConfig` and all four
+`TestReleaseArchives` subtests passed inside an isolated network namespace,
+including exact native help/version with empty PATH and isolated HOME/XDG.
+
+| Archive in `dist/` | Verified SHA-256 |
+| --- | --- |
+| `sei_0.0.0-snapshot.c09ad3a_linux_amd64.tar.gz` | `0d9be44076202133007c590c1011b1b0a0ab29b26610e6e75fd3db412e144e58` |
+| `sei_0.0.0-snapshot.c09ad3a_linux_arm64.tar.gz` | `67be95f731dc584398dfd6f6c5538b7965401ab00c626aedd7b9d3f2af18de66` |
+| `sei_0.0.0-snapshot.c09ad3a_darwin_amd64.tar.gz` | `3645699913eb1a3ae454cf5e7a4bd31cc81dd0a17fa10b9a5e1706718f63059f` |
+| `sei_0.0.0-snapshot.c09ad3a_darwin_arm64.tar.gz` | `6c743720f49b7e0537277a878eeebef7f0f9c6e331dbaf26720b3f4df28b35ce` |
+
+Manifest: `dist/sei_0.0.0-snapshot.c09ad3a_checksums.txt`. These identify this
+local run; archive documentation mtimes/ownership are not normalized, so this
+task promises a stable asset contract, not byte-identical rebuilds elsewhere.
+
+An additional Linux-only check extracted the native archive into a fresh chroot
+containing **only those four files**, with no Go installation, dynamic loader,
+shell, agent tools, or host configuration. Both commands below passed offline,
+returning help and `sei 0.0.0-snapshot.c09ad3a` respectively (zero exit status).
+`unshare`/`chroot` are host-side verification tools, not application dependencies:
+
+```sh
+# After release --snapshot --clean; native-runtime must not already exist.
+mkdir dist/native-runtime
+tar -xzf dist/sei_0.0.0-snapshot.c09ad3a_linux_amd64.tar.gz -C dist/native-runtime
+env -i PATH= HOME=/ XDG_CONFIG_HOME=/ \
+  /usr/bin/unshare --user --map-root-user --net \
+  /usr/sbin/chroot dist/native-runtime /sei --help
+env -i PATH= HOME=/ XDG_CONFIG_HOME=/ \
+  /usr/bin/unshare --user --map-root-user --net \
+  /usr/sbin/chroot dist/native-runtime /sei --version
+```
+
+Native Linux arm64 and both macOS executions, support-floor machines, extracted
+artifact PTY flows, signing/notarization, independent attestations, and actual
+publication remain external/later-task gates. Cross-compilation and header
+inspection do not satisfy those gates. No tag, push, upload, or release
+publication occurred.
