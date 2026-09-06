@@ -215,20 +215,20 @@ func TestObservedChangeMissingAncestor(t *testing.T) {
 }
 
 // macOS CI must exercise real cross-filesystem lookup, not a folded-name mock.
-func caseSensitiveSource(t *testing.T) string {
+func caseTestVolume(t *testing.T, filesystem string) string {
 	t.Helper()
 	base := t.TempDir()
 	if runtime.GOOS != "darwin" {
 		return base
 	}
-	image, mount := base+"/source.dmg", base+"/mount"
+	image, mount := base+"/volume.dmg", base+"/mount"
 	browseMkdir(t, mount)
 	for _, args := range [][]string{
-		{"create", "-size", "64m", "-fs", "HFSX", "-volname", "sei-test", image},
+		{"create", "-size", "64m", "-fs", filesystem, "-volname", "sei-test", image},
 		{"attach", "-nobrowse", "-mountpoint", mount, image},
 	} {
 		if output, err := exec.Command("hdiutil", args...).CombinedOutput(); err != nil {
-			t.Fatalf("case-sensitive test volume: %v\n%s", err, output)
+			t.Fatalf("%s test volume: %v\n%s", filesystem, err, output)
 		}
 	}
 	t.Cleanup(func() {
@@ -245,15 +245,19 @@ func TestCaseCollision(t *testing.T) {
 	writeTestFile(t, base+"/CaseProbe", "probe")
 	_, err := os.Lstat(base + "/caseprobe")
 	if errors.Is(err, os.ErrNotExist) {
-		if runtime.GOOS == "darwin" {
-			t.Fatal("native case-collision coverage requires a case-insensitive target volume")
+		if runtime.GOOS != "darwin" {
+			t.Skip("target filesystem is case-sensitive; native macOS volume coverage required")
 		}
-		t.Skip("target filesystem is case-sensitive; native macOS volume coverage required")
+		base = caseTestVolume(t, "HFS+") + "/global"
+		cfg.Agents[0].Global = base
+		browseMkdir(t, base)
+		writeTestFile(t, base+"/CaseProbe", "probe")
+		_, err = os.Lstat(base + "/caseprobe")
 	}
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.Library = caseSensitiveSource(t)
+	cfg.Library = caseTestVolume(t, "HFSX")
 	t.Run("scanned case rename", func(t *testing.T) {
 		browseMkdir(t, base+"/skill")
 		writeTestFile(t, base+"/skill/keep", "old")

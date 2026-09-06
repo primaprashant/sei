@@ -11,8 +11,8 @@ OS signal coalescing is harmless because requests are idempotent.
 Idle quit does not join read-only scans. Task 13 defers ordinary quit until its
 real sequential mutation completes. Navigation remains responsive before quit;
 additional mutations are rejected and refresh coalesces. Pending-quit failure
-returns sanitized stderr/status `1` after restoration. Tasks 18/19 still broaden
-real-process busy-quit and diagnostic coverage; model tests alone do not close them.
+returns sanitized stderr/status `1` after restoration. Task 18 busy-quit PTY tests
+pass on Linux; native macOS/manual checks and Task 19 diagnostic coverage remain pending.
 HUP follows the same wait-and-restore policy, but a disconnected terminal may no
 longer accept restoration or diagnostics. SIGKILL/forced termination cannot run
 cleanup and mutations may leave partial work.

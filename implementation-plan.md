@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase E and Tasks 16-17 implemented; Phase E passes all four native CI jobs. Tasks 16-17 verified on native Linux only; Task 17 native-volume acceptance remains open. Human terminal reviews and later-phase audits remain pending.
+**Status:** Phase F implemented; Linux verified. Native macOS and manual acceptance remain pending.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -484,7 +484,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Verification:** `go test -count=1 -run 'Test(OperationFailure|ErrorPersistence|UnavailableRoots)' .`; use channels/completion signals rather than sleep-based fault timing.
 
-**Verified (2026-09-06):** Native Linux amd64 only, Go 1.27.1: focused tests (also ten repetitions), full tests/race, build, vet, module hygiene, formatter/config checks, and lint pass. `operation_failure_test.go` covers synchronous per-call faults with real copy/remove/close operations, actual non-root permission failures, retained missing/partial output, retry/UI removal, failed-refresh error persistence/escaping, and unavailable-root panel isolation. Copy errors now include file/phase context. Native macOS and human terminal review remain pending; no Task 17/18 implementation or new cross-platform claim.
+**Evidence (2026-09-06):** Linux failure/recovery tests and standard/race checks pass on Go 1.27.1. Native macOS/manual acceptance pending.
 
 **Dependencies:** Task 15.
 
@@ -503,7 +503,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Verification:** `go test -count=1 -run 'Test(StaleSelection|ObservedChange|CaseCollision|ScanGeneration)' .`, native Linux/macOS tests, and race check. Verify skip reasons only for genuinely unsupported test filesystem features, with required cases covered elsewhere in the matrix.
 
-**Evidence (2026-09-06):** Go 1.27.1 Linux: focused regressions (10 repetitions), existing observed-change audits, full/race tests, lint/format/config checks, vet, module hygiene, and build pass. Scans now retain entry/root identities; commands reject drift. Existing collision and generation guards retained. Native macOS unavailable: case-sensitive Linux skips `TestCaseCollision`; existing four-platform CI will require a case-insensitive Mac target with an isolated HFSX source. Native-volume acceptance remains unchecked; no push or Task 18 work.
+**Evidence (2026-09-06):** Linux stale-state/generation tests pass; scans retain identities. Native macOS case-volume acceptance pending; case-sensitive targets now provision an isolated HFS+ volume.
 
 **Dependencies:** Task 16.
 
@@ -522,7 +522,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Verification:** `go test -count=1 -run 'TestPTYQuitDuringMutation' .` on both OS families, `CGO_ENABLED=1 go test -race -count=1 ./...`, and manual busy-quit confirmation.
 
-**Evidence (2026-09-06):** Go 1.27.1, native Linux: six coordinated PTY cases hold real partial copy/delete, verify navigation/waiting, reject new/replayed mutations, finish after release, and restore modes/screen/cursor. Production unchanged. Focused tests (20 repetitions; race 5), full/race, lint/format/config, vet, tidy, build and both macOS test cross-builds pass; native macOS/manual checks pending. Task 19 and checkpoint F untouched.
+**Evidence (2026-09-06):** Six Linux PTY cases verify busy-quit completion and terminal restoration; the copy gate targets a specific file. Native macOS/manual acceptance pending.
 
 **Dependencies:** Task 17.
 
@@ -533,8 +533,10 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 ### Checkpoint F: Tasks 16-18
 
 - [ ] Standard, failure-injection, native case/permission, race, and active-operation PTY tests pass.
-- [ ] No destructive action is queued, replayed against a new selection, or canceled by normal quit.
-- [ ] Review residual external-writer/forced-termination limits and ensure help/docs do not promise a sandbox or recovery.
+- [x] No destructive action is queued, replayed against a new selection, or canceled by normal quit.
+- [x] Review residual external-writer/forced-termination limits and ensure help/docs do not promise a sandbox or recovery.
+
+**Evidence:** Go 1.27.1 Linux standard/full/race checks, focused tests (10x; race 5x), build, macOS cross-builds, and limits review pass. Combined native macOS and manual acceptance pending.
 
 ### Phase G: Complete Interaction Prototype
 

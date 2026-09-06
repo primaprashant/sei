@@ -63,7 +63,7 @@ func (m mutationQuitProbe) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				var files []*os.File
 				held := false
 				err = addSkillWithOps(cfg, r.destination, r.name, copySkillOps{copy: func(w io.Writer, reader io.Reader) (int64, error) {
-					if w == io.Discard || held {
+					if w == io.Discard || held || filepath.Base(reader.(*os.File).Name()) != "file" {
 						return io.Copy(w, reader)
 					}
 					held = true

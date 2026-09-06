@@ -91,7 +91,7 @@ Distinct hard-linked files remain regular files and become independent copies.
 Nested collisions beneath absent target directories may only be discovered during
 exclusive creation; later failures leave truthful missing/partial output. No merge,
 staging, backup, or rollback exists. Conservative repeated-tree checks are not yet
-performance-tuned. Scan-to-operation identity capture remains the Task 17 audit.
+performance-tuned. Scans retain root/entry identities; mutations reject observed drift.
 
 ## API Review And Limits
 
@@ -126,7 +126,7 @@ Phase E Linux tests/race, injected failures, active-config protection, umask tes
 and PTY add/remove/replace/restart pass. Both macOS test binaries cross-build;
 native Phase E tests subsequently passed all four jobs in
 [CI 33999522026](https://github.com/primaprashant/sei/actions/runs/33999522026)
-at `664a898`. The broader cross-filesystem collision audit remains Task 17.
+at `664a898`. Phase F passes Linux tests/race; native macOS case-volume coverage remains pending.
 
 CI run `33999023333` passed both Linux jobs but failed both Macs in test fixtures:
 APFS rejected invalid-UTF-8 names (`EILSEQ`), and `/var` versus `/private/var` aliases
