@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase G implemented; all four native CI jobs pass. [Owner feedback](docs/prototype.md#feedback-received-2026-09-06) recorded; Phase H layout/minimum and complete theme/SSH acceptance remain open.
+**Status:** Phase G passed native CI; owner approved lowercase `x` removal. Other [UI feedback](docs/prototype.md#feedback-received-2026-09-06) is deferred until after the initial release; safety/release gates remain open.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -404,10 +404,10 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Task 13: Remove A Destination Skill
 
-**Description:** Deliver the first complete mutation path: focus a destination, press uppercase `X`, safely preflight/delete one ordinary directory, and see the resulting listing.
+**Description:** Deliver the first complete mutation path: focus a destination, press lowercase `x`, safely preflight/delete one ordinary directory, and see the resulting listing.
 
 **Acceptance criteria:**
-- [x] Connect captured selection through root/name/type validation, full target-tree no-link/special-file preflight, postorder rooted removal, and destination refresh. Removing a skill absent from the library works; lowercase `x`, library focus, empty lists, and blocked entries never delete.
+- [x] Connect captured selection through root/name/type validation, full target-tree no-link/special-file preflight, postorder rooted removal, and destination refresh. Removing a skill absent from the library works; uppercase `X`, library focus, empty lists, and blocked entries never delete.
 - [x] No confirmation, trash, Git check, root deletion, or library write occurs. Preserve existing content on predictable preflight rejection; report stale/disappeared selections without substituting another row.
 - [x] Run one mutation asynchronously, keep navigation responsive, reject busy/help mutation input, and wait on quit from the first enabled mutation. Success selects the following row or preceding last row; failure remains visible and refreshes actual partial state.
 
@@ -613,7 +613,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Owner review (2026-09-06):** Mostly functional; fix clipped headers/shortcuts, noisy status, focus markers, and path display. Record `.git` exclusion and lowercase-removal discussion in [feedback](docs/prototype.md#feedback-received-2026-09-06); layout/minimum and theme/SSH acceptance remain open.
 
+**Key revision (2026-09-06):** Owner approved `x` removal; `X` is inactive, superseding Task 13's original binding. Code, hints, tests, and current docs updated; historical captures labeled. Linux full/race/lint/build, 10x focused tests, and macOS cross-builds pass; native rerun pending.
+
 ### Phase H: Evidence-Based Polish
+
+**Owner sequencing (2026-09-06):** Defer recorded UI/clipping/status/focus/path/color and `.git` listing improvements until after the initial release. Only the `x` removal change is authorized now; no next task started. Reconcile Phase H/release dependencies before proceeding; do not mark safety, minimum-size, verification, or publication gates complete by deferral.
 
 ### Task 22: Implement The Approved Layout
 

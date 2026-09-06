@@ -30,6 +30,7 @@ func TestCLI(t *testing.T) {
 	}{
 		{"help", []string{"--help"}, 0, "Usage: sei", ""},
 		{"short help", []string{"-h"}, 0, "Usage: sei", ""},
+		{"remove key help", []string{"--help"}, 0, "x permanently removes (destination only); X does nothing.", ""},
 		{"version", []string{"--version"}, 0, "sei dev\n", ""},
 		{"unknown flag", []string{"--unknown"}, 2, "", "flag provided but not defined"},
 		{"unknown command", []string{"unknown"}, 2, "", "unexpected argument"},
@@ -259,7 +260,7 @@ func TestBrowseKeys(t *testing.T) {
 		}
 	}
 	for _, msg := range []tea.Msg{
-		tea.KeyPressMsg{Code: 'a'}, tea.KeyPressMsg{Code: 'X'}, tea.PasteMsg{Content: "q"},
+		tea.KeyPressMsg{Code: 'a'}, tea.KeyPressMsg{Code: 'x'}, tea.PasteMsg{Content: "xXq"},
 		tea.WindowSizeMsg{Width: 80, Height: 24},
 	} {
 		if _, cmd := m.Update(msg); cmd != nil {

@@ -35,7 +35,7 @@ g stays pending until a key: invalid continuations are consumed; Esc cancels/clo
 q or Ctrl+C always quit; recognized paste is ignored. Selections are per panel;
 refresh preserves raw names, otherwise clamps the old index.
 Add mappings by slot: a b c d e f h i o local, A B C D E F H I O global
-(library only). X permanently removes (destination only); x does nothing.
+(library only). x permanently removes (destination only); X does nothing.
 Add deletes an existing same-named target before copying: local edits are lost.
 No action confirmation, trash, backup, or undo. Failure may leave partial output.
 Quit waits for active work.

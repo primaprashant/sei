@@ -113,7 +113,9 @@ scan too. Root safety alone can finish before scans, so it is not a readiness ga
 `TestRepresentativeReadiness` deterministically delivers safety before the scan and
 rejects loading listings and wrong skill/operation/scope/path completion results.
 
-Input timing starts at Down; mutation timing at `a`/`X`. The harness opens help,
+Input timing starts at Down; mutation timing at `a`/`x`. The historical run below
+used the previous `X` binding; its measurements are not a new-binding benchmark.
+The harness opens help,
 waits for its footer, and matches only that surface's output. If unmatched, it
 renders browse then help again, without sleeps. Input ends on the exact new name
 and ready listing; operations end on the full escaped `Result: <operation/skill/
@@ -147,6 +149,10 @@ warm-data sample is exploratory, not a release gate or a Mac performance predict
 
 ## Captures And Follow-Ups
 
+These captures and timings predate the owner-approved removal-key change. Their
+recorded `X` hints are historical: current builds remove with `x`; `X` is inactive.
+Original output is preserved, not edited to imply a new capture run.
+
 Three-agent production `View` text: [148x39](prototype-captures/148x39.txt),
 [143x35](prototype-captures/143x35.txt), [80x24](prototype-captures/80x24.txt),
 [150x40](prototype-captures/150x40.txt). Paths are substituted **before** layout,
@@ -161,9 +167,9 @@ sanitized: [148x39](prototype-captures/148x39-pty.txt),
 regenerated together in the isolated 36-case run; standard/race checks ran afterward.
 
 - At 148x39 and 150x40 all 25 library names fit in the initial three-agent model view; at 143x35 it shows rows 1-23/25. These are observations, not approved minimums.
-- At 80x24 only agents 1-2 initially appear, their header add hints are truncated, and the library shows 11/25 rows with several truncated names. Agent 3 is reachable by focus/help, but offscreen discoverability needs owner review in Task 22.
+- At 80x24 only agents 1-2 initially appear, their header add hints are truncated, and the library shows 11/25 rows with several truncated names. Agent 3 is reachable by focus/help; offscreen discoverability is recorded for the deferred layout work.
 - Nine agents are addressable through last-slot local/global focus and full-target help, but not simultaneously visible. This is reachability evidence, not proof that the provisional grid is usable.
-- Real temporary paths truncate in panel cells; long result lines truncate in browse view and wrap in help. Preserve full-target inspection and decide result visibility/overflow in Task 22 rather than fixing layout in this task.
+- Real temporary paths truncate in panel cells; long result lines truncate in browse view and wrap in help. Preserve full-target inspection; result visibility/overflow improvements are deferred.
 - The shell-versus-sei workflow comparison, cold/warm native Mac measurements, replacement/larger-tree measurements, and approved budgets belong to the owner review and Task 23. RAM-backed results cannot justify storage budgets.
 
 ## Owner Review
@@ -178,11 +184,13 @@ The owner reports that the workflow is mostly functional, but the layout needs w
 - Show home-relative global paths such as `~/.claude/skills` and project-relative local paths such as `.claude/skills`; preserve full paths in help and actual filesystem targets.
 - The UI feels plain and colorless; improve visual hierarchy and color later without losing no-color readability.
 - Exclude `.git` from skill listings was requested as a narrow exception, not a blanket exclusion of dot-directories or a change to nested copying.
-- The owner asked whether lowercase `x` could replace uppercase `X` for removal. Current PRD requires `X`; the binding change is not yet approved.
+- The owner approved lowercase `x` replacing uppercase `X` for removal; uppercase `X` is inactive. Permanent deletion and all mutation guards are unchanged.
 
-This records review, not final acceptance. Exact panel arrangement/minimum and the
-removal binding remain undecided; terminal versions, per-Mac results, and theme/SSH
-coverage were not supplied. Task 22 should address clipping using real agent labels.
+The owner subsequently deferred all other feedback above until after the initial
+release, prioritizing the remaining implementation work. No next task is started
+by this decision. Final panel arrangement/minimum, terminal versions, per-Mac
+results, and theme/SSH coverage remain open; safety and publication gates are not
+waived. Reconcile the plan's existing polish dependencies before proceeding.
 
 ### Reproduce The Review
 
@@ -206,7 +214,7 @@ include the actual labels and longer paths. The prep command never runs skills o
 starts agents. Keep `LICENSE` alongside the retained data when sharing it.
 
 On each Mac, build natively and review at its stated geometry. Add three, remove
-two, quit/relaunch, inspect the longest name and all help pages, then try a fresh
+two with lowercase `x`, quit/relaunch, inspect the longest name and all help pages, then try a fresh
 fixture with a root replaced by an ordinary file to inspect the failure. Repeat
 in light/dark/no-color and over Mac-to-Linux SSH, recording terminal/app versions,
 TERM, actual geometry, path lengths, readability, target certainty, and mistakes.

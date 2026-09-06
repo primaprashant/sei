@@ -62,7 +62,7 @@ func TestMutationConfigProtection(t *testing.T) {
 func TestMutationHelpPendingQuit(t *testing.T) {
 	m := mutationModel(t)
 	m.focused = 1
-	m, worker := press(m, 'X')
+	m, worker := press(m, 'x')
 	if worker == nil {
 		t.Fatal("no worker")
 	}

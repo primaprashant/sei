@@ -124,7 +124,7 @@ func (m browseModel) View() tea.View {
 		lipgloss.JoinHorizontal(lipgloss.Top, left, " | ", right) +
 		"\n" + ansi.Truncate("Focused: "+displayText(m.panels[m.focused].label)+" | Selected: "+displayText(m.panels[m.focused].selectedName), m.width, "~") +
 		"\n0 library | 1-9 local | g 1-9 global | up/down | r refresh | ? full targets/help" + m.sequenceHint() +
-		"\nAdd from library using header keys; X permanently removes. " + keys +
+		"\nAdd from library using header keys; x permanently removes. " + keys +
 		"\n" + ansi.Truncate(displayText(status), m.width, "~"))
 	v.AltScreen = true
 	return v
@@ -192,7 +192,7 @@ func (m browseModel) helpLines() []string {
 	for i := range m.agents {
 		text += fmt.Sprintf("\n%c: %s; %c: %s", addKeys[i], displayText(m.panels[1+m.agents+i].label), strings.ToUpper(string(addKeys[i]))[0], displayText(m.panels[1+i].label))
 	}
-	text += "\nReplacement loses local edits and destination-only files, even if content seems identical. Not merge or sync.\nX: permanently remove from destination only; x does nothing. No confirmation, trash, backup, or undo.\nCopy failure may leave a missing or partial destination; no rollback. Retry add or remove the partial skill.\nWhile working, navigation remains available; extra mutations are ignored and refresh waits. Quit waits for completion.\nOther agents may also load skills from these folders. sei shows configured folder contents, not everything an agent discovers or has loaded."
+	text += "\nReplacement loses local edits and destination-only files, even if content seems identical. Not merge or sync.\nx: permanently remove from destination only; X does nothing. No confirmation, trash, backup, or undo.\nCopy failure may leave a missing or partial destination; no rollback. Retry add or remove the partial skill.\nWhile working, navigation remains available; extra mutations are ignored and refresh waits. Quit waits for completion.\nOther agents may also load skills from these folders. sei shows configured folder contents, not everything an agent discovers or has loaded."
 	if m.status != "" {
 		text += "\nResult: " + displayText(m.status)
 	}

@@ -305,7 +305,7 @@ func TestRepresentativePrototype(t *testing.T) {
 						send("1")
 						for i := range 2 {
 							ready("Agent1 / Local", local, entries[i].name, fmt.Sprintf("ready (%d entries)", 3-i))
-							send("X")
+							send("x")
 							actionStart := start
 							helpUntil("Result: " + displayText(fmt.Sprintf("Remove %q from Agent1 / Local (%s): complete", entries[i].name, local)) + "Help 1/")
 							start = actionStart

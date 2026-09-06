@@ -1,5 +1,9 @@
 # Task 21 Captures
 
+Historical evidence from before the removal-key change: recorded `X` hints are
+superseded by lowercase `x`; uppercase `X` is now inactive. Output and timing
+samples are preserved verbatim, not represented as a new run.
+
 Generated production `View` text with the 25 pinned upstream skills, three agents,
 and initially absent destinations. Paths are replaced with `<FIXTURE>` **before**
 layout; these are reproducible model snapshots, not pixel screenshots or terminal

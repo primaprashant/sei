@@ -49,7 +49,7 @@ func TestStaleSelection(t *testing.T) {
 				m = finishMutationRefresh(t, next.(browseModel), refresh)
 				key := rune('A')
 				if !add {
-					m.focused, key = 1, 'X'
+					m.focused, key = 1, 'x'
 				}
 				// Capture the raw selection, then change disk before executing work.
 				m, worker := press(m, key)
@@ -109,7 +109,7 @@ func TestScanGeneration(t *testing.T) {
 	m := mutationModel(t)
 	oldScan := scanPanel(1, m.panels[1].generation, m.panels[1].path)()
 	oldSafety := rootSafetyMsg{m.safetyGeneration, resolveRoots(m.config)}
-	m, worker := press(m, 'X')
+	m, worker := press(m, 'x')
 	for range 3 {
 		for _, msg := range []tea.Msg{startBrowseMsg{}, oldScan, oldSafety, mutationResult{id: 99}} {
 			next, cmd := m.Update(msg)
@@ -134,7 +134,7 @@ func TestScanGeneration(t *testing.T) {
 	if m.panels[1].selectedName != "b" || len(m.panels[1].entries) != 2 || m.status != status {
 		t.Fatal("deleted row resurrected or outcome erased")
 	}
-	m, worker = press(m, 'X')
+	m, worker = press(m, 'x')
 	if worker == nil || m.active.id != result.id+1 {
 		t.Fatal("next operation not independent")
 	}
@@ -155,7 +155,7 @@ func TestStaleSelectionRawName(t *testing.T) {
 	m = finishMutationRefresh(t, next.(browseModel), refresh)
 	library := removeSnapshot(t, m.config.Library)
 	other := removeSnapshot(t, base+"/b")
-	m, worker := press(m, 'X')
+	m, worker := press(m, 'x')
 	if worker == nil || m.active.name != raw {
 		t.Fatal("raw name was not captured")
 	}
@@ -265,7 +265,7 @@ func TestCaseCollision(t *testing.T) {
 		next, refresh := m.Update(startBrowseMsg{})
 		m = finishMutationRefresh(t, next.(browseModel), refresh)
 		m.focused = 1
-		m, worker := press(m, 'X')
+		m, worker := press(m, 'x')
 		if worker == nil || m.active.name != "skill" {
 			t.Fatal("missing captured removal")
 		}

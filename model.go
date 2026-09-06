@@ -202,7 +202,7 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		switch input {
-		case "X":
+		case "x":
 			return m.startMutation(panelID(m.focused), false)
 		case "g":
 			m.pendingGlobal = true

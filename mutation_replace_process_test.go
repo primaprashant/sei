@@ -215,7 +215,7 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 						send("?")
 						await("Configured folders")
 						if !restart && i < 2 {
-							send("X?")
+							send("x?")
 							awaitHelp("Selected name: survivor",
 								fmt.Sprintf(`Result: Remove \"replace-me\" from Agent%d / %s (%s): complete`, i+1, scopeLabel, resultPath(i)))
 							setupAbsent(t, targets[i])

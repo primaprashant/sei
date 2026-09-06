@@ -59,7 +59,14 @@ func TestRemoveFlow(t *testing.T) {
 			p.selected, p.selectedName = tc.selected, p.entries[tc.selected].name
 			target := filepath.Join(p.path, p.selectedName)
 			library := removeSnapshot(t, m.config.Library)
-			m, worker := press(m, 'X')
+			before := removeSnapshot(t, p.path)
+			next, cmd := press(m, 'X')
+			if cmd != nil || !reflect.DeepEqual(next, m) {
+				t.Fatal("uppercase X changed actionable destination state")
+			}
+			assertRemoveSnapshot(t, p.path, before)
+			assertRemoveSnapshot(t, m.config.Library, library)
+			m, worker := press(next, 'x')
 			if worker == nil || m.active == nil || m.status != m.active.target()+": working" {
 				t.Fatalf("remove not started: %+v", m)
 			}
@@ -81,8 +88,8 @@ func TestRemoveFlow(t *testing.T) {
 				t.Fatalf("remove result: %+v", result)
 			}
 			setupAbsent(t, target)
-			next, refresh := m.Update(result)
-			m = next.(browseModel)
+			nextModel, refresh := m.Update(result)
+			m = nextModel.(browseModel)
 			if m.active != nil || m.status != request.target()+": complete" || m.exitError != nil {
 				t.Fatalf("completion: %+v", m)
 			}
@@ -96,15 +103,15 @@ func TestRemoveFlow(t *testing.T) {
 }
 
 func TestMutationGuard(t *testing.T) {
-	for _, kind := range []string{"lowercase", "library", "empty", "blocked", "loading", "error", "missing", "unchecked", "unsafe", "help", "paste", "g", "size", "selection"} {
+	for _, kind := range []string{"uppercase", "library", "empty", "blocked", "loading", "error", "missing", "unchecked", "unsafe", "help", "paste", "g", "size", "selection"} {
 		t.Run(kind, func(t *testing.T) {
 			m := mutationModel(t)
 			before := removeSnapshot(t, m.panels[1].path)
-			msg := tea.Msg(tea.KeyPressMsg{Code: 'X'})
+			msg := tea.Msg(tea.KeyPressMsg{Code: 'x'})
 			p := &m.panels[1]
 			switch kind {
-			case "lowercase":
-				msg = tea.KeyPressMsg{Code: 'x'}
+			case "uppercase":
+				msg = tea.KeyPressMsg{Code: 'X'}
 			case "library":
 				m.focused = 0
 			case "empty":
@@ -124,7 +131,7 @@ func TestMutationGuard(t *testing.T) {
 			case "help":
 				m, _ = press(m, '?')
 			case "paste":
-				msg = tea.PasteMsg{Content: "X"}
+				msg = tea.PasteMsg{Content: "xX"}
 			case "g":
 				m, _ = press(m, 'g')
 			case "size":
@@ -149,14 +156,14 @@ func TestMutationGuard(t *testing.T) {
 		m.panels[0].loading = true
 		oldScan := scanResult{panel: 0, generation: m.panels[0].generation, missing: true}
 		oldSafety := rootSafetyMsg{m.safetyGeneration, rootSafety{blocked: make([]error, len(m.panels))}}
-		m, worker := press(m, 'X')
+		m, worker := press(m, 'x')
 		if worker == nil || m.active == nil {
 			t.Fatal("missing worker")
 		}
 		if m.safetyGeneration != oldSafety.generation+1 || m.panels[0].generation != oldScan.generation+1 {
 			t.Fatal("mutation did not invalidate in-flight scans and safety")
 		}
-		for _, msg := range []tea.Msg{tea.KeyPressMsg{Code: 'X'}, tea.KeyPressMsg{Code: 'r'}, startBrowseMsg{}, oldScan, oldSafety, mutationResult{id: 0}, mutationResult{id: m.active.id + 1}, tea.PasteStartMsg{}, tea.PasteMsg{Content: "Xrq"}, tea.PasteEndMsg{}} {
+		for _, msg := range []tea.Msg{tea.KeyPressMsg{Code: 'x'}, tea.KeyPressMsg{Code: 'r'}, startBrowseMsg{}, oldScan, oldSafety, mutationResult{id: 0}, mutationResult{id: m.active.id + 1}, tea.PasteStartMsg{}, tea.PasteMsg{Content: "xXrq"}, tea.PasteEndMsg{}} {
 			next, cmd := m.Update(msg)
 			if cmd != nil || !reflect.DeepEqual(next, m) {
 				t.Fatalf("busy/stale message changed state: %#v", msg)
@@ -180,7 +187,7 @@ func TestMutationGuard(t *testing.T) {
 			}
 		}
 		m = finishMutationRefresh(t, m, refresh)
-		m, worker = press(m, 'X')
+		m, worker = press(m, 'x')
 		if worker == nil || m.active == nil || m.active.id != 2 {
 			t.Fatal("operation ID not advanced")
 		}
@@ -192,7 +199,7 @@ func TestMutationGuard(t *testing.T) {
 	t.Run("failure refresh", func(t *testing.T) {
 		m := mutationModel(t)
 		m, _ = press(m, tea.KeyDown)
-		m, worker := press(m, 'X')
+		m, worker := press(m, 'x')
 		if worker == nil || m.active == nil {
 			t.Fatal("missing worker")
 		}
@@ -216,7 +223,7 @@ func TestMutationGuard(t *testing.T) {
 		for _, quit := range []string{"q", "ctrl-c", "signal"} {
 			t.Run(quit+map[bool]string{false: "/success", true: "/failure"}[fail], func(t *testing.T) {
 				m := mutationModel(t)
-				m, worker := press(m, 'X')
+				m, worker := press(m, 'x')
 				if worker == nil || m.active == nil {
 					t.Fatal("missing worker")
 				}
@@ -235,7 +242,7 @@ func TestMutationGuard(t *testing.T) {
 						t.Fatal("quit did not wait")
 					}
 				}
-				for _, code := range []rune{'X', 'r', '0', tea.KeyDown} {
+				for _, code := range []rune{'x', 'r', '0', tea.KeyDown} {
 					next, cmd := press(m, code)
 					if cmd != nil || !reflect.DeepEqual(next, m) {
 						t.Fatal("input accepted while quitting")

@@ -77,14 +77,14 @@ func TestInputPrecedence(t *testing.T) {
 				m := mutationModel(t)
 				var worker tea.Cmd
 				if busy {
-					m, worker = press(m, 'X')
+					m, worker = press(m, 'x')
 				}
 				m, _ = press(m, '0')
 				if help {
 					m, _ = press(m, '?')
 				}
 				m, _ = press(m, 'g')
-				for _, msg := range []tea.Msg{struct{}{}, tea.WindowSizeMsg{Width: m.width, Height: m.height}, tea.PasteStartMsg{}, tea.PasteMsg{Content: "\x1baAXrq?g9\x03"}, tea.PasteEndMsg{}} {
+				for _, msg := range []tea.Msg{struct{}{}, tea.WindowSizeMsg{Width: m.width, Height: m.height}, tea.PasteStartMsg{}, tea.PasteMsg{Content: "\x1baAXxrq?g9\x03"}, tea.PasteEndMsg{}} {
 					next, cmd := m.Update(msg)
 					if cmd != nil || !reflect.DeepEqual(next, m) {
 						t.Fatalf("non-key changed pending sequence: %T", msg)
@@ -125,7 +125,7 @@ func TestInputPrecedence(t *testing.T) {
 					if cmd != nil || !quitting.pendingQuit || quitting.active != m.active {
 						t.Fatal("busy quit did not wait")
 					}
-					for _, key := range "abcdefhioABCDEFHIOXr?g19" {
+					for _, key := range "abcdefhioABCDEFHIOXxr?g19" {
 						next, cmd := press(quitting, key)
 						if cmd != nil || !reflect.DeepEqual(next, quitting) {
 							t.Fatalf("pending quit accepted %c", key)
@@ -237,7 +237,7 @@ func TestSelectionPrimaryWorkflow(t *testing.T) {
 				m, _ = press(m, tea.KeyDown)
 				for _, want := range []string{"c", "a"} {
 					var worker tea.Cmd
-					m, worker = press(m, 'X')
+					m, worker = press(m, 'x')
 					if worker == nil {
 						t.Fatal("missing remove")
 					}

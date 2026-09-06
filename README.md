@@ -11,7 +11,7 @@ The executable supports strict JSON configuration, `--config`, `--project`,
 `--help`, `--version`, and an asynchronous configured folder browser
 (quit with `q` or Ctrl+C). Missing configuration opens editable first-run setup;
 `sei setup` reconfigures ordered agents, confirms config replacement, and saves/exits.
-Uppercase `X` permanently removes the selected destination skill, without
+Lowercase `x` permanently removes the selected destination skill, without
 confirmation, trash, backup, or undo. Library add keys delete an existing same-named
 destination completely before copying: local edits and destination-only files are
 lost, even if content seems identical. This is not merging or synchronization.
@@ -79,8 +79,8 @@ preserving the raw name if present, otherwise clamping the old index.
 `?` shows full sanitized selected name/root path and mappings; Up/Down scroll
 wrapped help, including arbitrarily long targets. Navigation retains errors.
 Add slots are exactly `a b c d e f h i o` local and `A B C D E F H I O` global,
-from library only. Uppercase `X` removes from destination panels only;
-lowercase `x` and unconfigured slots do nothing.
+from library only. Lowercase `x` removes from destination panels only;
+uppercase `X` and unconfigured slots do nothing.
 
 Other agents may also load skills from these folders. sei shows configured folder
 contents, not everything an agent discovers or has loaded.

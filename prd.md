@@ -94,7 +94,7 @@ These are presets, not exhaustive discovery implementations. Customized agent en
 | `g`, then `1` through `9` | Focus the corresponding global panel; these are two ordinary key presses. |
 | `a b c d e f h i o` | From the library only, add to local destination slots 1-9 respectively. |
 | `A B C D E F H I O` | From the library only, add to global destination slots 1-9 respectively. |
-| `X` | From a destination only, permanently remove the selected ordinary skill directory. Lowercase `x` does nothing. |
+| `x` | From a destination only, permanently remove the selected ordinary skill directory. Uppercase `X` does nothing. |
 | `r` | Refresh configured folder listings; no watcher or config reload. |
 | `?` | Toggle expanded help, including the full focused destination path. |
 | `Esc` | Close help or cancel a pending key sequence; otherwise do nothing. |

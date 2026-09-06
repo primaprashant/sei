@@ -95,7 +95,7 @@ func TestKeySequence(t *testing.T) {
 		m := navigationModel(3)
 		m, _ = press(m, 'g')
 		before := m
-		for _, msg := range []tea.Msg{tea.PasteStartMsg{}, tea.PasteMsg{Content: "1qXr?"}, tea.PasteEndMsg{}, tea.WindowSizeMsg{Width: m.width, Height: m.height}, struct{}{}} {
+		for _, msg := range []tea.Msg{tea.PasteStartMsg{}, tea.PasteMsg{Content: "1qXxr?"}, tea.PasteEndMsg{}, tea.WindowSizeMsg{Width: m.width, Height: m.height}, struct{}{}} {
 			updated, cmd := m.Update(msg)
 			m = updated.(browseModel)
 			if cmd != nil || !reflect.DeepEqual(before, m) {

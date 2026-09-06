@@ -361,7 +361,7 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 					send("0", "0")
 					send("a", "a")
 				} else {
-					send("X", "X")
+					send("x", "x")
 				}
 				ack("started")
 				from = screen.Len()
@@ -373,7 +373,7 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 				send("?", "?")
 				await("Configured folders")
 				// Exercise valid add and remove contexts while busy, then change focus.
-				for _, key := range []string{"0", "a", "A", "1", "X", "r", "g", "1"} {
+				for _, key := range []string{"0", "a", "A", "1", "x", "r", "g", "1"} {
 					send(key, key)
 				}
 				from = screen.Len()
@@ -402,7 +402,7 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 				if quit != "later-q" {
 					await("Exit requested; waiting for work")
 				}
-				for _, key := range []string{"X", "0", "a", "A", "1", "X", "r"} {
+				for _, key := range []string{"x", "0", "a", "A", "1", "x", "r"} {
 					send(key, key)
 				}
 				select {

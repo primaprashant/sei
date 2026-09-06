@@ -234,7 +234,7 @@ func TestErrorPersistence(t *testing.T) {
 				t.Fatal("successful rescan hid error or failed to recover partial listing")
 			}
 			m.focused = 1
-			m, worker := press(m, 'X')
+			m, worker := press(m, 'x')
 			if worker == nil || m.status == want {
 				t.Fatal("explicit removal did not supersede failure")
 			}
@@ -398,12 +398,12 @@ func TestUnavailableRoots(t *testing.T) {
 				}
 			}
 			m.focused = panel
-			if next, cmd := press(m, 'X'); cmd != nil || next.active != nil {
+			if next, cmd := press(m, 'x'); cmd != nil || next.active != nil {
 				t.Fatal("unavailable/empty panel allowed deletion")
 			}
 			// A supported destination skill remains removable without library reads.
 			m.focused = 2
-			m, worker := press(m, 'X')
+			m, worker := press(m, 'x')
 			if worker == nil {
 				t.Fatal("unaffected destination unusable")
 			}
