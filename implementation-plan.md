@@ -516,11 +516,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Prove the already-wired wait-on-quit behavior with a real process and a deterministic active operation, not just model-state tests.
 
 **Acceptance criteria:**
-- [ ] Test `q`, Ctrl+C bytes, and repeated SIGINT during an active operation: navigation remains responsive before quit, finishing-before-exit is visible afterward, and no new mutation can start.
-- [ ] Do not cancel copy/delete or terminate the command worker on ordinary quit; release resources and restore the terminal only after the operation completes.
-- [ ] Use a test-only subprocess wrapper around production operation code with explicit start/release signals; no public delay/failure flags, fixed sleeps, or emergency second-Ctrl+C shortcut are added.
+- [x] Test `q`, Ctrl+C bytes, and repeated SIGINT during an active operation: navigation remains responsive before quit, finishing-before-exit is visible afterward, and no new mutation can start.
+- [x] Do not cancel copy/delete or terminate the command worker on ordinary quit; release resources and restore the terminal only after the operation completes.
+- [x] Use a test-only subprocess wrapper around production operation code with explicit start/release signals; no public delay/failure flags, fixed sleeps, or emergency second-Ctrl+C shortcut are added.
 
 **Verification:** `go test -count=1 -run 'TestPTYQuitDuringMutation' .` on both OS families, `CGO_ENABLED=1 go test -race -count=1 ./...`, and manual busy-quit confirmation.
+
+**Evidence (2026-09-06):** Go 1.27.1, native Linux: six coordinated PTY cases hold real partial copy/delete, verify navigation/waiting, reject new/replayed mutations, finish after release, and restore modes/screen/cursor. Production unchanged. Focused tests (20 repetitions; race 5), full/race, lint/format/config, vet, tidy, build and both macOS test cross-builds pass; native macOS/manual checks pending. Task 19 and checkpoint F untouched.
 
 **Dependencies:** Task 17.
 
