@@ -254,7 +254,7 @@ func TestRepresentativePrototype(t *testing.T) {
 						}
 					}
 					await("> " + entries[0].name)
-					await("Root relations checked")
+					await("Ready")
 					await("Not created")
 					measure := func(kind string) {
 						ms := float64(time.Since(start).Microseconds()) / 1000

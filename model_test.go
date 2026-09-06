@@ -199,6 +199,7 @@ func TestBrowseCommandsAndGenerations(t *testing.T) {
 			t.Fatalf("future key %q enabled", input)
 		}
 	}
+	m.width = 143 // All three agents are visible at the owner's smaller geometry.
 	view := m.View().Content
 	for _, text := range []string{"Unavailable", "Not created", "Error:", "global-only", "local-only"} {
 		if !strings.Contains(view, text) {
@@ -255,17 +256,17 @@ func TestBrowseDisplay(t *testing.T) {
 		m := newBrowseModel(cfg)
 		m.width, m.height = 180, 60
 		view := m.View().Content
-		lastGlobal := 0
+		lastLocal := 0
 		for i := range count {
 			global := strings.Index(view, fmt.Sprintf("Agent%d / Global", i))
 			local := strings.Index(view, fmt.Sprintf("Agent%d / Local", i))
-			if global < lastGlobal || local < global || !strings.Contains(view, fmt.Sprintf("/local%d", i)) {
+			if local < lastLocal || global < local || !strings.Contains(view, fmt.Sprintf("/local%d", i)) {
 				t.Fatalf("configured order/scope missing for %d agents: %s", count, view)
 			}
-			lastGlobal = global
+			lastLocal = local
 		}
-		if strings.Index(view, "Agent0 / Local") < lastGlobal || strings.Index(view, "Library") > strings.Index(view, "Agent0") {
-			t.Fatal("library-left / globals-above-locals organization lost")
+		if strings.Index(view, "Agent0 / Global") < lastLocal || strings.Index(view, "Library") > strings.Index(view, "Agent0") {
+			t.Fatal("library-left / locals-above-globals organization lost")
 		}
 	}
 }

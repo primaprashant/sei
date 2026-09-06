@@ -5,7 +5,8 @@
 Automated Linux evidence refreshed after `f0784fa`, 2026-09-06. Checkpoint review
 fixed a P2 harness readiness gap; help now exposes listing state. Native CI passes at
 `8eafad9`; owner feedback is recorded below. No final layout, minimum, budget, or
-complete theme/SSH acceptance is implied.
+complete theme/SSH acceptance is implied by that historical evidence. Task 22
+decisions and current verification are recorded below.
 
 The owner initially approved a provisional synthetic fixture, then superseded
 its source with [Addy Osmani's agent-skills](https://github.com/addyosmani/agent-skills).
@@ -191,6 +192,27 @@ release, prioritizing the remaining implementation work. No next task is started
 by this decision. Final panel arrangement/minimum, terminal versions, per-Mac
 results, and theme/SSH coverage remain open; safety and publication gates are not
 waived. Reconcile the plan's existing polish dependencies before proceeding.
+
+### Approved Layout (Task 22)
+
+Owner reopened Phase H on 2026-09-06 and approved **80x24** minimum, with the
+explicit revision **local above global**. This supersedes the UI deferral above;
+`.git` listing changes remain deferred. PRD/vision updated; bindings unchanged.
+
+- Library left; up to three destination columns, locals above corresponding globals.
+- Agent windows follow focus, show the visible slot range, and retain all 1-9 mappings.
+- Separate title/shortcut rows; `*` panel focus versus `>` selected row.
+- Home-relative library/global paths and project-relative local paths; full raw-target display in scrollable help.
+- Routine per-panel root-check success removed; one readiness status, actionable errors retained.
+- Below 80x24: resize warning, no new mutations, quit available; resizing never cancels work.
+
+Linux `Test(Layout|Resize)` covers 80x24, 143x35, 148x39, all agent counts/focus
+targets, consecutive heights 24-65, full-target help and before/during/after
+mutation resizing. Real gated copy/delete PTYs resize to 79x24 and back, reject
+extra work, finish on quit, and restore terminal state. Full/race/lint/vet/build
+and ten repeated affected PTY runs pass. PTY assertions account for retained
+renderer text; model tests separately check complete frames. No new dependency.
+Native Mac, VTE/Terminal.app/theme/SSH inspection and final human acceptance remain open.
 
 ### Reproduce The Review
 

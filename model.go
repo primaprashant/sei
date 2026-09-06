@@ -9,6 +9,7 @@ import (
 
 type browsePanel struct {
 	label, path   string
+	hint          string // Display-only shortcuts, populated on a panel copy.
 	generation    uint64
 	loading       bool
 	entries       []skillEntry
@@ -239,7 +240,7 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m browseModel) startMutation(destination panelID, add bool) (tea.Model, tea.Cmd) {
-	if m.active != nil || m.pendingQuit || m.showHelp || destination <= 0 || int(destination) >= len(m.panels) || m.width <= 0 || m.height <= 0 {
+	if m.active != nil || m.pendingQuit || m.showHelp || destination <= 0 || int(destination) >= len(m.panels) || m.width < minimumWidth || m.height < minimumHeight {
 		return m, nil
 	}
 	p := m.panels[m.focused]

@@ -22,7 +22,7 @@ Keep it in the terminal so it works where development happens, locally or on rem
 
 ## The Experience
 
-- Show library folder names on the left, agents' global folders at the top right, and their project-local folders below.
+- Show library folder names on the left, agents' project-local folders at the top right, and their global folders below (owner revision, September 6, 2026).
 - Navigate lists with the keyboard. Keep the selected skill, focused panel, agent, global/local scope, destination path, and action result obvious. Show key hints so shortcuts don't need memorizing.
 - From the library, press a destination-specific letter key to add the selected skill. Stay on that library row so adding several skills to one destination takes minimal typing and panel switching.
 - Press `0` to focus the library, `1-9` for agents' local panels, and `g` followed by `1-9` for their global panels. These are ordinary key sequences, not modifier combinations. The convention allows up to nine agents; fitting nine agents comfortably on screen is not a first-version requirement.

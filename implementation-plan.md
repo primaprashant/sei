@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase G passed native CI; owner approved lowercase `x` removal. Other [UI feedback](docs/prototype.md#feedback-received-2026-09-06) is deferred until after the initial release; safety/release gates remain open.
+**Status:** Phase H reopened; Task 22 implemented with owner-approved local-above-global layout and 80x24 minimum. Measurement, native/human verification, and release gates remain open.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -617,18 +617,20 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Phase H: Evidence-Based Polish
 
-**Owner sequencing (2026-09-06):** Defer recorded UI/clipping/status/focus/path/color and `.git` listing improvements until after the initial release. Only the `x` removal change is authorized now; no next task started. Reconcile Phase H/release dependencies before proceeding; do not mark safety, minimum-size, verification, or publication gates complete by deferral.
+**Owner sequencing (2026-09-06):** Owner reopened Phase H, superseding UI deferral; approved proposed layout/minimum with locals above globals. `.git` exclusion remains deferred; no verification or publication gates waived.
 
 ### Task 22: Implement The Approved Layout
 
 **Description:** Turn the reviewed prototype into a reliable desktop layout without silently choosing a minimum terminal size on the owner's behalf.
 
 **Acceptance criteria:**
-- [ ] Owner approves dimensions, panel overflow/focus visibility for 1-9 agents, full-target inspection, and a minimum terminal size based on Task 21 evidence; record exact decisions.
-- [ ] Implement those choices while retaining library-left/global-above-local organization, exact key hints, visible scope/path/result, and text focus markers without a required font.
-- [ ] Below the approved minimum, block new mutations and show a resize message while retaining quit support; resizing during work does not cancel it or re-enable input prematurely.
+- [x] Owner approves dimensions, panel overflow/focus visibility for 1-9 agents, full-target inspection, and a minimum terminal size based on Task 21 evidence; record exact decisions.
+- [x] Implement those choices with owner-revised library-left/local-above-global organization, exact key hints, visible scope/path/result, and text focus markers without a required font.
+- [x] Below the approved minimum, block new mutations and show a resize message while retaining quit support; resizing during work does not cancel it or re-enable input prematurely.
 
 **Verification:** `go test -count=1 -run 'Test(Layout|Resize)' .`; manual resize before/during/after a mutation, help inspection, and focus to all nine agent slots.
+
+**Evidence:** 80x24 minimum; 143x35/148x39, all slots, height sweep, full-help and resize regressions pass. Linux full/race/lint/vet/build and 10x PTY checks pass; native/human rendering pending. [Decisions](docs/prototype.md#approved-layout-task-22).
 
 **Dependencies:** Task 21 and explicit layout approval.
 

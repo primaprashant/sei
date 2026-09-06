@@ -128,7 +128,7 @@ func runAddPTY(t *testing.T, binary, root, path, scope string, restart bool) {
 		}
 	}
 	await("Configured folders")
-	await("Root relations checked")
+	await("Ready")
 	await("> add-me")
 	if !restart {
 		from = screen.Len()
@@ -140,7 +140,7 @@ func runAddPTY(t *testing.T, binary, root, path, scope string, restart bool) {
 		await("complete")
 		from = screen.Len()
 		send("?")
-		await("Root relations checked; every mutation revalidates.")
+		await("Root relations checked; every mutation revalidates")
 		await("Selected name: add-me")
 		await("Focused: Library")
 		from = screen.Len()
@@ -154,7 +154,7 @@ func runAddPTY(t *testing.T, binary, root, path, scope string, restart bool) {
 	}
 	from = screen.Len()
 	send("?")
-	await("Root relations checked; every mutation revalidates.")
+	await("Root relations checked; every mutation revalidates")
 	if restart {
 		await("Selected name: add-me")
 	} else {

@@ -112,6 +112,10 @@ func (m mutationQuitProbe) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.report("key:" + msg.String())
 	case exitRequestMsg:
 		m.report("signal")
+	case tea.WindowSizeMsg:
+		if msg.Width == 79 || previous.width == 79 {
+			m.report(fmt.Sprintf("resize:%dx%d", msg.Width, msg.Height))
+		}
 	}
 	return m, cmd
 }
@@ -343,7 +347,7 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 					}
 					ack("key:" + name)
 				}
-				await("Root relations checked")
+				await("Ready")
 				await("> active")
 				// Help confirms the actual target's scan and safety are ready.
 				send("1", "1")
@@ -365,10 +369,37 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 				}
 				ack("started")
 				from = screen.Len()
+				if err := pty.Setsize(master, &pty.Winsize{Rows: 24, Cols: 79}); err != nil {
+					t.Fatal(err)
+				}
+				if err := cmd.Process.Signal(syscall.SIGWINCH); err != nil {
+					t.Fatal(err)
+				}
+				ack("resize:79x24")
+				await("Resize to at least 80x24")
+				await("Working; q waits for completion")
+				for _, key := range []string{"0", "a", "1", "x"} {
+					send(key, key)
+				}
+				// Restore the original focus before the existing navigation proof.
+				if operation == "copy" {
+					send("0", "0")
+				}
+				from = screen.Len()
+				if err := pty.Setsize(master, &pty.Winsize{Rows: 40, Cols: 240}); err != nil {
+					t.Fatal(err)
+				}
+				if err := cmd.Process.Signal(syscall.SIGWINCH); err != nil {
+					t.Fatal(err)
+				}
+				ack("resize:240x40")
+				await("Configured folders")
+				from = screen.Len()
 				send("\x1b[B", "down")
 				send("?", "?")
 				await("Selected name: survivor")
-				await("Working; q waits for completion")
+				// Busy text was verified in the resize frame above. The renderer
+				// may retain that same line while scrolling into help.
 				from = screen.Len()
 				send("?", "?")
 				await("Configured folders")
@@ -429,7 +460,7 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 					// help, opened while work is gated so no completion can race the toggle.
 					from = screen.Len()
 					send("?", "?")
-					await("Working; q waits for completion")
+					await(" | up/down scroll | ?/Esc close |")
 					from = screen.Len()
 				}
 				if _, err := releaseW.Write([]byte("R")); err != nil {

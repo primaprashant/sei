@@ -9,7 +9,7 @@ This PRD refines [product-vision.md](product-vision.md) and contains the product
 ### Primary Workflow
 
 1. Run `sei` in a project; on first use, complete interactive setup.
-2. See the library on the left, configured global destinations at the top right, and corresponding project-local destinations below.
+2. See the library on the left, configured project-local destinations at the top right, and corresponding global destinations below (owner revision, September 6, 2026).
 3. Select a library folder and use a destination-specific letter to copy it. Keep focus and selection on that library row.
 4. Add three skills to one local destination without repeatedly switching panels or entering paths.
 5. Focus that destination, remove two skills, and quit. Filesystem changes persist.
@@ -112,7 +112,7 @@ The initial three agents therefore use `a/A`, `b/B`, and `c/C`. Positional keys 
 - List every immediate ordinary subdirectory, including dot-directories, without requiring `SKILL.md` or parsing frontmatter. Ignore loose regular files in listings. Show symlink entries as blocked, with a reason; do not follow or delete those entries. No recursive skill discovery.
 - Names and paths are untrusted display text: escape terminal control characters, keep raw names for filesystem operations, and truncate using terminal cell width. A truncated label must not be the only way to inspect the full action target.
 - Use text labels and focus markers as well as color; support light/dark terminals and a readable no-color presentation. No required patched fonts or distracting animation. Ignore paste events as action input, and do not depend on enhanced keyboard protocols or reliable key-repeat detection.
-- Prototype the default three-agent layout before choosing dimensions, overflow behavior, or a minimum supported terminal size. One to nine agents must remain addressable, but nine simultaneously comfortable columns are not required. Below the eventually agreed minimum, disable new mutations and show a clear resize message while retaining quit support.
+- Owner-approved layout (September 6, 2026): minimum 80x24; verify 143x35 and 148x39. Keep shortcuts on separate rows, compact paths with full-target help, and a focus-following agent window with a visible slot range. One to nine agents remain addressable; nine simultaneous columns are not required. Below the minimum, disable new mutations and show a resize message while retaining quit support; active work is not canceled.
 
 ### Filesystem Contract
 

@@ -145,7 +145,7 @@ func runMutationPTY(t *testing.T, binary, root, path, scope string, restart bool
 		}
 	}
 	await("Configured folders")
-	await("Root relations checked")
+	await("Ready")
 	await("> remove-me")
 	raw, err := term.GetState(slave.Fd())
 	if err != nil || reflect.DeepEqual(before, raw) {

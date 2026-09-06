@@ -39,7 +39,8 @@ Add mappings by slot: a b c d e f h i o local, A B C D E F H I O global
 Add deletes an existing same-named target before copying: local edits are lost.
 No action confirmation, trash, backup, or undo. Failure may leave partial output.
 Quit waits for active work.
-Layout is provisional; no minimum terminal size has been approved.
+Library left, local destinations above global; agent windows follow focus.
+Minimum terminal size: 80x24. Smaller windows block new mutations; quit still works.
 `
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {

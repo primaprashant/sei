@@ -184,7 +184,7 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 					}
 					scopeLabel := strings.ToUpper(scope[:1]) + scope[1:]
 					await("Configured folders")
-					await("Root relations checked")
+					await("Ready")
 					await("> replace-me")
 					if !restart {
 						for i, key := range "abc" {

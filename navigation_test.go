@@ -68,7 +68,7 @@ func TestNavigation(t *testing.T) {
 			}
 			m.width, m.height = 100, 30
 			view := m.View().Content
-			if !strings.Contains(view, "> line\\nb") || !strings.Contains(view, "> [") {
+			if !strings.Contains(view, "> line\\nb") || !strings.Contains(view, "* "+m.panels[id].label) {
 				t.Fatalf("focused selection hidden: %s", view)
 			}
 		}
@@ -147,7 +147,7 @@ func TestHelp(t *testing.T) {
 	m.focused = 9
 	m.panels[9].path = "/" + strings.Repeat("long path界/", 200) + "\x1b[31mENDPATH"
 	m.panels[9].selectedName = strings.Repeat("long-name", 200) + "\nENDNAME"
-	m.width, m.height = 42, 10
+	m.width, m.height = 80, 24
 	m, _ = press(m, '?')
 	var inspected strings.Builder
 	for range len(m.helpLines()) {

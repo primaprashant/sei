@@ -61,15 +61,18 @@ The browser lists immediate ordinary directories, including dot-directories,
 without parsing `SKILL.md`. Loose files are ignored; symlink entries are shown as
 blocked and are not followed. Listings use raw, case-sensitive Go string ordering;
 display labels are escaped and truncated by terminal cell width without changing
-raw selection names. The library appears left, with configured globals above
-locals on the right. Missing destinations show `Not created` and remain absent;
+raw selection names. The library appears left, with configured locals above
+globals on the right. Missing destinations show `Not created` and remain absent;
 inaccessible or invalid roots show errors independently of other panels.
 Configured root aliases are permitted when root checks pass. Safety warnings are
 independent of listings, with full reasons in help; unsafe roots remain inspectable.
 Every mutation revalidates, including after missing-root creation. The active
 config location and its aliases are protected even when the project changes.
-The grid is provisional: it pages to the focused agent and scrolls lists to the
-selection. No minimum terminal size or final overflow behavior is established.
+The grid follows the focused agent, shows the visible slot range, and scrolls lists
+to the selection. Shortcut rows stay separate from titles; `*` marks panel focus
+and `>` marks selection. Paths are home/project-relative where possible, with full
+paths in help. Below the approved **80x24** minimum, new mutations are disabled;
+quit still works and active work finishes normally.
 
 Keys: Up/Down clamp; `0` library; `1-9` local; `g` then `1-9` global.
 Each panel remembers its raw-name selection. `r` refreshes listings, not config,
