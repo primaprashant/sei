@@ -643,11 +643,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Establish quantitative gates and demonstrate that the actual task beats the owner's existing shell workflow, without treating microbenchmarks as usability proof.
 
 **Acceptance criteria:**
-- [ ] Agree on a repeatable protocol and sample counts; separate first/cold runs from warm runs, input-to-render from I/O completion, and local from SSH. Report distributions, fixture characteristics, environment, flags, and artifact size.
+- [x] Agree on a repeatable protocol and sample counts; separate first/cold runs from warm runs, input-to-render from I/O completion, and local from SSH. Report distributions, fixture characteristics, environment, flags, and artifact size.
 - [ ] Time add-three/remove-two/quit against the current shell method on reset copies of the same fixture; record keystrokes, panel switches, mistakes, readability, and target certainty.
 - [ ] Owner approves explicit startup/navigation/copy/replacement/removal/artifact budgets based on results. If workflow or budgets fail, identify and implement narrowly scoped follow-up fixes with regression tests before release; no arbitrary budgets or automatic scope expansion.
 
 **Verification:** `go test -run='^$' -bench=. -benchmem -count=5 ./...` plus the recorded release-build process/PTY timing protocol and owner-run shell comparison. Benchmarks alone do not close this task.
+
+**Evidence:** [42 Linux trials and five benchmark repetitions](docs/performance.md) pass; test-only VT emulator approved. Scoped Linux budgets approved/enforced; owner `cp`/`rm` comparison and native/SSH evidence open. Owner permits Task 24 before human comparison; Task 23 acceptance remains partial.
 
 **Dependencies:** Task 22 and owner availability.
 

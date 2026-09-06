@@ -214,6 +214,14 @@ and ten repeated affected PTY runs pass. PTY assertions account for retained
 renderer text; model tests separately check complete frames. No new dependency.
 Native Mac, VTE/Terminal.app/theme/SSH inspection and final human acceptance remain open.
 
+### Measurements (Task 23)
+
+[Approved protocol, current 42-trial Linux evidence, benchmarks, and owner shell
+comparison](performance.md). Current timing uses reconstructed terminal cells,
+all-panel readiness, and direct browse navigation timing; historical P2 timing and
+captures above are not silently relabeled. Scoped Linux budgets approved; human
+comparison remains open, with owner authorization to proceed to Task 24.
+
 ### Reproduce The Review
 
 Prepare a retained disposable fixture (the path must not already exist):
