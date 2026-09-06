@@ -68,7 +68,7 @@ func (m setupModel) View() tea.View {
 	}
 	helper := m.fieldHint()
 	keys := "Tab/↑↓ field  Ctrl+U clear  Enter review  F1 details  Esc cancel"
-	extra := "Ctrl+A add agent  Ctrl+D remove agent  Ctrl+K/J reorder"
+	extra := "Ctrl+N add agent  Ctrl+X remove agent  Ctrl+K/J reorder"
 	if m.preview || m.details {
 		helper = fmt.Sprintf("Rows %d–%d / %d", offset+1, min(len(body), offset+available), len(body))
 		keys = "Enter save  e edit  ↑↓ scroll  F1 details  Esc cancel"
@@ -191,7 +191,7 @@ func (m setupModel) setupBody(width int, s uiStyles) ([]string, int) {
 			lines = append(lines, "")
 		}
 		lines = append(lines, s.section.Render("EDITING"))
-		text := "Tab/Up/Down selects fields; typing appends; Backspace erases; Ctrl+U clears.\nCtrl+A adds an agent, Ctrl+D removes it, Ctrl+K/J changes its slot.\nEnter reviews resolved paths before saving. Recognized paste is ignored."
+		text := "Tab/Up/Down selects fields; typing appends; Backspace erases; Ctrl+U clears.\nCtrl+N adds an agent, Ctrl+X removes it, Ctrl+K/J changes its slot.\nEnter reviews resolved paths before saving. Recognized paste is ignored."
 		lines = append(lines, strings.Split(ansi.Wrap(text, width, ""), "\n")...)
 		lines = append(lines, "")
 		for _, line := range strings.Split(ansi.Wrap(sharedDiscovery, width, ""), "\n") {

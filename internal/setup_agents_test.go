@@ -56,10 +56,27 @@ func TestSetupPresetPaths(t *testing.T) {
 func TestSetupAgents(t *testing.T) {
 	ctrl := func(code rune) tea.KeyPressMsg { return tea.KeyPressMsg{Code: code, Mod: tea.ModCtrl} }
 	text := func(s string) tea.KeyPressMsg { return tea.KeyPressMsg{Code: rune(s[0]), Text: s} }
+	t.Run("old shortcuts are ignored and plain letters remain editable", func(t *testing.T) {
+		m := newSetupModel("", "")
+		m.field = 1
+		before := m
+		for _, code := range []rune{'a', 'd'} {
+			next, cmd := setupUpdate(t, m, ctrl(code))
+			if cmd != nil || !reflect.DeepEqual(next, before) {
+				t.Fatalf("Ctrl+%c changed setup", code)
+			}
+		}
+		for _, letter := range []string{"n", "x"} {
+			m, _ = setupUpdate(t, m, text(letter))
+		}
+		if m.adding || len(m.cfg.Agents) != len(before.cfg.Agents) || m.cfg.Agents[0].Name != before.cfg.Agents[0].Name+"nx" {
+			t.Fatal("plain n/x did not edit the field")
+		}
+	})
 	t.Run("library focus does not remove or reorder agents", func(t *testing.T) {
 		m := newSetupModel("", "")
 		before := append([]agentConfig(nil), m.cfg.Agents...)
-		for _, key := range []rune{'d', 'k', 'j'} {
+		for _, key := range []rune{'x', 'k', 'j'} {
 			m, cmd := setupUpdate(t, m, ctrl(key))
 			if cmd != nil || m.field != 0 || !reflect.DeepEqual(m.cfg.Agents, before) {
 				t.Fatal("library focus changed agents")
@@ -70,7 +87,7 @@ func TestSetupAgents(t *testing.T) {
 		cfg, project, path := saveConfigFixture(t)
 		m := newSetupModel(project, path)
 		m.cfg = cfg
-		m, _ = setupUpdate(t, m, ctrl('a'))
+		m, _ = setupUpdate(t, m, ctrl('n'))
 		m, _ = setupUpdate(t, m, text("0"))
 		for _, value := range []string{cfg.Agents[0].Name, "~/other", ".other/skills"} {
 			m, _ = setupUpdate(t, m, text(value))
@@ -87,7 +104,7 @@ func TestSetupAgents(t *testing.T) {
 		for i, preset := range setupPresets {
 			m := newSetupModel("", "")
 			m.cfg.Agents = []agentConfig{{Name: "Other"}}
-			m, _ = setupUpdate(t, m, ctrl('a'))
+			m, _ = setupUpdate(t, m, ctrl('n'))
 			if !m.adding || !strings.Contains(m.View().Content, "5  Cursor") || !strings.Contains(m.View().Content, "0  Custom") {
 				t.Fatal("missing chooser")
 			}
@@ -96,7 +113,7 @@ func TestSetupAgents(t *testing.T) {
 			if cmd != nil || m.adding || m.field != 4 || len(m.cfg.Agents) != 2 || m.cfg.Agents[1] != preset || len(before) != 1 {
 				t.Fatalf("preset %d: %+v", i+1, m)
 			}
-			m, _ = setupUpdate(t, m, ctrl('a'))
+			m, _ = setupUpdate(t, m, ctrl('n'))
 			m, _ = setupUpdate(t, m, text(fmt.Sprint(i+1)))
 			if m.err == nil || !strings.Contains(m.err.Error(), "duplicate") || len(m.cfg.Agents) != 2 {
 				t.Fatalf("duplicate accepted: %+v", m)
@@ -105,7 +122,7 @@ func TestSetupAgents(t *testing.T) {
 		for _, key := range []tea.KeyPressMsg{text("x"), text("10"), tea.KeyPressMsg{Code: tea.KeyEnter}} {
 			m := newSetupModel("", "")
 			before := m.cfg
-			m, _ = setupUpdate(t, m, ctrl('a'))
+			m, _ = setupUpdate(t, m, ctrl('n'))
 			m, cmd := setupUpdate(t, m, key)
 			if cmd != nil || m.adding || !reflect.DeepEqual(m.cfg, before) {
 				t.Fatal("invalid chooser input changed config")
@@ -117,12 +134,12 @@ func TestSetupAgents(t *testing.T) {
 		m := newSetupModel(project, path)
 		m.cfg = cfg
 		m.field = 3
-		m, _ = setupUpdate(t, m, ctrl('d'))
+		m, _ = setupUpdate(t, m, ctrl('x'))
 		if len(m.cfg.Agents) != 1 || m.err == nil || m.field != 3 {
 			t.Fatal("removed last agent")
 		}
 		for i := 2; i <= 9; i++ {
-			m, _ = setupUpdate(t, m, ctrl('a'))
+			m, _ = setupUpdate(t, m, ctrl('n'))
 			m, _ = setupUpdate(t, m, text("0"))
 			if m.field != 1+3*(i-1) || m.cfg.Agents[i-1] != (agentConfig{}) {
 				t.Fatal("custom not blank or focused")
@@ -133,7 +150,7 @@ func TestSetupAgents(t *testing.T) {
 			}
 		}
 		before := append([]agentConfig(nil), m.cfg.Agents...)
-		m, _ = setupUpdate(t, m, ctrl('a'))
+		m, _ = setupUpdate(t, m, ctrl('n'))
 		if m.adding || m.err == nil || !reflect.DeepEqual(m.cfg.Agents, before) {
 			t.Fatal("allowed tenth agent")
 		}
@@ -182,7 +199,7 @@ func TestSetupAgents(t *testing.T) {
 		m.field = 27
 		for len(m.cfg.Agents) > 1 {
 			old := append([]agentConfig(nil), m.cfg.Agents...)
-			m, _ = setupUpdate(t, m, ctrl('d'))
+			m, _ = setupUpdate(t, m, ctrl('x'))
 			if !reflect.DeepEqual(m.cfg.Agents, old[:len(old)-1]) || m.field != 3*len(m.cfg.Agents) {
 				t.Fatal("remove did not preserve order/clamp focus")
 			}
@@ -218,7 +235,7 @@ func TestExplicitSetup(t *testing.T) {
 				if cmd != nil || !m.confirm || m.busy || !strings.Contains(m.View().Content, "y confirm · n back") {
 					t.Fatal("missing separate confirmation")
 				}
-				for _, key := range []tea.KeyPressMsg{{Code: tea.KeyEnter}, {Code: 'e', Text: "e"}, {Code: 'a', Mod: tea.ModCtrl}} {
+				for _, key := range []tea.KeyPressMsg{{Code: tea.KeyEnter}, {Code: 'e', Text: "e"}, {Code: 'n', Mod: tea.ModCtrl}, {Code: 'x', Mod: tea.ModCtrl}} {
 					next, ignored := setupUpdate(t, m, key)
 					if ignored != nil || !reflect.DeepEqual(next, m) {
 						t.Fatal("confirmation accepted unrelated key")

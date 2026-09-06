@@ -23,7 +23,7 @@ sei setup  Edit → Review
 
 Source stays unchanged. Type appends; Backspace erases.
 Tab/↑↓ field  Ctrl+U clear  Enter review  F1 details  Esc cancel
-Ctrl+A add agent  Ctrl+D remove agent  Ctrl+K/J reorder
+Ctrl+N add agent  Ctrl+X remove agent  Ctrl+K/J reorder
 
 === last-agent (80x24) ===
 sei setup  Edit → Review
@@ -49,7 +49,7 @@ sei setup  Edit → Review
 
 Project folder: relative path inside the current project.
 Tab/↑↓ field  Ctrl+U clear  Enter review  F1 details  Esc cancel
-Ctrl+A add agent  Ctrl+D remove agent  Ctrl+K/J reorder
+Ctrl+N add agent  Ctrl+X remove agent  Ctrl+K/J reorder
 
 === chooser (80x24) ===
 sei setup  Add agent
@@ -164,7 +164,7 @@ sei setup  Edit → Review
 Error: library must be absolute or start with ~/ · F1 details
 Source stays unchanged. Type appends; Backspace erases.
 Tab/↑↓ field  Ctrl+U clear  Enter review  F1 details  Esc cancel
-Ctrl+A add agent  Ctrl+D remove agent  Ctrl+K/J reorder
+Ctrl+N add agent  Ctrl+X remove agent  Ctrl+K/J reorder
 
 === saving (80x24) ===
 sei setup  Saving configuration
@@ -229,7 +229,7 @@ Source stays unchanged. Type appends; Backspace erases.
 
 EDITING
 Tab/Up/Down selects fields; typing appends; Backspace erases; Ctrl+U clears.
-Ctrl+A adds an agent, Ctrl+D removes it, Ctrl+K/J changes its slot.
+Ctrl+N adds an agent, Ctrl+X removes it, Ctrl+K/J changes its slot.
 Enter reviews resolved paths before saving. Recognized paste is ignored.
 
 Other agents may also load skills from these folders. sei shows configured

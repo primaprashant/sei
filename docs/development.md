@@ -52,8 +52,8 @@ Try add/replace/remove, Tab/Shift+Tab, help, resize and quit; rerun to inspect p
 
 ## UI Invariants
 
-In setup, Tab/Up/Down selects fields; Ctrl+U clears. Ctrl+A adds a preset/custom
-agent (1–9 preset, 0 custom), Ctrl+D removes it, and Ctrl+K/J reorders it.
+In setup, Tab/Up/Down selects fields; Ctrl+U clears. Ctrl+N adds a preset/custom
+agent (1–9 preset, 0 custom), Ctrl+X removes it, and Ctrl+K/J reorders it.
 Enter previews and saves; F1 opens/closes scrollable field/path/error details; `e` returns to editing and
 `y` confirms replacing config. Esc/Ctrl+C cancels.
 Recognized paste is ignored. Explicit `sei setup` edits valid config and exits

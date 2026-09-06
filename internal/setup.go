@@ -170,13 +170,13 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.cfg.Agents = append([]agentConfig(nil), m.cfg.Agents...)
 		switch key {
-		case "ctrl+a":
+		case "ctrl+n":
 			if len(m.cfg.Agents) == 9 {
 				m.err = fmt.Errorf("agents must contain 1-9 entries")
 			} else {
 				m.adding = true
 			}
-		case "ctrl+d":
+		case "ctrl+x":
 			if len(m.cfg.Agents) == 1 {
 				m.err = fmt.Errorf("at least one agent is required")
 			} else if m.field > 0 {
