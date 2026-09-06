@@ -1,180 +1,180 @@
 === RUN   TestRepresentativePrototype
 === RUN   TestRepresentativePrototype/148x39/1/dark
-    performance_test.go:211: TIMING startup 54.285 ms
+    performance_test.go:262: TIMING startup 54.118 ms
 === RUN   TestRepresentativePrototype/148x39/1/light
-    performance_test.go:211: TIMING startup 56.708 ms
+    performance_test.go:262: TIMING startup 57.102 ms
 === RUN   TestRepresentativePrototype/148x39/1/no-color
-    performance_test.go:211: TIMING startup 57.155 ms
+    performance_test.go:262: TIMING startup 56.775 ms
 === RUN   TestRepresentativePrototype/148x39/3/dark
-    performance_test.go:211: TIMING startup 56.150 ms
-    performance_test.go:211: TIMING add 30.042 ms
-    performance_test.go:211: TIMING input 16.454 ms
-    performance_test.go:211: TIMING add 32.060 ms
-    performance_test.go:211: TIMING input 16.015 ms
-    performance_test.go:211: TIMING add 32.591 ms
-    performance_test.go:211: TIMING remove 17.541 ms
-    performance_test.go:211: TIMING remove 16.695 ms
+    performance_test.go:262: TIMING startup 55.686 ms
+    performance_test.go:262: TIMING add 49.967 ms
+    performance_test.go:262: TIMING input 16.971 ms
+    performance_test.go:262: TIMING add 49.938 ms
+    performance_test.go:262: TIMING input 15.364 ms
+    performance_test.go:262: TIMING add 49.227 ms
+    performance_test.go:262: TIMING remove 15.891 ms
+    performance_test.go:262: TIMING remove 15.999 ms
 === RUN   TestRepresentativePrototype/148x39/3/light
-    performance_test.go:211: TIMING startup 59.683 ms
-    performance_test.go:211: TIMING add 29.942 ms
-    performance_test.go:211: TIMING input 16.805 ms
-    performance_test.go:211: TIMING add 17.411 ms
-    performance_test.go:211: TIMING input 15.443 ms
-    performance_test.go:211: TIMING add 17.680 ms
-    performance_test.go:211: TIMING remove 15.995 ms
-    performance_test.go:211: TIMING remove 15.556 ms
+    performance_test.go:262: TIMING startup 56.214 ms
+    performance_test.go:262: TIMING add 49.412 ms
+    performance_test.go:262: TIMING input 15.337 ms
+    performance_test.go:262: TIMING add 48.774 ms
+    performance_test.go:262: TIMING input 15.383 ms
+    performance_test.go:262: TIMING add 49.150 ms
+    performance_test.go:262: TIMING remove 16.683 ms
+    performance_test.go:262: TIMING remove 16.551 ms
 === RUN   TestRepresentativePrototype/148x39/3/no-color
-    performance_test.go:211: TIMING startup 60.370 ms
-    performance_test.go:211: TIMING add 29.839 ms
-    performance_test.go:211: TIMING input 16.220 ms
-    performance_test.go:211: TIMING add 32.313 ms
-    performance_test.go:211: TIMING input 15.208 ms
-    performance_test.go:211: TIMING add 32.101 ms
-    performance_test.go:211: TIMING remove 16.466 ms
-    performance_test.go:211: TIMING remove 16.026 ms
+    performance_test.go:262: TIMING startup 63.135 ms
+    performance_test.go:262: TIMING add 49.047 ms
+    performance_test.go:262: TIMING input 16.984 ms
+    performance_test.go:262: TIMING add 49.492 ms
+    performance_test.go:262: TIMING input 16.351 ms
+    performance_test.go:262: TIMING add 49.386 ms
+    performance_test.go:262: TIMING remove 15.367 ms
+    performance_test.go:262: TIMING remove 15.629 ms
 === RUN   TestRepresentativePrototype/148x39/9/dark
-    performance_test.go:211: TIMING startup 53.605 ms
+    performance_test.go:262: TIMING startup 60.122 ms
 === RUN   TestRepresentativePrototype/148x39/9/light
-    performance_test.go:211: TIMING startup 57.905 ms
+    performance_test.go:262: TIMING startup 55.874 ms
 === RUN   TestRepresentativePrototype/148x39/9/no-color
-    performance_test.go:211: TIMING startup 57.805 ms
+    performance_test.go:262: TIMING startup 68.274 ms
 === RUN   TestRepresentativePrototype/143x35/1/dark
-    performance_test.go:211: TIMING startup 54.056 ms
+    performance_test.go:262: TIMING startup 59.154 ms
 === RUN   TestRepresentativePrototype/143x35/1/light
-    performance_test.go:211: TIMING startup 52.423 ms
+    performance_test.go:262: TIMING startup 58.121 ms
 === RUN   TestRepresentativePrototype/143x35/1/no-color
-    performance_test.go:211: TIMING startup 58.390 ms
+    performance_test.go:262: TIMING startup 54.827 ms
 === RUN   TestRepresentativePrototype/143x35/3/dark
-    performance_test.go:211: TIMING startup 52.991 ms
-    performance_test.go:211: TIMING add 31.700 ms
-    performance_test.go:211: TIMING input 15.246 ms
-    performance_test.go:211: TIMING add 32.639 ms
-    performance_test.go:211: TIMING input 16.570 ms
-    performance_test.go:211: TIMING add 32.843 ms
-    performance_test.go:211: TIMING remove 16.760 ms
-    performance_test.go:211: TIMING remove 16.705 ms
+    performance_test.go:262: TIMING startup 59.214 ms
+    performance_test.go:262: TIMING add 49.462 ms
+    performance_test.go:262: TIMING input 16.167 ms
+    performance_test.go:262: TIMING add 49.051 ms
+    performance_test.go:262: TIMING input 15.550 ms
+    performance_test.go:262: TIMING add 16.989 ms
+    performance_test.go:262: TIMING remove 15.657 ms
+    performance_test.go:262: TIMING remove 15.141 ms
 === RUN   TestRepresentativePrototype/143x35/3/light
-    performance_test.go:211: TIMING startup 56.929 ms
-    performance_test.go:211: TIMING add 30.753 ms
-    performance_test.go:211: TIMING input 16.185 ms
-    performance_test.go:211: TIMING add 33.374 ms
-    performance_test.go:211: TIMING input 16.704 ms
-    performance_test.go:211: TIMING add 32.829 ms
-    performance_test.go:211: TIMING remove 15.306 ms
-    performance_test.go:211: TIMING remove 16.861 ms
+    performance_test.go:262: TIMING startup 58.527 ms
+    performance_test.go:262: TIMING add 49.508 ms
+    performance_test.go:262: TIMING input 16.761 ms
+    performance_test.go:262: TIMING add 16.119 ms
+    performance_test.go:262: TIMING input 16.671 ms
+    performance_test.go:262: TIMING add 15.756 ms
+    performance_test.go:262: TIMING remove 16.949 ms
+    performance_test.go:262: TIMING remove 15.336 ms
 === RUN   TestRepresentativePrototype/143x35/3/no-color
-    performance_test.go:211: TIMING startup 58.618 ms
-    performance_test.go:211: TIMING add 31.978 ms
-    performance_test.go:211: TIMING input 15.678 ms
-    performance_test.go:211: TIMING add 32.843 ms
-    performance_test.go:211: TIMING input 15.143 ms
-    performance_test.go:211: TIMING add 32.176 ms
-    performance_test.go:211: TIMING remove 17.163 ms
-    performance_test.go:211: TIMING remove 16.906 ms
+    performance_test.go:262: TIMING startup 53.568 ms
+    performance_test.go:262: TIMING add 49.634 ms
+    performance_test.go:262: TIMING input 15.600 ms
+    performance_test.go:262: TIMING add 50.009 ms
+    performance_test.go:262: TIMING input 16.048 ms
+    performance_test.go:262: TIMING add 48.743 ms
+    performance_test.go:262: TIMING remove 16.334 ms
+    performance_test.go:262: TIMING remove 15.271 ms
 === RUN   TestRepresentativePrototype/143x35/9/dark
-    performance_test.go:211: TIMING startup 56.671 ms
+    performance_test.go:262: TIMING startup 64.246 ms
 === RUN   TestRepresentativePrototype/143x35/9/light
-    performance_test.go:211: TIMING startup 54.990 ms
+    performance_test.go:262: TIMING startup 54.989 ms
 === RUN   TestRepresentativePrototype/143x35/9/no-color
-    performance_test.go:211: TIMING startup 63.767 ms
+    performance_test.go:262: TIMING startup 64.360 ms
 === RUN   TestRepresentativePrototype/80x24/1/dark
-    performance_test.go:211: TIMING startup 55.124 ms
+    performance_test.go:262: TIMING startup 54.674 ms
 === RUN   TestRepresentativePrototype/80x24/1/light
-    performance_test.go:211: TIMING startup 53.260 ms
+    performance_test.go:262: TIMING startup 69.001 ms
 === RUN   TestRepresentativePrototype/80x24/1/no-color
-    performance_test.go:211: TIMING startup 52.258 ms
+    performance_test.go:262: TIMING startup 51.933 ms
 === RUN   TestRepresentativePrototype/80x24/3/dark
-    performance_test.go:211: TIMING startup 54.549 ms
+    performance_test.go:262: TIMING startup 63.028 ms
 === RUN   TestRepresentativePrototype/80x24/3/light
-    performance_test.go:211: TIMING startup 51.908 ms
+    performance_test.go:262: TIMING startup 56.620 ms
 === RUN   TestRepresentativePrototype/80x24/3/no-color
-    performance_test.go:211: TIMING startup 53.611 ms
+    performance_test.go:262: TIMING startup 51.837 ms
 === RUN   TestRepresentativePrototype/80x24/9/dark
-    performance_test.go:211: TIMING startup 55.072 ms
+    performance_test.go:262: TIMING startup 56.409 ms
 === RUN   TestRepresentativePrototype/80x24/9/light
-    performance_test.go:211: TIMING startup 53.976 ms
+    performance_test.go:262: TIMING startup 52.479 ms
 === RUN   TestRepresentativePrototype/80x24/9/no-color
-    performance_test.go:211: TIMING startup 57.170 ms
+    performance_test.go:262: TIMING startup 57.140 ms
 === RUN   TestRepresentativePrototype/150x40/1/dark
-    performance_test.go:211: TIMING startup 53.668 ms
+    performance_test.go:262: TIMING startup 56.428 ms
 === RUN   TestRepresentativePrototype/150x40/1/light
-    performance_test.go:211: TIMING startup 59.025 ms
+    performance_test.go:262: TIMING startup 63.661 ms
 === RUN   TestRepresentativePrototype/150x40/1/no-color
-    performance_test.go:211: TIMING startup 53.527 ms
+    performance_test.go:262: TIMING startup 62.887 ms
 === RUN   TestRepresentativePrototype/150x40/3/dark
-    performance_test.go:211: TIMING startup 67.966 ms
-    performance_test.go:211: TIMING add 31.002 ms
-    performance_test.go:211: TIMING input 15.798 ms
-    performance_test.go:211: TIMING add 32.634 ms
-    performance_test.go:211: TIMING input 15.862 ms
-    performance_test.go:211: TIMING add 18.245 ms
-    performance_test.go:211: TIMING remove 16.863 ms
-    performance_test.go:211: TIMING remove 14.553 ms
+    performance_test.go:262: TIMING startup 61.212 ms
+    performance_test.go:262: TIMING add 49.564 ms
+    performance_test.go:262: TIMING input 16.480 ms
+    performance_test.go:262: TIMING add 49.159 ms
+    performance_test.go:262: TIMING input 16.345 ms
+    performance_test.go:262: TIMING add 16.363 ms
+    performance_test.go:262: TIMING remove 15.335 ms
+    performance_test.go:262: TIMING remove 16.273 ms
 === RUN   TestRepresentativePrototype/150x40/3/light
-    performance_test.go:211: TIMING startup 56.943 ms
-    performance_test.go:211: TIMING add 31.126 ms
-    performance_test.go:211: TIMING input 16.318 ms
-    performance_test.go:211: TIMING add 32.328 ms
-    performance_test.go:211: TIMING input 16.600 ms
-    performance_test.go:211: TIMING add 31.708 ms
-    performance_test.go:211: TIMING remove 16.398 ms
-    performance_test.go:211: TIMING remove 15.046 ms
+    performance_test.go:262: TIMING startup 59.945 ms
+    performance_test.go:262: TIMING add 49.345 ms
+    performance_test.go:262: TIMING input 16.481 ms
+    performance_test.go:262: TIMING add 15.323 ms
+    performance_test.go:262: TIMING input 15.498 ms
+    performance_test.go:262: TIMING add 15.876 ms
+    performance_test.go:262: TIMING remove 15.760 ms
+    performance_test.go:262: TIMING remove 15.245 ms
 === RUN   TestRepresentativePrototype/150x40/3/no-color
-    performance_test.go:211: TIMING startup 56.198 ms
-    performance_test.go:211: TIMING add 30.775 ms
-    performance_test.go:211: TIMING input 16.701 ms
-    performance_test.go:211: TIMING add 32.730 ms
-    performance_test.go:211: TIMING input 16.226 ms
-    performance_test.go:211: TIMING add 32.034 ms
-    performance_test.go:211: TIMING remove 16.368 ms
-    performance_test.go:211: TIMING remove 15.290 ms
+    performance_test.go:262: TIMING startup 58.888 ms
+    performance_test.go:262: TIMING add 49.880 ms
+    performance_test.go:262: TIMING input 15.148 ms
+    performance_test.go:262: TIMING add 49.759 ms
+    performance_test.go:262: TIMING input 15.130 ms
+    performance_test.go:262: TIMING add 48.985 ms
+    performance_test.go:262: TIMING remove 15.488 ms
+    performance_test.go:262: TIMING remove 15.318 ms
 === RUN   TestRepresentativePrototype/150x40/9/dark
-    performance_test.go:211: TIMING startup 57.105 ms
+    performance_test.go:262: TIMING startup 52.389 ms
 === RUN   TestRepresentativePrototype/150x40/9/light
-    performance_test.go:211: TIMING startup 60.103 ms
+    performance_test.go:262: TIMING startup 65.653 ms
 === RUN   TestRepresentativePrototype/150x40/9/no-color
-    performance_test.go:211: TIMING startup 60.477 ms
+    performance_test.go:262: TIMING startup 54.766 ms
 === NAME  TestRepresentativePrototype
-    performance_test.go:67: SUMMARY startup n=36 min=51.908 median=56.671 p95=63.767 max=67.966 ms
-    performance_test.go:67: SUMMARY input n=18 min=15.143 median=16.220 p95=16.805 max=16.805 ms
-    performance_test.go:67: SUMMARY add n=27 min=17.411 median=32.034 p95=32.843 max=33.374 ms
-    performance_test.go:67: SUMMARY remove n=18 min=14.553 median=16.466 p95=17.541 max=17.541 ms
---- PASS: TestRepresentativePrototype (8.45s)
+    performance_test.go:112: SUMMARY startup n=36 min=51.837 median=57.140 p95=68.274 max=69.001 ms
+    performance_test.go:112: SUMMARY input n=18 min=15.130 median=16.167 p95=16.984 max=16.984 ms
+    performance_test.go:112: SUMMARY add n=27 min=15.323 median=49.227 p95=49.967 max=50.009 ms
+    performance_test.go:112: SUMMARY remove n=18 min=15.141 median=15.657 p95=16.949 max=16.949 ms
+--- PASS: TestRepresentativePrototype (11.72s)
     --- PASS: TestRepresentativePrototype/148x39/1/dark (0.15s)
     --- PASS: TestRepresentativePrototype/148x39/1/light (0.15s)
     --- PASS: TestRepresentativePrototype/148x39/1/no-color (0.16s)
-    --- PASS: TestRepresentativePrototype/148x39/3/dark (0.45s)
-    --- PASS: TestRepresentativePrototype/148x39/3/light (0.43s)
-    --- PASS: TestRepresentativePrototype/148x39/3/no-color (0.46s)
-    --- PASS: TestRepresentativePrototype/148x39/9/dark (0.17s)
-    --- PASS: TestRepresentativePrototype/148x39/9/light (0.17s)
-    --- PASS: TestRepresentativePrototype/148x39/9/no-color (0.17s)
-    --- PASS: TestRepresentativePrototype/143x35/1/dark (0.15s)
+    --- PASS: TestRepresentativePrototype/148x39/3/dark (0.82s)
+    --- PASS: TestRepresentativePrototype/148x39/3/light (0.82s)
+    --- PASS: TestRepresentativePrototype/148x39/3/no-color (0.83s)
+    --- PASS: TestRepresentativePrototype/148x39/9/dark (0.18s)
+    --- PASS: TestRepresentativePrototype/148x39/9/light (0.18s)
+    --- PASS: TestRepresentativePrototype/148x39/9/no-color (0.20s)
+    --- PASS: TestRepresentativePrototype/143x35/1/dark (0.16s)
     --- PASS: TestRepresentativePrototype/143x35/1/light (0.15s)
-    --- PASS: TestRepresentativePrototype/143x35/1/no-color (0.16s)
-    --- PASS: TestRepresentativePrototype/143x35/3/dark (0.45s)
-    --- PASS: TestRepresentativePrototype/143x35/3/light (0.46s)
-    --- PASS: TestRepresentativePrototype/143x35/3/no-color (0.46s)
-    --- PASS: TestRepresentativePrototype/143x35/9/dark (0.17s)
+    --- PASS: TestRepresentativePrototype/143x35/1/no-color (0.15s)
+    --- PASS: TestRepresentativePrototype/143x35/3/dark (0.79s)
+    --- PASS: TestRepresentativePrototype/143x35/3/light (0.76s)
+    --- PASS: TestRepresentativePrototype/143x35/3/no-color (0.82s)
+    --- PASS: TestRepresentativePrototype/143x35/9/dark (0.18s)
     --- PASS: TestRepresentativePrototype/143x35/9/light (0.17s)
-    --- PASS: TestRepresentativePrototype/143x35/9/no-color (0.18s)
+    --- PASS: TestRepresentativePrototype/143x35/9/no-color (0.19s)
     --- PASS: TestRepresentativePrototype/80x24/1/dark (0.15s)
-    --- PASS: TestRepresentativePrototype/80x24/1/light (0.15s)
+    --- PASS: TestRepresentativePrototype/80x24/1/light (0.17s)
     --- PASS: TestRepresentativePrototype/80x24/1/no-color (0.15s)
-    --- PASS: TestRepresentativePrototype/80x24/3/dark (0.15s)
-    --- PASS: TestRepresentativePrototype/80x24/3/light (0.15s)
+    --- PASS: TestRepresentativePrototype/80x24/3/dark (0.16s)
+    --- PASS: TestRepresentativePrototype/80x24/3/light (0.16s)
     --- PASS: TestRepresentativePrototype/80x24/3/no-color (0.15s)
     --- PASS: TestRepresentativePrototype/80x24/9/dark (0.17s)
     --- PASS: TestRepresentativePrototype/80x24/9/light (0.17s)
-    --- PASS: TestRepresentativePrototype/80x24/9/no-color (0.17s)
+    --- PASS: TestRepresentativePrototype/80x24/9/no-color (0.18s)
     --- PASS: TestRepresentativePrototype/150x40/1/dark (0.15s)
-    --- PASS: TestRepresentativePrototype/150x40/1/light (0.15s)
-    --- PASS: TestRepresentativePrototype/150x40/1/no-color (0.15s)
-    --- PASS: TestRepresentativePrototype/150x40/3/dark (0.45s)
-    --- PASS: TestRepresentativePrototype/150x40/3/light (0.46s)
-    --- PASS: TestRepresentativePrototype/150x40/3/no-color (0.46s)
+    --- PASS: TestRepresentativePrototype/150x40/1/light (0.16s)
+    --- PASS: TestRepresentativePrototype/150x40/1/no-color (0.16s)
+    --- PASS: TestRepresentativePrototype/150x40/3/dark (0.79s)
+    --- PASS: TestRepresentativePrototype/150x40/3/light (0.76s)
+    --- PASS: TestRepresentativePrototype/150x40/3/no-color (0.83s)
     --- PASS: TestRepresentativePrototype/150x40/9/dark (0.17s)
     --- PASS: TestRepresentativePrototype/150x40/9/light (0.18s)
     --- PASS: TestRepresentativePrototype/150x40/9/no-color (0.18s)
 PASS
-ok  	github.com/primaprashant/sei	8.488s
+ok  	github.com/primaprashant/sei	11.763s

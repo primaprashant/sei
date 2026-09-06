@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Task 21 automated Linux evidence recorded in [the prototype report](docs/prototype.md); native Phase G and owner terminal/SSH acceptance remain pending. No Phase H layout or minimum approved.
+**Status:** Phase G implementation and automated Linux evidence are available in [the prototype report](docs/prototype.md); native Phase G and owner terminal/SSH review remain pending. No Phase H layout or minimum approved.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -601,9 +601,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Checkpoint G: Tasks 19-21
 
-- [ ] Standard checks pass and the full primary workflow is usable with representative folders.
+- [x] Standard Linux checks and the automated full primary workflow pass with representative folders; human usability remains owner-reviewed.
 - [ ] Owner reviews the actual three-agent prototype before final dimensions/overflow tests are fixed.
-- [ ] Record problems as concrete follow-up work; screenshots alone do not establish startup or copy performance.
+- [x] Record problems as concrete follow-up work; screenshots alone do not establish startup or copy performance.
+
+**Evidence:** [Refreshed report](docs/prototype.md): P2 readiness/completion waits fixed, isolated 36-case measurements/captures regenerated, then focused/full/race/lint/build checks passed. Owner/native/SSH acceptance remains pending.
 
 ### Phase H: Evidence-Based Polish
 

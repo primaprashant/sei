@@ -168,6 +168,16 @@ func (m browseModel) helpLines() []string {
 	if p.selectedName == "" {
 		text += "(none)"
 	}
+	switch {
+	case p.loading:
+		text += "\nListing: loading"
+	case p.err != nil:
+		text += "\nListing: error"
+	case p.missing:
+		text += "\nListing: not created"
+	default:
+		text += fmt.Sprintf("\nListing: ready (%d entries)", len(p.entries))
+	}
 	if p.err != nil {
 		text += "\nError: " + displayText(p.err.Error())
 	}

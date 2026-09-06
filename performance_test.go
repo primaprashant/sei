@@ -20,6 +20,50 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+func representativeHelpMatches(output string, wants ...string) bool {
+	text := strings.NewReplacer("\r", "", "\n", "").Replace(ansi.Strip(output))
+	for _, want := range wants {
+		if !strings.Contains(text, want) {
+			return false
+		}
+	}
+	return true
+}
+
+func TestRepresentativeReadiness(t *testing.T) {
+	cfg := rootFixture(t)
+	browseMkdir(t, filepath.Join(cfg.Library, "first"))
+	m := newBrowseModel(cfg)
+	next, refresh := m.Update(m.Init()())
+	m = finishMutationRefresh(t, next.(browseModel), refresh)
+	m.showHelp = true
+	ready := []string{"Focused: Library", "Selected name: firstListing: ready (1 entries)", "Root relations checked; every mutation revalidates."}
+	for _, width := range []int{80, 143, 148, 150} {
+		m.width, m.height = width, 100
+		next, _ = m.Update(startBrowseMsg{})
+		m = next.(browseModel)
+		next, _ = m.Update(rootSafetyMsg{m.safetyGeneration, resolveRoots(cfg)})
+		m = next.(browseModel)
+		m.status = `Add "previous" to Agent1 / Local (/target): complete`
+		if representativeHelpMatches(m.View().Content, ready...) {
+			t.Fatal("safety completion accepted a still-loading listing")
+		}
+		next, _ = m.Update(scanPanel(0, m.panels[0].generation, cfg.Library)())
+		m = next.(browseModel)
+		if !representativeHelpMatches(m.View().Content, ready...) {
+			t.Fatal("completed listing not recognized")
+		}
+		want := "Result: " + displayText(`Add "first" to Agent1 / Local (/target): complete`) + "Help 1/"
+		for _, status := range []string{m.status, `Add "first" to Agent1 / Local (/other): complete`, `Remove "first" from Agent1 / Local (/target): complete`, `Add "first" to Agent1 / Global (/target): complete`, `Add "first" to Agent1 / Local (/target): working`, `Add "first" to Agent1 / Local (/target): complete`} {
+			m.status = status
+			got := representativeHelpMatches(m.View().Content, want)
+			if got != (status == `Add "first" to Agent1 / Local (/target): complete`) {
+				t.Fatalf("wrong completion match: %q", status)
+			}
+		}
+	}
+}
+
 // Opt-in local DATA and already-built release binary; ordinary tests are offline.
 func TestRepresentativePrototype(t *testing.T) {
 	archive, binary := os.Getenv("SEI_TEST_ARCHIVE"), os.Getenv("SEI_TEST_BINARY")
@@ -195,6 +239,20 @@ func TestRepresentativePrototype(t *testing.T) {
 							t.Fatal(err)
 						}
 					}
+					closeHelp := func() { send("?"); await("Configured folders") }
+					// Alternate rendered browse/help frames, not timed sleeps. Only match
+					// one fresh help surface, never accumulated stale result suffixes.
+					helpUntil := func(wants ...string) {
+						t.Helper()
+						for {
+							send("?")
+							await(" | up/down scroll | ?/Esc close |")
+							if representativeHelpMatches(screen.String()[from:], wants...) {
+								return
+							}
+							closeHelp()
+						}
+					}
 					await("> " + entries[0].name)
 					await("Root relations checked")
 					await("Not created")
@@ -214,46 +272,55 @@ func TestRepresentativePrototype(t *testing.T) {
 						}
 					}
 					if count == 3 && size[0] >= 143 {
+						local := filepath.Join(root, "local1")
+						ready := func(focus, path, name, listing string) {
+							helpUntil("Focused: "+focus+"Root path: "+path+"Selected name: "+name+"Listing: "+listing, "Root relations checked; every mutation revalidates.")
+							closeHelp()
+						}
 						for i := range 3 {
-							// Force a fresh help surface so an unchanged status suffix cannot
-							// disappear from differential output. Timing includes this key.
-							send("a?")
-							await("complete")
+							send("1")
+							name, listing := "(none)", "not created"
+							if i > 0 {
+								name, listing = entries[0].name, fmt.Sprintf("ready (%d entries)", i)
+							}
+							ready("Agent1 / Local", local, name, listing)
+							send("0")
+							ready("Library", library, entries[i].name, "ready (25 entries)")
+							send("a")
+							actionStart := start
+							helpUntil("Result: " + displayText(fmt.Sprintf("Add %q to Agent1 / Local (%s): complete", entries[i].name, local)) + "Help 1/")
+							start = actionStart
 							measure("add")
-							send("?")
-							await("Configured folders")
-							await("Root relations checked")
+							closeHelp()
 							if i < 2 {
-								send("\x1b[B?")
-								await("Selected name: " + entries[i+1].name)
+								ready("Library", library, entries[i].name, "ready (25 entries)")
+								send("\x1b[B")
+								actionStart = start
+								helpUntil("Selected name: " + entries[i+1].name + "Listing: ready (25 entries)")
+								start = actionStart
 								measure("input")
-								send("?")
-								await("Configured folders")
-								await("Root relations checked")
+								closeHelp()
 							}
 						}
 						send("1")
-						await("Agent1 / Local")
-						for range 2 {
-							send("X?")
-							await("complete")
+						for i := range 2 {
+							ready("Agent1 / Local", local, entries[i].name, fmt.Sprintf("ready (%d entries)", 3-i))
+							send("X")
+							actionStart := start
+							helpUntil("Result: " + displayText(fmt.Sprintf("Remove %q from Agent1 / Local (%s): complete", entries[i].name, local)) + "Help 1/")
+							start = actionStart
 							measure("remove")
-							send("?")
-							await("Configured folders")
-							await("Root relations checked")
+							closeHelp()
 						}
 					}
 					for i, keys := range []string{fmt.Sprint(count), "g" + fmt.Sprint(count)} {
 						send(keys)
-						send("?")
-						await("Root path:")
-						await(fmt.Sprintf("Focused: Agent%d / %s", count, []string{"Local", "Global"}[i]))
-						send("?")
-						await("Configured folders")
+						helpUntil(fmt.Sprintf("Focused: Agent%d / %s", count, []string{"Local", "Global"}[i]), "Selected name: (none)Listing: not created", "Root relations checked; every mutation revalidates.")
+						closeHelp()
 					}
 					writeTestFile(t, filepath.Join(root, "global1"), "Supplemental test-only failure: root is a file")
-					send("g1r?")
-					await("Error:")
+					send("g1r")
+					helpUntil("Focused: Agent1 / Global", "Selected name: (none)Listing: errorError:")
 					send("q")
 					for chunk := range chunks {
 						screen.WriteString(chunk)
