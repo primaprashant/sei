@@ -27,6 +27,15 @@ func (m setupModel) View() tea.View {
 	if m.confirm {
 		stage = "Replace configuration"
 	}
+	if m.busy {
+		stage = "Checking configuration"
+		if m.preview {
+			stage = "Saving configuration"
+		}
+	}
+	if m.pendingQuit {
+		stage = "Finishing before exit"
+	}
 	title := s.accent.Render("sei setup") + "  " + s.section.Render(stage)
 	body, anchor := m.setupBody(width, s)
 	available := m.height - 6
@@ -93,6 +102,14 @@ func (m setupModel) View() tea.View {
 			keys, extra = "Tab field  Enter review", "Esc cancel  F1 details"
 		}
 	}
+	if m.busy {
+		helper = ""
+		keys = "Esc / Ctrl+C quit after work"
+		extra = ""
+	}
+	if m.pendingQuit {
+		helper, keys, extra = "", "", ""
+	}
 	statusStyle := s.danger
 	if m.busy {
 		statusStyle = s.section
@@ -101,6 +118,9 @@ func (m setupModel) View() tea.View {
 		statusStyle = s.warning
 	}
 	status := statusStyle.Render(ansi.Truncate(m.setupStatus(), width, "~"))
+	if m.details && !m.busy {
+		status = ""
+	}
 	lines := []string{title, ""}
 	lines = append(lines, visible...)
 	lines = append(lines, status, s.muted.Render(helper), s.accent.Render(keys), s.muted.Render(extra))
@@ -156,13 +176,30 @@ func (m setupModel) setupBody(width int, s uiStyles) ([]string, int) {
 		return strings.Split(s.frame("Add agent", "1–6 choose", lines, width, len(lines)+2, false), "\n"), 0
 	}
 	if m.details {
-		text := "SETUP DETAILS\nConfig: " + displayText(m.path) + "\nProject: " + displayText(m.project) + "\n\nCurrent field: " + displayText(*m.value()) + "\n" + m.fieldHint()
-		if m.err != nil {
-			text += "\n\nError: " + displayText(m.err.Error())
+		lines := []string{s.section.Render("PATHS AND FIELD")}
+		for _, text := range []string{"Config: " + displayText(m.path), "Project: " + displayText(m.project), "Current field: " + displayText(*m.value())} {
+			lines = append(lines, strings.Split(ansi.Hardwrap(text, width, true), "\n")...)
 		}
-		text += "\n\nTab/Up/Down selects fields; typing appends; Backspace erases; Ctrl+U clears.\nCtrl+A adds an agent, Ctrl+D removes it, Ctrl+K/J changes its slot.\nEnter reviews resolved paths before saving. Recognized paste is ignored.\n\n" + sharedDiscovery
-		return strings.Split(ansi.Hardwrap(text, width, true), "\n"), 0
+		for _, line := range strings.Split(ansi.Wrap(m.fieldHint(), width, ""), "\n") {
+			lines = append(lines, s.muted.Render(line))
+		}
+		lines = append(lines, "")
+		if m.err != nil {
+			for _, line := range strings.Split(ansi.Hardwrap("Error: "+displayText(m.err.Error()), width, true), "\n") {
+				lines = append(lines, s.danger.Render(line))
+			}
+			lines = append(lines, "")
+		}
+		lines = append(lines, s.section.Render("EDITING"))
+		text := "Tab/Up/Down selects fields; typing appends; Backspace erases; Ctrl+U clears.\nCtrl+A adds an agent, Ctrl+D removes it, Ctrl+K/J changes its slot.\nEnter reviews resolved paths before saving. Recognized paste is ignored."
+		lines = append(lines, strings.Split(ansi.Wrap(text, width, ""), "\n")...)
+		lines = append(lines, "")
+		for _, line := range strings.Split(ansi.Wrap(sharedDiscovery, width, ""), "\n") {
+			lines = append(lines, s.muted.Render(line))
+		}
+		return lines, 0
 	}
+
 	var body []string
 	anchor := 0
 	appendFrame := func(title, footer string, lines []string, active bool) {

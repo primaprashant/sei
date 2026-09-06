@@ -226,6 +226,14 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if slot := int(input[0] - '0'); slot <= m.agents {
 				m.focused, m.helpOffset = m.agents+slot, 0
 			}
+		case "tab", "shift+tab":
+			if !m.showHelp {
+				delta := 1
+				if input == "shift+tab" {
+					delta = -1
+				}
+				m.cyclePanel(delta)
+			}
 		case "up", "down":
 			delta := 1
 			if input == "up" {
@@ -245,6 +253,26 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, nil
+}
+
+// Traverse the displayed scopes without changing the IDs used by mutation keys.
+func (m *browseModel) cyclePanel(delta int) {
+	position := m.focused
+	if position > m.agents {
+		position -= m.agents
+	} else if position > 0 {
+		position += m.agents
+	}
+	position = (position + delta + len(m.panels)) % len(m.panels)
+	switch {
+	case position == 0:
+		m.focused = 0
+	case position <= m.agents:
+		m.focused = m.agents + position
+	default:
+		m.focused = position - m.agents
+	}
+	m.helpOffset = 0
 }
 
 func (m browseModel) startMutation(destination panelID, add bool) (tea.Model, tea.Cmd) {

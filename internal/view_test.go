@@ -429,3 +429,26 @@ func TestDisplaySafetyRawNames(t *testing.T) {
 		})
 	}
 }
+
+func TestBackgroundReplyPrecedence(t *testing.T) {
+	m := navigationModel(1)
+	next, _ := m.Update(tea.BackgroundColorMsg{Color: color.White})
+	m = next.(browseModel)
+	next, _ = m.Update(tea.EnvMsg{"COLORFGBG=15;0"})
+	m = next.(browseModel)
+	if !m.theme.light {
+		t.Fatal("fallback replaced the terminal background reply")
+	}
+}
+
+func TestPanelTitlePreservesAgentName(t *testing.T) {
+	for _, name := range []string{"Demo / Global", "Demo / Project", "界 / Global"} {
+		for _, scope := range []string{"Project", "Global"} {
+			p := browsePanel{label: name + " / " + scope, safetyChecked: true}
+			view := (uiStyles{}).panelView(p, false, true, 60, 8)
+			if !strings.Contains(strings.Split(view, "\n")[0], "* "+name+" ") {
+				t.Fatalf("agent name lost in %q", view)
+			}
+		}
+	}
+}

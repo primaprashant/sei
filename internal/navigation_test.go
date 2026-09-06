@@ -218,3 +218,80 @@ func TestSelectionRefresh(t *testing.T) {
 		}
 	}
 }
+
+func TestPanelCycling(t *testing.T) {
+	for count := 1; count <= 9; count++ {
+		order := []int{0}
+		for slot := 1; slot <= count; slot++ {
+			order = append(order, count+slot)
+		}
+		for slot := 1; slot <= count; slot++ {
+			order = append(order, slot)
+		}
+		for _, reverse := range []bool{false, true} {
+			m := navigationModel(count)
+			m.width, m.height = 80, 24
+			before := append([]browsePanel(nil), m.panels...)
+			for step := 1; step <= 2*len(order); step++ {
+				key := tea.KeyPressMsg{Code: tea.KeyTab}
+				index := step % len(order)
+				if reverse {
+					key.Mod = tea.ModShift
+					index = (len(order) - index) % len(order)
+				}
+				next, cmd := m.Update(key)
+				m = next.(browseModel)
+				if cmd != nil || m.focused != order[index] || !reflect.DeepEqual(m.panels, before) {
+					t.Fatalf("count=%d reverse=%t step=%d: focus=%d", count, reverse, step, m.focused)
+				}
+				if m.focused > 0 {
+					_, columns, _, visible, first := m.layout()
+					slot := (m.focused - 1) % count
+					if slot < first*columns || slot >= (first+visible)*columns {
+						t.Fatal("cycled focus is hidden")
+					}
+				}
+				if !strings.Contains(m.View().Content, "> a") {
+					t.Fatal("cycling lost selection")
+				}
+			}
+		}
+	}
+}
+
+func TestPanelCyclingPrecedence(t *testing.T) {
+	for _, context := range []string{"help", "busy", "sequence", "quit"} {
+		for _, reverse := range []bool{false, true} {
+			m := navigationModel(3)
+			switch context {
+			case "help":
+				m.showHelp = true
+			case "busy":
+				m.active = &mutationRequest{id: 1}
+			case "sequence":
+				m.pendingGlobal = true
+			case "quit":
+				m.pendingQuit = true
+				m.active = &mutationRequest{id: 1}
+			}
+			want := m
+			switch context {
+			case "busy":
+				want.focused = 4
+				if reverse {
+					want.focused = 3
+				}
+			case "sequence":
+				want.pendingGlobal = false
+			}
+			key := tea.KeyPressMsg{Code: tea.KeyTab}
+			if reverse {
+				key.Mod = tea.ModShift
+			}
+			next, cmd := m.Update(key)
+			if cmd != nil || !reflect.DeepEqual(next, want) {
+				t.Fatalf("Tab changed %s state unexpectedly", context)
+			}
+		}
+	}
+}

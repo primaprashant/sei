@@ -18,7 +18,14 @@ func displayText(raw string) string {
 }
 
 func (s uiStyles) panelView(p browsePanel, library, focused bool, width, height int) string {
-	title := strings.TrimSuffix(strings.TrimSuffix(p.label, " / Project"), " / Global")
+	title := p.label
+	if !library {
+		if strings.HasSuffix(title, " / Project") {
+			title = strings.TrimSuffix(title, " / Project")
+		} else {
+			title = strings.TrimSuffix(title, " / Global")
+		}
+	}
 	lines := []string{}
 	if library {
 		lines = append(lines, s.muted.Render(displayText(p.path)))
@@ -94,7 +101,7 @@ func (m browseModel) View() tea.View {
 			text += "\nWorking; q waits for completion"
 		}
 		lines := strings.Split(ansi.Hardwrap(text, max(1, m.width), true), "\n")
-		v := tea.NewView(strings.Join(lines[:min(len(lines), max(0, m.height))], "\n"))
+		v := tea.NewView(m.theme.styles().warning.Render(strings.Join(lines[:min(len(lines), max(0, m.height))], "\n")))
 		v.AltScreen = true
 		return v
 	}
@@ -109,6 +116,14 @@ func (m browseModel) View() tea.View {
 				visible[i] = s.section.Render(line)
 			case strings.HasPrefix(line, "Error:") || strings.HasPrefix(line, "Root safety blocked:"):
 				visible[i] = s.danger.Render(line)
+			case strings.HasPrefix(line, "Selected folder blocked:"):
+				visible[i] = s.warning.Render(line)
+			case strings.HasPrefix(line, "Result:"):
+				style := s.success
+				if m.statusFailed {
+					style = s.danger
+				}
+				visible[i] = style.Render(line)
 			case strings.HasPrefix(line, "Root path:"):
 				visible[i] = s.muted.Render(line)
 			}
@@ -167,15 +182,22 @@ func (m browseModel) View() tea.View {
 		detail += " · " + displayText(p.selectedName)
 	}
 	status, style := m.browserStatus(s)
-	controls := "↑↓ select  0 library  1-9 project  g global  r refresh  ? help  q quit"
+	controls := s.shortcuts("↑↓", "select", "Tab", "panel", "0", "library", "1-9", "project", "g", "global", "?", "help", "q", "quit")
 	if m.focused > 0 {
-		controls = "↑↓ select  0 library  x remove permanently  g global  ? help  q quit"
+		controls = s.shortcuts("↑↓", "select", "Tab", "panel", "0", "library") + "  " + s.danger.Render("x remove permanently") + "  " + s.shortcuts("?", "help", "q", "quit")
+	}
+	if m.active != nil {
+		controls = s.shortcuts("↑↓", "select", "Tab", "panel", "?", "help", "q", "quit")
 	}
 	if m.pendingGlobal {
-		controls = "g pending: 1-9 global, Esc cancel | ? help | q quit"
+		controls = s.warning.Render("g pending: ") + s.shortcuts("1-9", "global", "Esc", "cancel", "q", "quit")
 	}
+	if m.pendingQuit {
+		controls = ""
+	}
+
 	return boundedView(header+"\n"+workspace+"\n"+s.muted.Render(ansi.Truncate(detail, m.width, "~"))+"\n"+
-		style.Render(ansi.Truncate(status, m.width, "~"))+"\n"+s.muted.Render(controls)+"\n"+s.warning.Render(m.operationHint()), m.width, m.height)
+		style.Render(ansi.Truncate(status, m.width, "~"))+"\n"+controls+"\n"+s.warning.Render(m.operationHint()), m.width, m.height)
 }
 
 func (m browseModel) operationHint() string {
@@ -249,7 +271,7 @@ func (m browseModel) labeledPanel(id int) browsePanel {
 			add = strings.ToUpper(add)
 		}
 		p.hint = "focus " + shortcut
-		if m.focused == 0 {
+		if m.focused == 0 && m.active == nil && !m.pendingQuit {
 			p.hint += " · copy " + add
 		}
 	}
@@ -298,7 +320,7 @@ func (m browseModel) helpLines() []string {
 	} else {
 		text += "\nRoot relations checked; every mutation revalidates."
 	}
-	text += "\n\nNAVIGATION\n0 library · 1–9 project · g then 1–9 global · Up/Down select\nr refresh · ? help · Esc close/cancel · q/Ctrl+C quit\nUnconfigured slots do nothing. g has no timeout; invalid keys cancel it.\n\nCOPY AND REMOVE\nUse these keys from the library to copy a skill:"
+	text += "\n\nNAVIGATION\n0 library · 1–9 project · g then 1–9 global · Up/Down select\nTab / Shift+Tab cycles panels forward / backward\nr refresh · ? help · Esc close/cancel · q/Ctrl+C quit\nUnconfigured slots do nothing. g has no timeout; invalid keys cancel it.\n\nCOPY AND REMOVE\nUse these keys from the library to copy a skill:"
 
 	for i := range m.agents {
 		text += fmt.Sprintf("\n%c: %s; %c: %s", addKeys[i], displayText(m.panels[1+m.agents+i].label), strings.ToUpper(string(addKeys[i]))[0], displayText(m.panels[1+i].label))

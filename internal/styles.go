@@ -13,8 +13,8 @@ import (
 // The zero value is monochrome, also useful for deterministic view snapshots.
 // Terminal capability messages choose colors without doing I/O in View.
 type uiTheme struct {
-	profile        colorprofile.Profile
-	light, noColor bool
+	profile                         colorprofile.Profile
+	light, noColor, backgroundKnown bool
 }
 
 func (t *uiTheme) update(msg tea.Msg) (bool, tea.Cmd) {
@@ -24,10 +24,11 @@ func (t *uiTheme) update(msg tea.Msg) (bool, tea.Cmd) {
 		return true, tea.RequestBackgroundColor
 	case tea.BackgroundColorMsg:
 		t.light = !msg.IsDark()
+		t.backgroundKnown = true
 	case tea.EnvMsg:
 		t.noColor = msg.Getenv("NO_COLOR") != ""
 		parts := strings.Split(msg.Getenv("COLORFGBG"), ";")
-		if n, err := strconv.Atoi(parts[len(parts)-1]); err == nil {
+		if n, err := strconv.Atoi(parts[len(parts)-1]); err == nil && !t.backgroundKnown {
 			t.light = n == 7 || n >= 9 && n <= 15
 		}
 	default:
@@ -107,4 +108,12 @@ func boundedView(text string, width, height int) tea.View {
 	v := tea.NewView(strings.Join(lines, "\n"))
 	v.AltScreen = true
 	return v
+}
+
+func (s uiStyles) shortcuts(pairs ...string) string {
+	var hints []string
+	for i := 0; i+1 < len(pairs); i += 2 {
+		hints = append(hints, s.accent.Render(pairs[i])+" "+s.muted.Render(pairs[i+1]))
+	}
+	return strings.Join(hints, "  ")
 }

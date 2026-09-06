@@ -8,12 +8,12 @@ See [README](../README.md) for usage/configuration. A root entry point calls pac
 | --- | --- |
 | `main.go` | Entry point and build version |
 | `internal/cli.go`, `internal/lifecycle.go` | Arguments/errors, terminal and signals |
-| `internal/config.go`, `internal/config_save.go`, `internal/setup.go` | Config parsing/paths, safe saving, setup UI |
+| `internal/config.go`, `internal/config_save.go`, `internal/setup.go`, `internal/setup_view.go` | Config parsing/paths, safe saving, setup UI |
 | `internal/skills.go`, `internal/roots.go` | Listings and filesystem boundary validation |
 | `internal/mutation_fs.go`, `internal/mutation_copy.go` | Rooted removal, add and delete-then-copy replacement |
-| `internal/model.go`, `internal/view.go` | Browser state/commands, keyboard handling, layout/display |
+| `internal/model.go`, `internal/view.go`, `internal/styles.go` | Browser state/commands, keyboard handling, layout/display |
 | `scripts/`, `.github/workflows/`, `.goreleaser.yaml` | Installer and release automation |
-| `internal/testdata/views.golden` | Escaped model-view snapshots |
+| `internal/testdata/*.golden` | Browser and setup view snapshots |
 
 ## Checks
 
@@ -48,25 +48,35 @@ HOME="$demo/home" XDG_CONFIG_HOME="$demo/home/.config" \
   ./bin/sei --config "$demo/config.json" --project "$demo/project"
 ```
 
-Try add/replace/remove, help, resize and quit; rerun to inspect persistence. Never use real agent paths for mutation tests.
+Try add/replace/remove, Tab/Shift+Tab, help, resize and quit; rerun to inspect persistence. Never use real agent paths for mutation tests.
 
 ## UI Invariants
 
 In setup, Tab/Up/Down selects fields; Ctrl+U clears. Ctrl+A adds a preset/custom
 agent, Ctrl+D removes it, and Ctrl+K/J reorders it. Enter previews and saves;
-`e` returns to editing and `y` confirms replacing config. Esc/Ctrl+C cancels.
+F1 opens/closes scrollable field/path/error details; `e` returns to editing and
+`y` confirms replacing config. Esc/Ctrl+C cancels.
 Recognized paste is ignored. Explicit `sei setup` edits valid config and exits
 after saving; malformed config fails rather than being replaced. Global CLI
 options must precede `setup`.
 
 Panel IDs are **library, configured globals, corresponding locals**; rendering puts library left,
 **locals above globals**, with up to three agent columns. Never reorder IDs to match rendering:
-slot/key mappings depend on config order. Focus windows retain access to all nine agents.
+slot/key mappings depend on config order. Tab/Shift+Tab cycle library, all project
+panels, then all global panels, in configuration order. Help ignores Tab; pending
+`g` consumes it, busy work permits navigation, and pending quit ignores it.
+Focus windows retain access to all nine agents.
 Below 80x24, new mutations are blocked; active work continues and quit stays available.
 Preserve raw names through escaping/truncation; full escaped targets remain in help.
 
-Intentional snapshot changes: `SEI_TEST_UPDATE_VIEWS=1 go test -run '^TestViewSnapshots$' ./internal`,
-then review `git diff -- internal/testdata/views.golden`. Normal tests only compare snapshots.
+Intentional snapshot changes: `SEI_TEST_UPDATE_VIEWS=1 go test -run '^(TestViewSnapshots|TestSetupSnapshots)$' ./internal`,
+then review `git diff -- internal/testdata`. Normal tests only compare snapshots.
+The `TestPTYThemeAndNavigation` check covers real light/dark/monochrome rendering
+and panel cycling. Set `SEI_TEST_CAPTURES` to an existing disposable directory
+to capture its styled terminal frames as `.ansi` files.
+
+Color-profile messages choose shared light/dark styles; `NO_COLOR` retains plain
+text focus cues. Terminal background replies take precedence over `COLORFGBG`.
 
 ## Async And Lifecycle
 

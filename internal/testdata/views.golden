@@ -35,7 +35,7 @@ sei  /project                                                                   
 \u2570 focus 0 \u00b7 5 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f
 Library \u00b7 ~/library \u00b7 .dot
 Ready
-\u2191\u2193 select  0 library  1-9 project  g global  r refresh  ? help  q quit
+\u2191\u2193 select  Tab panel  0 library  1-9 project  g global  ? help  q quit
 Copy using panel keys \u00b7 Replaces existing folders; no undo
 
 === minimum-mixed (80x24) ===
@@ -61,7 +61,7 @@ sei  /project                                                     Agents 1-1 / 3
 \u2570 focus 0 \u00b7 5 skills \u2500\u2500\u2500\u2500\u256f
 Library \u00b7 ~/library \u00b7 look-safe\\x1b[2J\\r\\nspoof
 Check panel errors; ? for details
-\u2191\u2193 select  0 library  1-9 project  g global  r refresh  ? help  q quit
+\u2191\u2193 select  Tab panel  0 library  1-9 project  g global  ? help  q quit
 Copy using panel keys \u00b7 Replaces existing folders; no undo
 
 === busy-help (80x24) ===
@@ -87,14 +87,14 @@ folder contents, not everything an agent discovers or has loaded.
 Result: Add \\\"look-safe\\\\x1b[2J\\\\r\\\\nspoof\\\" to Claude Code / Project (/project/
 long-path/long-path/long-path/long-path/long-path/long-path/long-path/long-path/
 ): working
-Help 10/30 | up/down scroll | ?/Esc close |
+Help 11/31 | up/down scroll | ?/Esc close |
 Working; q waits for completion | g pending: 1-9 global, Esc cancel
 
 === busy-quit (80x24) ===
 sei  /project                                                     Agents 1-1 / 3
 \u256d * Library \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e PROJECT
 \u2502 ~/library              \u2502 \u256d Claude Code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e
-\u2502 > .dot                 \u2502 \u2502 focus 1 \u00b7 copy a                                  \u2502
+\u2502 > .dot                 \u2502 \u2502 focus 1                                           \u2502
 \u2502   e\u0301-\u754c-wide            \u2502 \u2502 Folder not created                                \u2502
 \u2502   long-name-long-name~ \u2502 \u2502                                                   \u2502
 \u2502   look-safe\\x1b[2J\\r\\~ \u2502 \u2502                                                   \u2502
@@ -103,7 +103,7 @@ sei  /project                                                     Agents 1-1 / 3
 \u2502                        \u2502 \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f
 \u2502                        \u2502 GLOBAL
 \u2502                        \u2502 \u256d Claude Code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e
-\u2502                        \u2502 \u2502 focus g 1 \u00b7 copy A                                \u2502
+\u2502                        \u2502 \u2502 focus g 1                                         \u2502
 \u2502                        \u2502 \u2502 Folder not created                                \u2502
 \u2502                        \u2502 \u2502                                                   \u2502
 \u2502                        \u2502 \u2502                                                   \u2502
@@ -113,7 +113,7 @@ sei  /project                                                     Agents 1-1 / 3
 \u2570 focus 0 \u00b7 5 skills \u2500\u2500\u2500\u2500\u256f
 Library \u00b7 ~/library \u00b7 .dot
 Copying look-safe\\x1b[2J\\r\\nspoof \u2192 Claude Code / Project
-\u2191\u2193 select  0 library  1-9 project  g global  r refresh  ? help  q quit
+
 Exit requested; waiting for work
 
 === undersized (79x23) ===
@@ -144,5 +144,5 @@ sei                                                               Agents 9-9 / 9
 \u2570 focus 0 \u00b7 3 skills \u2500\u2500\u2500\u2500\u256f
 Agent9 / Project \u00b7 /local9 \u00b7 a
 Ready
-\u2191\u2193 select  0 library  x remove permanently  g global  ? help  q quit
+\u2191\u2193 select  Tab panel  0 library  x remove permanently  ? help  q quit
 Removal is permanent \u00b7 No confirmation or undo

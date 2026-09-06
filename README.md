@@ -72,7 +72,8 @@ and copied skills remain.
 1. Keep your skill folders in a separate library, such as `~/skill-library`.
 2. Run `sei` from your project directory.
 3. First-run setup asks for your library and agent destinations. Choose your paths
-   and save to start browsing.
+   and save to start browsing. Use **F1** in setup for full paths, field guidance,
+   and validation details.
 
 Setup offers Claude Code, Codex, OpenCode, Pi, and Cursor presets, plus custom
 agents. All names and paths are editable.
@@ -117,12 +118,18 @@ to choose a different config, or `sei --help` for all options.
 The library is on the left, project folders at the top right, and global folders
 below them. Use a terminal of at least **80×24**.
 
+The active panel has a violet border and highlighted selection. Project and global
+folders are grouped separately; the footer shows the focused path and current
+operation. Colors adapt to light/dark terminal backgrounds. Set `NO_COLOR=1` for
+monochrome output; focus and selection remain marked with `*` and `>`.
+
 A **slot** is an agent's position in your configuration: the first agent is slot 1,
 the second is slot 2, and so on.
 
 | Key | Action |
 | --- | --- |
 | Up / Down | Move selection, or scroll help. |
+| Tab / Shift+Tab | Focus the next / previous panel (library, project, then global). |
 | `0` | Focus the library. |
 | `1`–`9` | Focus an agent's project folder. |
 | `g`, then `1`–`9` | Focus an agent's global folder. |
