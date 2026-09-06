@@ -10,13 +10,97 @@ runbooks are optional historical references, not work required before Task 34.
 Keep existing native/fuzz/race/PTY/installer safety checks. The authorized next
 workflow builds once, checksums/tests the same bytes and uploads only a draft;
 only its final upload job gets `contents: write` with the existing GitHub token.
-No new credentials, signing, attestations or protected environment. Implementation
-is next, not claimed complete here; no tag, push or publication this turn.
+No new credentials, signing, attestations or protected environment. Task 34 is
+implemented locally below; hosted tag execution is untested. No tag, push or
+publication this turn.
 
 [Debian verification](linux-verification.md) is accepted for personal Linux use,
 without an all-distro promise. [Mac source evidence](mac-verification.md) has an
 unknown source SHA and is not personal exact-artifact or download-trust evidence.
 Public URLs remain pending until separately authorized publication and verification.
+
+## Task 34 Draft Runbook
+
+`.github/workflows/release.yml` accepts tag pushes matching `v*`, then calls the
+existing read-only CI with `release: true`. The producer rejects anything except
+`vMAJOR.MINOR.PATCH` with optional SemVer prerelease identifiers (no leading
+numeric zeros, build metadata, whitespace or extra suffixes). This matches the
+installer's supported version syntax, not every possible SemVer spelling.
+`v0.x` always becomes a GitHub prerelease, even without a SemVer prerelease
+suffix; any `-rc.1`-style tag does too. Stable `v1.x` and later tags have no
+GitHub prerelease flag, but still remain drafts and never become latest automatically.
+
+Only release producers fetch full history; ordinary push/PR CI remains shallow
+snapshot CI. The final upload checkout also fetches history to validate the tag.
+The producer checks the full tag ref's peeled commit against HEAD and the event
+SHA before `goreleaser release --clean --skip=publish`, explicitly setting
+`GORELEASER_CURRENT_TAG` to the triggering tag so RC/stable tags on the same
+commit cannot select the wrong version. `release.disable: true` remains in
+place. Metadata must match the tag version without `v` and the source
+commit. No tag is created by either workflow.
+
+The existing four native jobs, installer mocks/lint, PTY, standard tests, Linux
+race and two fuzz jobs are reused, not duplicated. The producer copies the tested
+source installer to `dist/install.sh` with its own `install.sh.sha256`; the four
+tarball checksum contract is unchanged. Producer/native archive tests require
+the installer bytes and checksum to match the checked-out source. Installer
+behavior tests still execute that same source script with local fixtures, not
+public URLs. All consumers download the exact producer artifact ID.
+
+Only `draft-upload`, after the entire reusable CI succeeds, gets `contents: write`
+and the existing `github.token`. It downloads that same artifact ID without
+rebuilding, checks producer commit/version and local/remote tag identity,
+reconstructs the four-entry manifest and compares installer hash/source bytes.
+It passes exactly seven explicit asset paths to `gh release create --draft
+--verify-tag --latest=false`, with the prerelease policy above. No upload globs,
+clobber, release edit or publish command exists. An existing draft/public release
+or failed release-list API request stops upload. A failed create/upload can leave
+a partial draft: inspect it manually; reruns refuse existing releases rather
+than repairing them silently. Tag/ref mutation by another authorized writer is
+not an atomic transaction with draft creation; do not move release tags.
+
+Existing reviewed action/tool pins are reused. The final job uses the hosted
+runner's `gh` and logs its version; it is deliberately not an additional pinned
+download/dependency. This is a scoped exception to the historical exact-tool-pin
+proposal, not an immutable runner or independent publisher-authentication claim.
+Notes describe unsigned, unnotarized personal-tool scope and waived gates honestly.
+
+Future execution, **only after separate owner authorization**:
+
+1. Review and commit the implementation separately, choose the approved source
+   commit and next version (initial development release `v0.1.0`), then authorize
+   its tag and push explicitly. Example eventual commands: `git tag v0.1.0
+   <approved-commit>` and `git push origin refs/tags/v0.1.0`. Do not run these as
+   part of local verification. Use immutable tags, not force updates.
+2. Inspect the release workflow's producer, four native and both fuzz results,
+   source SHA, version, artifact ID and draft assets/digests. A successful ordinary
+   snapshot CI run is not tagged-release evidence. The draft is not public and
+   does not make unauthenticated installer/download URLs work.
+3. Obtain separate publication authorization for Tasks 35/36. Inspect the draft
+   and notes before manual publication; keep every `v0.x`/SemVer prerelease out
+   of stable latest. Promote the approved `v1.0.0` only with that authorization,
+   then verify public URLs and installation. Nothing here claims those steps ran.
+
+Local validation uses credential-free Go mocks for tag/ref/commit/version policy,
+manifest/installer corruption, API failure, existing-release refusal and exact
+draft arguments. Workflow contract tests are targeted text checks, not a generic
+YAML parser. Local snapshot packaging can check current dirty-worktree metadata;
+it cannot prove the non-snapshot tag path or hosted native execution. No fake
+tag is needed or permitted for this rehearsal.
+
+Local evidence (2026-09-06, Debian Linux amd64, `bd2f8c1` plus uncommitted Task 34):
+module verify/tidy diff, lint config/format/lint (zero issues), vet, full uncached
+tests, build and full CGO race tests passed. Both fuzz targets passed 30-second
+runs. Installer/release shell syntax and pinned ShellCheck passed. Ruby/Psych
+parsed both workflows and every run block passed `bash -n`; `actionlint` is not
+installed, so no actionlint or hosted schema/execution result is claimed.
+GoReleaser check and snapshot packaging passed as `0.0.0-snapshot.bd2f8c1`, with
+honest `vcs.modified=true`. All four archive metadata/checksum tests, installer
+source/checksum comparison and native Linux amd64 help/version/PTY passed. The
+other three architectures were inspected, not executed locally. Mock draft
+tests made no network calls and inherited no credentials. No tag, push,
+draft upload or publication occurred; the actual non-snapshot tag build remains
+untested until separately authorized execution.
 
 Checkpoint K (2026-09-06): `dist/` now contains clean
 `0.0.0-snapshot.04c5ca3` artifacts, replacing the historical snapshots below.
@@ -66,10 +150,11 @@ help/version, and rejects tracked-file changes even after a failed step.
 `GOFLAGS=-mod=readonly` prevents build-time module repair; neither formatter
 fixes nor `go mod tidy` without `-diff` are used. No cache action is used.
 
-Both events have only `contents: read`; all unspecified token permissions are
+Ordinary push/PR events have only `contents: read`; all unspecified token permissions are
 disabled. Checkout does not persist credentials. There is no
 `pull_request_target`, release secret, OIDC permission, privileged publishing
-job, or live agent installation. Checks use disposable `HOME` and
+job in ordinary CI, or live agent installation. The separate Task 34 caller has
+only the final draft-upload permission described above. Checks use disposable `HOME` and
 `XDG_CONFIG_HOME`, isolating macOS's `$HOME/Library/Application Support` too.
 Future filesystem tests must continue using disposable project/library/target
 fixtures and must never execute skill scripts.
@@ -263,6 +348,8 @@ go mod download
 go mod verify
 ./.bin/goreleaser check
 GOPROXY=off ./.bin/goreleaser release --snapshot --clean
+cp scripts/install.sh dist/install.sh
+(cd dist && shasum -a 256 install.sh > install.sh.sha256)
 export SEI_RELEASE_DIST=dist
 export SEI_RELEASE_VERSION=$(jq -er .version dist/metadata.json)
 export SEI_RELEASE_COMMIT=$(git rev-parse HEAD)

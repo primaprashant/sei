@@ -75,6 +75,18 @@ func TestReleaseArchives(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	installer, err := os.ReadFile(filepath.Join(dist, "install.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := os.ReadFile("scripts/install.sh")
+	if err != nil || !bytes.Equal(installer, source) {
+		t.Fatalf("bundled installer differs from tested source: %v", err)
+	}
+	installerSum, err := os.ReadFile(filepath.Join(dist, "install.sh.sha256"))
+	if err != nil || string(installerSum) != fmt.Sprintf("%x  install.sh\n", sha256.Sum256(installer)) {
+		t.Fatalf("installer checksum mismatch: %v", err)
+	}
 	sums := map[string]string{}
 	for _, line := range strings.Split(strings.TrimSpace(string(manifest)), "\n") {
 		fields := strings.Fields(line)

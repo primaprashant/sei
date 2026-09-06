@@ -3,6 +3,18 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_call:
+    inputs:
+      release:
+        type: boolean
+        default: false
+    outputs:
+      artifact-id:
+        value: ${{ jobs.archives.outputs.artifact-id }}
+      version:
+        value: ${{ jobs.archives.outputs.version }}
+      commit:
+        value: ${{ jobs.archives.outputs.commit }}
 
 permissions:
   contents: read
@@ -20,7 +32,7 @@ env:
 
 jobs:
   archives:
-    name: Produce exact snapshot archives
+    name: Produce exact archives
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:
@@ -31,6 +43,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: ${{ inputs.release && '0' || '1' }}
+      - name: Validate release ref before building
+        if: inputs.release
+        run: bash scripts/release.sh tag
       - name: Install verified producer tools
         run: |
           uname -a
@@ -49,6 +65,8 @@ jobs:
           printf 'GOROOT=%s\n' "$tools/go" >> "$GITHUB_ENV"
       - name: Build once and verify archive contract
         id: snapshot
+        env:
+          RELEASE_MODE: ${{ inputs.release || false }}
         run: |
           test "$(go env GOVERSION)" = go1.27.1
           goreleaser --version
@@ -56,21 +74,35 @@ jobs:
           go mod download
           go mod verify
           goreleaser check
-          GOPROXY=off goreleaser release --snapshot --clean
+          if [ "$RELEASE_MODE" = true ]; then
+            GORELEASER_CURRENT_TAG="$GITHUB_REF_NAME" GOPROXY=off goreleaser release --clean --skip=publish
+          else
+            GOPROXY=off goreleaser release --snapshot --clean
+          fi
           SEI_RELEASE_COMMIT=$(git rev-parse HEAD)
           SEI_RELEASE_VERSION=$(jq -er .version dist/metadata.json)
           export SEI_RELEASE_COMMIT SEI_RELEASE_VERSION
           test "$(jq -er .commit dist/metadata.json)" = "$SEI_RELEASE_COMMIT"
+          if [ "$RELEASE_MODE" = true ]; then
+            test "$SEI_RELEASE_VERSION" = "${GITHUB_REF_NAME#v}"
+          fi
+          cp scripts/install.sh dist/install.sh
+          (cd dist && shasum -a 256 install.sh > install.sh.sha256)
           SEI_RELEASE_DIST=dist go test -count=1 -run '^TestRelease' -v .
           printf 'commit=%s\nversion=%s\n' "$SEI_RELEASE_COMMIT" "$SEI_RELEASE_VERSION" >> "$GITHUB_OUTPUT"
-      - name: Transfer only the four archives and checksum manifest
+      - name: Transfer only the four archives, manifest and installer
         id: upload
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sei-archives-${{ github.sha }}-${{ github.run_attempt }}
           path: |
-            dist/*.tar.gz
-            dist/*_checksums.txt
+            dist/sei_${{ steps.snapshot.outputs.version }}_linux_amd64.tar.gz
+            dist/sei_${{ steps.snapshot.outputs.version }}_linux_arm64.tar.gz
+            dist/sei_${{ steps.snapshot.outputs.version }}_darwin_amd64.tar.gz
+            dist/sei_${{ steps.snapshot.outputs.version }}_darwin_arm64.tar.gz
+            dist/sei_${{ steps.snapshot.outputs.version }}_checksums.txt
+            dist/install.sh
+            dist/install.sh.sha256
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
@@ -182,6 +214,8 @@ jobs:
           test "$(./.bin/shellcheck --version | grep '^version:')" = 'version: 0.11.0'
           sh -n scripts/install.sh
           ./.bin/shellcheck -s sh scripts/install.sh
+          bash -n scripts/release.sh
+          ./.bin/shellcheck -s bash scripts/release.sh
 
       - name: Offline installer failure matrix (native POSIX shells)
         run: go test -count=1 -run '^TestInstaller' -v .

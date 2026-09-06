@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase K native CI, Debian artifact verification and owner-reported Mac source suite pass at their recorded scopes. Task 34 workflow implementation is next; no tag, push or publication is authorized this turn.
+**Status:** Phase K native CI, Debian artifact verification and owner-reported Mac source suite pass at their recorded scopes. Task 34 is implemented locally; hosted tagged-release/draft execution remains untested. No tag, push or publication is authorized this turn.
 
 **Debian follow-up (2026-09-06):** [Exact CI artifact](docs/linux-verification.md) at `11aa829` passes full/race/offline and native workflow/installer checks on Debian 13.6 amd64, sufficient owner-approved Linux acceptance without an all-distro promise.
 
@@ -905,17 +905,15 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Connect trusted tags to exact artifacts and required tests, keeping publication separate from ordinary CI and avoiding a build-after-test artifact mismatch.
 
 **Acceptance criteria:**
-- [ ] Add a separate full-history, SHA-pinned, exact-tool-version tag workflow with full tag validation. Preserve existing standard/native, fuzz, Linux race, PTY and safe installer checks; no extra external hosts or human gates.
-- [ ] Build/package once, checksum the final bytes, and pass those exact archives through existing native archive checks. After required checks pass, upload the same four archives, checksums and installer to a draft with release notes; retain packaged notices. Do not rebuild for upload.
-- [ ] Only the final draft-upload job has `contents: write`, using the existing GitHub token. Other jobs stay read-only; no new credentials, signing, attestations, Apple account or protected environment is required. Keep `v0.x` prereleases out of stable latest; never publish automatically.
+- [x] Implement a full-history tag path with full tag validation and existing action/build/lint pins. Reuse standard/native, fuzz, Linux race, PTY and installer checks; no extra hosts/human gates. Final uploader uses runner-provided `gh`, logging its version rather than adding a new tool pin.
+- [x] Implement build-once, same-artifact-ID native verification and draft transfer of four archives, manifest, installer and separate installer checksum; retain notices. No upload rebuild. Hosted execution remains untested.
+- [x] Only the final draft-upload job has `contents: write`, using the existing GitHub token. Other jobs stay read-only; no new credentials, signing, attestations, Apple account or protected environment. `v0.x` and SemVer prerelease tags remain prereleases; every release is draft/not-latest.
 
 **Verification:** Validate workflow/config syntax and contracts locally, including permissions, tag/version policy and same-byte transfer. A live tag/draft rehearsal requires separate execution authorization; inspect required job results and uploaded digests then. No tag, push, upload or public URL test this turn.
 
 **Dependencies:** Existing Tasks 26, 28 and 32 automated checks; Task 29 extra trust gates WAIVED. Workflow implementation and final-job permission scope are owner-authorized.
 
-**Files likely touched:** `.github/workflows/release.yml`, `.goreleaser.yaml`, `docs/release.md`.
-
-**Estimated scope:** Medium, 3 files; reuse existing installer and artifact tests.
+**Evidence (2026-09-06):** Reused CI and draft-only upload implemented; standard/race/fuzz, ShellCheck, mock contracts and Linux snapshot checks pass. Review pinned the triggering tag for same-commit RC/stable builds. [Runbook](docs/release.md#task-34-draft-runbook). Hosted tag/draft execution remains untested and separately authorized.
 
 ### Task 35: Publish Pre-1.0 Development Releases
 
