@@ -1,5 +1,16 @@
 # Destructive And Failure Test Matrix
 
+## Task 29 Trust Gate
+
+2026-09-06 after `8ad23fe`: [trust runbook](release.md#task-29-trust-policy)
+records approved intended attestations, future-only permission proposals and
+integrity-verified local ShellCheck `0.11.0`. No credentials/write grants added.
+Mac browser/extractor and eventual installer download paths, quarantine/first
+launch on both native architectures, signing decision and any required signed
+artifact retests remain **untested release blockers**. Checksums, CI extraction
+and missing quarantine are not Gatekeeper passes. Task 30 local/mock Go installer
+tests may proceed by owner approval; Task 28 floors/support approval remain open.
+
 ## Task 28 Archive Gate
 
 `TestReleaseArchives` checks all four exact producer archives, hashes, embedded

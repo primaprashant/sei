@@ -440,3 +440,146 @@ artifacts, replacing Checkpoint I output, not promising reproducible rebuilds:
 | linux/arm64 | `68586fa85c7222552d3ba58b98da221035b889d2a4a79847d1bcfff44c41f9de` |
 | darwin/amd64 | `f37d34ed12a70e319be072b811f523b5de02aa84326c6ce339f76e0004b648c9` |
 | darwin/arm64 | `97ab4a28a6ac789e8b3c0838df73d11f35c7f5d998c4a24833268a6f046310f4` |
+
+## Task 29 Trust Policy
+
+2026-09-06, sequentially after `8ad23fe`: owner approves local/CI slices while
+floor/Mac gates remain blocked, verified ShellCheck v0.11.0, and GitHub artifact
+attestations as the intended provenance policy. Apple signing/notarization is
+deferred to actual download tests. **No credentials or write permissions are
+authorized this phase.** No workflow, installer, signing or publication added.
+
+### Future Protected Release Only
+
+Reviewed primary [GitHub attestation guidance](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations)
+and [CLI verification policy](https://cli.github.com/manual/gh_attestation_verify).
+Proposed permissions below require separate owner approval before implementation:
+
+| Job / Capability | Exact Proposed Permission / Trust | Current State |
+| --- | --- | --- |
+| Ordinary PR/push checks | `contents: read`; all other token permissions disabled | Unchanged; no release credentials. |
+| Protected release build/attest | `contents: read`, `id-token: write` (GitHub OIDC signing identity), `attestations: write` (persist attestations); all others disabled | Proposal only; no long-lived signing key needed. |
+| Separate protected draft publisher | `contents: write`; all others disabled | Later approval only; no OIDC needed just to upload existing bytes. |
+| Apple signing/notarization, if chosen | Developer ID Application certificate/private key and approved notary authentication in an isolated temporary keychain | Availability, team/account, authentication method and secret names **unknown**, not inspected or provisioned. |
+
+Require protected release refs and a protected environment with owner review;
+never grant these capabilities to PR code, `pull_request_target`, or arbitrary
+workflow/ref inputs. Revalidate these protections before enabling the job.
+No `packages: write`, `artifact-metadata: write`, PAT or broad workflow-level
+write grant is proposed for tarballs. Existing selected action SHAs are in
+[Pins And Review](#pins-and-review) and [Transfer Action Review](#transfer-action-review).
+GitHub now documents `actions/attest@v4`; this is **not a selected immutable pin**.
+Resolve/review its exact release commit and dependencies before the later job;
+no attestation action SHA or Apple tool version is invented here.
+
+Build/sign/package once, then checksum and attest each of the four **final**
+tarballs and the checksum manifest. Test and publish those same bytes; signing
+changes executable bytes, so never attest only a pre-signing build. SHA-256
+detects corruption/substitution against a trusted expected digest. An attacker
+who replaces both an archive and its same-release manifest can pass that check;
+HTTPS/API hashes from the same publisher are not independent authentication.
+Attestations bind bytes to a workflow identity, not proof of safe code, honest
+workflow-controlled claims, or Apple trust; a compromised authorized builder
+remains a risk.
+
+Future consumer verification, before extraction: run `gh attestation verify
+"$archive" --repo primaprashant/sei` for each selected artifact/manifest, adding
+`--signer-workflow "$approved_signer_workflow" --source-ref "refs/tags/$tag"
+--source-digest "$approved_commit" --deny-self-hosted-runners --format json`.
+Values must come from the owner-approved release record, not untrusted predicate
+fields; require the SLSA provenance v1 predicate and GitHub OIDC issuer defaults.
+Record verified identity, subject digest, source/ref and run; fail closed on
+missing/mismatched evidence. Reusable workflows require the actual signer
+identity. Local `gh 2.92.0` help confirms these flags; no release attestation was
+generated/verified, and a future CI CLI install still needs its own integrity pin.
+This is release verification policy, not a new installed-user `gh` dependency.
+
+### Mac Download Gate
+
+Reviewed Apple's [current Gatekeeper guidance](https://support.apple.com/en-us/102445),
+[TN2206 download/quarantine testing](https://developer.apple.com/library/archive/technotes/tn2206/_index.html),
+and [custom notarization workflow](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow)
+(full text via its [DocC JSON](https://developer.apple.com/tutorials/data/documentation/security/customizing-the-notarization-workflow.json)).
+TN2206's app-bundle examples are not proof of this standalone CLI's behavior.
+
+On fresh native Macs on both architectures, including the proposed macOS 13
+floor, use the exact checksummed candidate and record host details from Task 28,
+source URL/tag/commit/hash, browser/version, extraction tool/version, destination,
+default security settings, network availability and first-launch transcript.
+Test browser download plus Archive Utility/command-line extraction separately
+from the eventual curl/installer path. Inspect attributes read-only with
+`xattr -l "$archive"` and `xattr -l "$binary"` before first execution; record
+presence **or absence** of `com.apple.quarantine` and signature diagnostics via
+`codesign -dv --verbose=4 "$binary"` and `codesign --verify --strict --verbose=2
+"$binary"`. Preserve statuses even on failure; then test absolute-path help,
+version and PTY startup/quit with disposable HOME/config. No quarantine on a
+curl/CI copy is not proof of the quarantined browser path. Avoid cached trust
+by repeating from a fresh machine/VM snapshot, not just a fresh user directory.
+
+Do not remove/set quarantine to manufacture a result, disable Gatekeeper, add
+trust exceptions, or use Open Anyway. Ordinary identified-developer consent is
+distinct from a security override; record the actual prompt. No Mac evidence is
+available here. If the promised flow fails, recommend Developer ID signing and
+notarization and obtain the owner's decision; do not publish bypass guidance.
+
+If signing is needed, these small follow-ups **block Task 34**:
+1. Approve identity/authentication availability, scoped secret handling, runner
+   access and cleanup; record actual macOS/Xcode/codesign/notarytool versions.
+2. Implement and verify Developer ID signing for both binaries (including
+   hardened-runtime/timestamp requirements), then notarization with `notarytool`,
+   accepted status and reviewed logs. Apple accepts ZIP/UDIF/signed flat packages,
+   not the current tar.gz as a submission container; verify a submission ZIP
+   containing the exact signed payload and its final tar.gz distribution path.
+3. Resolve ticket delivery and repeat fresh download tests before freezing final
+   checksums/attestations. Apple cannot staple standalone binaries or ZIPs;
+   online ticket lookup is not an offline-first-launch guarantee. Any packaging
+   change needs owner approval and archive/installer contract tests. Phase I's
+   macOS offline exception does not waive this separate trust decision.
+
+### ShellCheck Provenance
+
+Approved **v0.11.0** only. Reviewed [primary release](https://github.com/koalaman/shellcheck/releases/tag/v0.11.0)
+and [asset API digests](https://api.github.com/repos/koalaman/shellcheck/releases/tags/v0.11.0)
+on 2026-09-06. Selected gzip assets (no xz dependency):
+
+| Asset `shellcheck-v0.11.0.<platform>.tar.gz` | API Asset ID | SHA-256 |
+| --- | --- | --- |
+| `linux.x86_64` | 336391469 | `b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6` |
+| `linux.aarch64` | 336391401 | `68a8133197a50beb8803f8d42f9908d1af1c5540d4bb05fdfca8c1fa47decefc` |
+| `darwin.x86_64` | 336391375 | `c2c15e08df0e8fbc374c335b230a7ee958c313fa5714817a59aa59f1aa594f51` |
+| `darwin.aarch64` | 336391359 | `339b930feb1ea764467013cc1f72d09cd6b869ebf1013296ba9055ab2ffbd26f` |
+
+Future local/CI installation from repository root on Linux/macOS with curl,
+tar/gzip and `shasum` available; stop on failure, no remote installer or fallback:
+
+```sh
+set -eu
+case "$(uname -s)/$(uname -m)" in
+  Linux/x86_64) platform=linux.x86_64; digest=b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6 ;;
+  Linux/aarch64) platform=linux.aarch64; digest=68a8133197a50beb8803f8d42f9908d1af1c5540d4bb05fdfca8c1fa47decefc ;;
+  Darwin/x86_64) platform=darwin.x86_64; digest=c2c15e08df0e8fbc374c335b230a7ee958c313fa5714817a59aa59f1aa594f51 ;;
+  Darwin/arm64) platform=darwin.aarch64; digest=339b930feb1ea764467013cc1f72d09cd6b869ebf1013296ba9055ab2ffbd26f ;;
+  *) exit 1 ;;
+esac
+mkdir -p .bin
+archive=".bin/shellcheck-v0.11.0.$platform.tar.gz"
+curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+  -o "$archive" "https://github.com/koalaman/shellcheck/releases/download/v0.11.0/${archive##*/}"
+printf '%s  %s\n' "$digest" "$archive" | shasum -a 256 --check -
+tar -xzf "$archive" -C .bin --strip-components=1 shellcheck-v0.11.0/shellcheck
+./.bin/shellcheck --version
+test "$(./.bin/shellcheck --version | grep '^version:')" = 'version: 0.11.0'
+```
+
+Local Linux x86_64 archive matched the API digest **before listing/extraction
+or execution**; ignored `.bin/shellcheck` reports `0.11.0`, executable SHA-256
+`4da528ddb3a4d1b7b24a59d4e16eb2f5fd960f4bd9a3708a15baddbdf1d5a55b`.
+Other platforms have reviewed API pins only, not downloaded/native execution
+evidence. No independent signature/attestation verification is claimed.
+Version checks also report Go `1.27.1`, golangci-lint `2.13.2`, Community
+GoReleaser `2.18.0`; existing pins remain unchanged.
+
+Task 30 will add POSIX `sh` installer lint (`sh -n`, this pinned
+`shellcheck -s sh`) and Go `testing`/`os/exec` integration tests using disposable
+HOME/destinations, local archives and mocked downloads on Linux/macOS. No Bats,
+live GitHub test dependency, new runtime, or installer script in Task 29.

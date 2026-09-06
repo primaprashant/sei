@@ -791,6 +791,8 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Dependencies:** Task 28 and owner security/credential decision.
 
+**Progress (2026-09-06):** Owner approved intended attestations and ShellCheck v0.11.0; Linux tool integrity/version verified. [Trust runbook](docs/release.md#task-29-trust-policy) records pins, future-only permissions and Apple follow-ups. Mac trust tests/signing decision remain blockers; no credentials/write grants. Task 30 local/mock work approved.
+
 **Files likely touched:** `docs/release.md`, `docs/test-matrix.md`.
 
 **Estimated scope:** Small documentation/decision task, 2 files; any credential-backed implementation is separately scoped after the decision.
@@ -976,7 +978,7 @@ Repository identity, MIT licensing, and the release-version policy are confirmed
 | Gate | Recommendation / Question | Resolve Before |
 | --- | --- | --- |
 | Copyright and tag execution | Confirm copyright attribution and record the approved `v0.1.0` onward / first-usable `v1.0.0` policy. | Task 1 metadata; individual tags still need explicit execution authorization. |
-| New test tooling | PTY/terminal helper and Task 23 pinned test-only VT emulator approved; ShellCheck remains pending. No installed-user runtime added. | Tasks 9/23 approved; Task 29 pending. |
+| New test tooling | PTY/terminal helper, Task 23 test-only VT emulator and integrity-verified ShellCheck v0.11.0 approved. No installed-user runtime added. | Tasks 9/23 approved; Task 29 tooling verified, trust acceptance partial. |
 | Unverifiable root safety | Keep inspection usable; allow removal with unavailable library contents if root relationships remain provable. Block only affected mutations when aliases/permissions make safety unknowable. | Task 8 safety review. |
 | Config write placement | Recommend rejecting config-file symlinks for writes and config saves inside any managed library/destination root; preserve read-only loading where safe. Config-parent creation must not create skill destinations. Clarify before implementing because PRD does not specify config symlink/placement semantics. | Task 10 saving, verified in Task 12. |
 | Non-key interruptions | Recommend wait-and-restore for catchable SIGINT/SIGTERM, with documented best-effort SIGHUP/disconnected-terminal behavior; SIGKILL remains forced termination. Ctrl+C wait behavior is already fixed. | Task 9 lifecycle implementation. |
