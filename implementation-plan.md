@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase J native CI verified; Tasks 31-32 pass local standard/race and offline GNU/BSD tar checks. Task 33 and new native execution are pending; support-floor and Mac trust gates remain open.
+**Status:** Task 33 documentation implemented after `0de0dbe`; local/offline examples verified. New native execution, live release URLs, support-floor approval and Mac trust gates remain pending.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -871,9 +871,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Write accurate public instructions against the now-tested application and installer contracts.
 
 **Acceptance criteria:**
-- [ ] README covers the one-command and inspect-then-run installer paths, explicit version/custom directory, PATH follow-up, manual archive/checksum verification, receipt-based upgrades versus manual installs, and uninstalling the binary/installer receipt without deleting copied skills/config automatically.
-- [ ] Explain native config locations, first-run/explicit setup, overrides/global-option ordering, presets and shared-discovery warning, exact shortcut table, resolved targets, refresh semantics, no network/telemetry, and no agent-session isolation.
-- [ ] State delete-then-copy/local-edit loss, immediate permanent deletion, partial failures/forced termination, no undo, supported systems and measured limits, plus developer/test commands and a useful issue-report checklist. Include notices and no untested compatibility promises.
+- [x] README covers the one-command and inspect-then-run installer paths, explicit version/custom directory, PATH follow-up, manual archive/checksum verification, receipt-based upgrades versus manual installs, and uninstalling the binary/installer receipt without deleting copied skills/config automatically.
+- [x] Explain native config locations, first-run/explicit setup, overrides/global-option ordering, presets and shared-discovery warning, exact shortcut table, resolved targets, refresh semantics, no network/telemetry, and no agent-session isolation.
+- [x] State delete-then-copy/local-edit loss, immediate permanent deletion, partial failures/forced termination, no undo, supported systems and measured limits, plus developer/test commands and a useful issue-report checklist. Include notices and no untested compatibility promises.
+
+**Evidence (2026-09-06):** [Local/mock example rehearsal](docs/test-matrix.md#task-33-documentation) passes; documentation criteria implemented, not live/native release acceptance. No public release; all sei URL examples pending.
 
 **Verification:** Follow every example in disposable fresh environments, compare keyboard/config docs against tests, run `git diff --check`, and verify release-relative URL construction. Mark public URLs pending until Task 36 verifies them live.
 
@@ -885,9 +887,9 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Checkpoint K: Tasks 31-33
 
-- [ ] Installer lint/local integration tests pass, including preservation of an existing binary on failed upgrade.
+- [x] Installer lint/local integration tests pass, including preservation of an existing binary on failed upgrade.
 - [ ] A new user can follow documentation without Go, agent tooling, sudo, profile edits, or security bypasses.
-- [ ] Instructions distinguish persistent copied skills from removable installation files and explain all destructive risks.
+- [x] Instructions distinguish persistent copied skills from removable installation files and explain all destructive risks.
 
 ### Phase L: Publish And Verify
 

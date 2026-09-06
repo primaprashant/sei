@@ -9,7 +9,9 @@ assertion; native Linux amd64 help/version/PTY and full standard/race/installer
 checks pass. Subsequent [Phase J hosted evidence](#phase-j-hosted-evidence) closes
 native CI execution at `54fbfb9`, not minimum-OS hosts, support approval or Mac
 download trust. Tasks 31-32 are verified locally below; their new native execution
-remains pending. No public release.
+remains pending. Task 33 user documentation is implemented with
+[local/mock verification](test-matrix.md#task-33-documentation); public URL and
+fresh-user native/trust acceptance remain pending. No public release.
 
 Task 4 establishes ordinary PR/push CI. Task 27 adds local snapshot packaging
 with GoReleaser Community v2.18.0, not signing, tagging, uploading or publishing.
@@ -377,15 +379,15 @@ These are proposed floors, **not supported-platform claims**:
 | --- | --- | --- | --- |
 | Ubuntu 22.04, actual 5.15-series host kernel | Untested | Untested | Release blocker; newer kernel/container userspace does not qualify. |
 | macOS 13 | Untested | Untested | Release blocker; no Rosetta substitution. |
-| Ubuntu 24.04 CI labels | Pending remote archive run | Pending remote archive run | Newer-host evidence only, even when successful. |
-| macOS 15 CI labels | Pending remote archive run | Pending remote archive run | Not macOS 13 or Gatekeeper evidence. |
+| Ubuntu 24.04 CI labels | Phase J exact archive run passed | Phase J exact archive run passed | Newer-host evidence only; see hosted evidence below. |
+| macOS 15 CI labels | Phase J exact archive run passed | Phase J exact archive run passed | Not macOS 13 or Gatekeeper evidence. |
 | Local Debian, kernel 6.12.90+deb13.1-cloud-amd64 | Local verification below | Unavailable | Not an Ubuntu floor. |
 
 macOS quarantine/download/extraction/Gatekeeper validation remains Task 29's
 release blocker. CI extraction cannot establish the end-user trust path; do not
-remove quarantine or disable security checks to turn it green. No remote run of
-this change was available or initiated. Earlier native source CI success does
-not establish exact-archive execution for this worktree.
+remove quarantine or disable security checks to turn it green. The
+[Phase J hosted run](#phase-j-hosted-evidence) establishes exact-archive execution
+at `54fbfb9`, not new native verification of Tasks 31-33.
 
 ### Floor Host Runbook
 
@@ -807,7 +809,8 @@ CGO-enabled race (`119.692s`), and the complete installer suite with GNU tar and
 isolated BSD tar/libarchive 3.7.4 using the Task 30 wrapper above. These fixtures
 also pass with both tar implementations in isolated network namespaces. Module
 verification and a local build/help/version smoke pass. These fixtures are not
-native Mac Task 31 execution. Task 32 results follow; Task 33 remains pending;
+native Mac Task 31 execution. Task 32 results follow; Task 33 documentation is
+now recorded in the test matrix;
 no push, tag, credentials or publication in this task.
 
 ## Task 32 Broken Inputs

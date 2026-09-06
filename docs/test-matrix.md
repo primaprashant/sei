@@ -11,6 +11,32 @@ at exact head `54fbfb9`, including producer transfer and exact-archive execution
 on all four native runners. [Step evidence](release.md#phase-j-hosted-evidence).
 This does not waive support-floor or Mac Gatekeeper/signing decisions.
 
+## Task 33 Documentation
+
+Implemented sequentially after `0de0dbe`, 2026-09-06. Only documentation changes
+remain; no installer/application code, dependencies, or persistent test scaffolding
+changed. README commands were cross-checked against CLI/setup/key code, installer
+source and tests, and the performance/prototype/release gates.
+
+| Rehearsal | Evidence / Limits |
+| --- | --- |
+| README shell blocks | All parsed under sh, dash and Bash. Temporary Go test extracted the actual fenced commands and reused existing installer fixtures; removed after verification. |
+| One-command and inspect-then-run | Passed offline with local curl fixtures under all three shells and GNU tar 1.35 / BSD tar 3.7.4 on Linux. Exact versioned URL, default/custom quoted directory, installed bytes, PATH/help/version and same-version receipt-owned reinstall checked. `less` was a noninteractive file-presence stub, not human approval. |
+| Truncated script | Mock curl wrote executable partial text then failed; the one-command example did not execute it or install a binary. |
+| Manual archive | Actual Linux amd64 command passed with local fixture bytes and each tar implementation; forced shasum branch also passed. Duplicate checksum, digest mismatch and an injected extra listing member failed before installation. Existing installer tests cover all four target URL mappings and unsafe archive types; these are not foreign-native manual executions. |
+| Manual ownership / uninstall | Installer refused the manual binary. Actual uninstall block removed binary/receipt and preserved disposable config/library sentinel bytes; manual install's absent receipt is expected. |
+| Disposable browser | Actual scratch example launched the built Linux binary under the existing PTY helper (absolute binary substitution and disposable TMPDIR); `.hidden`, `example`, `Not created`, quit and terminal restoration passed; browsing did not create the local destination. |
+| Existing coverage | Final full uncached Go suite (47.592s), CGO-enabled race (144.821s), and network-disabled GNU/BSD installer suites passed, including setup/restart, all keys, upgrade failures and preservation. Module verify/tidy diff, pinned linter config/format/lint (zero issues), vet, build, installer syntax/ShellCheck and whitespace checks passed. Local linter/ShellCheck archives still match recorded SHA-256 pins. |
+
+No live install/download was attempted. All sei public URLs remain pending;
+`v0.1.0` is a planned GitHub prerelease, not `latest`. Manual review of downloaded
+code, deliberate relocation of existing install files, real terminal/SSH use,
+Mac/arm64 execution, floor approval and quarantine/Gatekeeper acceptance remain
+manual/external checks, not inferred from fixtures. Tool download recipes retain
+their existing exact pins/provenance; no network tool reinstall or fresh snapshot
+was needed for this documentation-only change. Historical performance numbers
+were checked against recorded evidence, not remeasured.
+
 ## Task 32 Installer Matrix
 
 Implemented after `abdb967`. `go test -count=1 -run '^TestInstaller' -v .`
@@ -37,7 +63,8 @@ syntax and whitespace checks pass; `actionlint` is unavailable. Cross-builds are
 compilation checks only.
 These are shell fixtures, not foreign binary execution or native macOS evidence.
 Task 32 hosted/native execution, minimum-OS/support approval, Mac download trust,
-and live public release verification remain pending. Task 33 is not completed here.
+and live public release verification remain pending. Task 33 documentation evidence
+is recorded above.
 
 ## Task 31 Upgrades (Historical)
 
@@ -55,7 +82,7 @@ requires manual inspection/relocation.
 Local syntax/pinned ShellCheck, tidy/format/lint (zero issues)/vet, uncached full
 tests (`23.541s`), full CGO race (`119.692s`) and complete GNU/BSD tar installer
 suites pass. Task 31 native hosted results are pending, not implied by Phase J
-CI. Task 32 results are above; Task 33 and external floor/Mac trust gates remain open.
+CI. Tasks 32-33 results are above; external floor/Mac trust gates remain open.
 Both tar suites also pass with networking disabled; module verification and local
 build/help/version smoke pass.
 

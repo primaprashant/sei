@@ -5,103 +5,345 @@ configured agent destinations and removing installed copies. Not a skill
 marketplace, agent launcher, or agent skill. See [the PRD](prd.md) for the product
 contract and [the implementation plan](implementation-plan.md) for progress.
 
-## Status
+**Development status:** setup, browsing, copying/replacement, removal, and the
+receipt-owned installer are implemented. **No public release or installer asset
+exists yet. All sei download URLs below are pending examples, not working install
+claims.** For use now, [build from source](#development) and try disposable data.
+Planned `v0.1.0` and subsequent `v0.x` releases are GitHub **prereleases**, even
+when the tag has no `-rc` suffix; `v1.0.0` is reserved for the first usable release.
 
-The executable supports strict JSON configuration, `--config`, `--project`,
-`--help`, `--version`, and an asynchronous configured folder browser
-(quit with `q` or Ctrl+C). Missing configuration opens editable first-run setup;
-`sei setup` reconfigures ordered agents, confirms config replacement, and saves/exits.
-Lowercase `x` permanently removes the selected destination skill, without
-confirmation, trash, backup, or undo. Library add keys delete an existing same-named
-destination completely before copying: local edits and destination-only files are
-lost, even if content seems identical. This is not merging or synchronization.
-Later failure can leave missing/partial output; retry add or remove it, with no
-rollback. Predictable preflight rejection leaves the existing tree intact. During work,
-navigation remains available; extra mutations are ignored, refresh is coalesced,
-and quit waits for completion. Failures remain visible and listings refresh.
-Malformed or unreadable configuration fails without starting setup or writing files.
-There is no published installer or usable release. Unknown flags, commands, and
-unexpected positional arguments return status `2`. After configuration validation,
-interactive startup requires terminal stdin and stdout and otherwise returns `1`.
-Help/version use stdout and need neither configuration nor a terminal; errors use stderr.
-SIGINT, SIGTERM, and SIGHUP request ordinary exit through the same model path as
-`q`/Ctrl+C; repeated signals never force exit. Terminal restoration precedes final
-runtime diagnostics. HUP restoration is best effort on a disconnected terminal;
-SIGKILL cannot restore anything. See [lifecycle policy and evidence](docs/terminal-lifecycle.md).
+## Install
 
-Use global options **before** the optional `setup` subcommand:
+The future released binary needs no Go, agent tooling, or language runtime.
+The installer needs POSIX shell/core utilities, curl, GNU/BSD tar, gzip, mktemp,
+and either `sha256sum` or `shasum -a 256` (available on macOS). It detects the
+host, verifies the selected archive, and defaults to `$HOME/.local/bin`. It never
+uses sudo, edits shell profiles, or disables macOS security checks.
+
+### One Command (Pending Publication)
+
+This explicit-version example downloads the **complete** script before executing
+it, and cleans its private temporary directory on exit. Do not use `curl | sh`:
+a failed/truncated transfer can otherwise execute a dangerous partial script.
 
 ```sh
-sei --config /tmp/sei.json --project ./example
-sei --config /tmp/sei.json setup
+sh -c 'set -eu; d=$(mktemp -d); trap '\''rm -rf "$d"'\'' 0; trap '\''exit 1'\'' HUP INT TERM; curl -q --fail --silent --show-error --location --proto "=https" --proto-redir "=https" --tlsv1.2 --output "$d/install.sh" "https://github.com/primaprashant/sei/releases/download/v0.1.0/install.sh"; sh "$d/install.sh" --version v0.1.0'
+```
+
+This still trusts downloaded shell code. Prefer reviewing it first:
+
+### Inspect Then Run (Pending Publication)
+
+```sh
+installer_dir=$(mktemp -d)
+curl -q --fail --silent --show-error --location --proto '=https' \
+  --proto-redir '=https' --tlsv1.2 --output "$installer_dir/install.sh" \
+  https://github.com/primaprashant/sei/releases/download/v0.1.0/install.sh &&
+# Stop if curl fails. Review the complete script before running the next command.
+less "$installer_dir/install.sh" &&
+sh "$installer_dir/install.sh" --version v0.1.0 --install-dir "$HOME/Tools/sei bin"
+rm -r "$installer_dir"
+```
+
+Use the printed absolute `Run` command immediately, or execute the printed
+`export PATH=...` in your current shell. For the custom directory above:
+
+```sh
+"$HOME/Tools/sei bin/sei" --version
+export PATH="$HOME/Tools/sei bin":$PATH
 sei --help
 ```
 
-Setup starts with Claude Code, Codex, and OpenCode. Tab/Up/Down selects a field;
-typing appends, Backspace deletes, and Ctrl+U clears. Ctrl+A adds a preset (including
-Pi/Cursor) or custom agent; Ctrl+D removes the selected agent; Ctrl+K/J reorders it.
-Enter validates and previews resolved paths/shortcuts, then Enter saves (existing
-config requires `y` confirmation). Esc/Ctrl+C cancels before saving; during a save,
-quit waits for completion. Setup never creates library or destination folders.
+PATH is not changed by the installer; persist it yourself only if desired.
+Directories containing `:` cannot be a single PATH component: use the absolute
+invocation instead. Quote custom directories, including spaces or apostrophes.
 
-Without `--config`, configuration uses `os.UserConfigDir()`: Linux uses
-`$XDG_CONFIG_HOME/sei/config.json` or `~/.config/sei/config.json`; macOS uses
-`~/Library/Application Support/sei/config.json` and ignores XDG. Relative Linux
-`XDG_CONFIG_HOME` is rejected. Relative config/project overrides use the launch
-directory, never a Git root or the config file's parent. There is no config merging.
-The [PRD configuration example](prd.md#setup-and-configuration) documents the exact
-schema: a library and 1-9 ordered agents, each with a name and global/local paths.
-Library/global paths must be absolute or begin with `~/`; only that home shorthand
-is expanded. Local paths are project-relative and lexically contained. Raw path
-components are retained; Task 8 checks physical containment, root overlap, and
-existing filesystem identity aliases asynchronously. This milestone is still not
-mutation-ready; see [the safety algorithm and limits](docs/filesystem-safety.md).
+`--version latest` (the default) resolves GitHub's latest **stable** release once,
+then pins both downloads to that tag. It does not select GitHub prereleases.
+The future stable script URL is
+`https://github.com/primaprashant/sei/releases/latest/download/install.sh`;
+it will not serve the planned `v0.1.0` prerelease. Until a stable release exists,
+use an explicit published prerelease tag and its versioned script URL. For any
+explicit target, use the script asset and `--version` from the **same tag**.
 
-The browser lists immediate ordinary directories, including dot-directories,
-without parsing `SKILL.md`. Loose files are ignored; symlink entries are shown as
-blocked and are not followed. Listings use raw, case-sensitive Go string ordering;
-display labels are escaped and truncated by terminal cell width without changing
-raw selection names. The library appears left, with configured locals above
-globals on the right. Missing destinations show `Not created` and remain absent;
-inaccessible or invalid roots show errors independently of other panels.
-Configured root aliases are permitted when root checks pass. Safety warnings are
-independent of listings, with full reasons in help; unsafe roots remain inspectable.
-Every mutation revalidates, including after missing-root creation. The active
-config location and its aliases are protected even when the project changes.
-The grid follows the focused agent, shows the visible slot range, and scrolls lists
-to the selection. Shortcut rows stay separate from titles; `*` marks panel focus
-and `>` marks selection. Paths are home/project-relative where possible, with full
-paths in help. Below the approved **80x24** minimum, new mutations are disabled;
-quit still works and active work finishes normally.
+### Manual Archive (Pending Publication)
 
-Keys: Up/Down clamp; `0` library; `1-9` local; `g` then `1-9` global.
-Each panel remembers its raw-name selection. `r` refreshes listings, not config,
-preserving the raw name if present, otherwise clamping the old index.
-`g` stays visibly pending without a timeout; invalid continuations are consumed.
-`Esc` cancels/closes help; `q`/Ctrl+C retain quit priority. Paste is ignored.
-`?` shows full sanitized selected name/root path and mappings; Up/Down scroll
-wrapped help, including arbitrarily long targets. Navigation retains errors.
-Add slots are exactly `a b c d e f h i o` local and `A B C D E F H I O` global,
-from library only. Lowercase `x` removes from destination panels only;
-uppercase `X` and unconfigured slots do nothing.
+Choose your native platform; these are the four planned `v0.1.0` artifacts:
 
-Other agents may also load skills from these folders. sei shows configured folder
-contents, not everything an agent discovers or has loaded.
+| OS / CPU | Archive |
+| --- | --- |
+| Linux x86_64 (amd64) | `sei_0.1.0_linux_amd64.tar.gz` |
+| Linux aarch64 (arm64) | `sei_0.1.0_linux_arm64.tar.gz` |
+| macOS Intel (amd64) | `sei_0.1.0_darwin_amd64.tar.gz` |
+| macOS Apple Silicon (arm64) | `sei_0.1.0_darwin_arm64.tar.gz` |
 
-## Project Decisions
+The manifest is `sei_0.1.0_checksums.txt`. The following Linux amd64 example
+uses a fresh directory, strictly selects exactly one valid checksum entry,
+verifies bytes **before extraction**, and allows only the four ordinary root
+members `sei`, `README.md`, `LICENSE`, `THIRD_PARTY_NOTICES`. Change `target`
+to `linux_arm64`, `darwin_amd64`, or `darwin_arm64` as appropriate. Stop on any
+failure; do not substitute another archive's checksum.
 
-- Repository and Go module: `github.com/primaprashant/sei`.
-- MIT license, copyright 2026 Prashant Anand, confirmed by the owner.
-- Approved version policy: initial published tag `v0.1.0`, then `v0.x`
-  development releases; reserve `v1.0.0` for the first usable release.
-- Commits, public pushes, credential changes, branch protection, tags, and
-  releases require explicit authorization. Version policy is not permission to
-  publish. Do not replace an existing Git remote or local agent configuration.
+```sh
+(
+set -eu
+export LC_ALL=C
+unset TAR_OPTIONS GZIP
+tag=v0.1.0
+target=linux_amd64
+asset="sei_${tag#v}_${target}.tar.gz"
+base="https://github.com/primaprashant/sei/releases/download/$tag"
+work=$(mktemp -d)
+trap 'rm -rf "$work"' 0
+trap 'exit 1' HUP INT TERM
+curl -q --fail --silent --show-error --location --proto '=https' \
+  --proto-redir '=https' --tlsv1.2 --output "$work/archive.tar.gz" "$base/$asset"
+curl -q --fail --silent --show-error --location --proto '=https' \
+  --proto-redir '=https' --tlsv1.2 --output "$work/checksums" "$base/sei_${tag#v}_checksums.txt"
+expected=$(awk -v name="$asset" '
+  $2 == name { n++; if (NF != 2 || length($1) != 64 || $1 ~ /[^0-9a-f]/) bad=1; sum=$1 }
+  END { if (n != 1 || bad) exit 1; print sum }' "$work/checksums")
+if command -v sha256sum >/dev/null 2>&1; then
+  actual=$(sha256sum < "$work/archive.tar.gz")
+else
+  actual=$(shasum -a 256 < "$work/archive.tar.gz")
+fi
+test "${actual%% *}" = "$expected"
+gzip -t "$work/archive.tar.gz"
+tar --ignore-zeros -tzf "$work/archive.tar.gz" > "$work/names"
+awk '
+  $0 != "sei" && $0 != "README.md" && $0 != "LICENSE" && $0 != "THIRD_PARTY_NOTICES" { bad=1 }
+  seen[$0]++ { bad=1 }
+  END { exit bad || NR != 4 }' "$work/names"
+tar --ignore-zeros -tvzf "$work/archive.tar.gz" > "$work/types"
+awk 'substr($0,1,1) != "-" { bad=1 } END { exit bad || NR != 4 }' "$work/types"
+tar -xOzf "$work/archive.tar.gz" sei > "$work/sei"
+chmod 755 "$work/sei"
+"$work/sei" --version
+install_dir="$HOME/.local/bin"
+mkdir -p "$install_dir"
+# Fresh manual install only: do not overwrite any binary or receipt entry.
+for path in "$install_dir/sei" "$install_dir/.sei-install-receipt"; do
+  test ! -e "$path" && test ! -L "$path"
+done
+cp "$work/sei" "$install_dir/sei"
+)
+```
 
-The existing `origin` points to the intended repository. At kickoff,
-`gh repo view primaprashant/sei` confirmed that it is public, owned by
-`primaprashant`, and accessible with `ADMIN` permission. No remote changes were
-made during bootstrap.
+Run `"$HOME/.local/bin/sei" --version`; for current-shell PATH use
+`export PATH="$HOME/.local/bin":$PATH`. Manual installation creates **no receipt**.
+Checksums from the same release detect corruption, not a compromised publisher;
+neither checksum checks nor executing `--version` sandbox downloaded code.
+[Provenance and Mac trust gates](docs/release.md#task-29-trust-policy) are still
+pending. Do not remove quarantine or bypass Gatekeeper if macOS refuses launch.
+
+### Upgrade And Uninstall
+
+For an installer-owned binary, repeat the installer flow with the desired tag's
+script, the same `--version` target, and the original `--install-dir`. Ownership
+requires the existing executable's digest to match `.sei-install-receipt` beside
+it. Candidate verification and receipt preparation precede binary replacement;
+pre-commit failures preserve the old executable. A failed final binary rename
+can be retried using the retained receipt. This is not crash recovery or hostile
+concurrent-writer protection.
+
+**Manual or modified installs are refused**, as are missing/mismatched receipts,
+symlinks, and nonregular paths. Never forge/edit a receipt to bypass refusal.
+For explicit manual replacement, quit sei, verify the new archive as above,
+inspect the exact existing binary and receipt paths, then move those entries to
+a separate backup directory you control. Rerun the fresh manual procedure (no
+receipt), or rerun the installer to establish real ownership. Do not delete the
+old copy until the new one works. A receipt without a binary after a failed fresh
+install also requires this inspection/relocation, not an automatic upgrade.
+
+To uninstall, quit sei and inspect the chosen install directory first. Remove
+only these two entries, not the directory or anything in your skill folders:
+
+```sh
+install_dir="$HOME/.local/bin" # Use your actual custom directory if different.
+ls -ld "$install_dir/sei" "$install_dir/.sei-install-receipt"
+# A manual install has no receipt. After confirming these are your install files:
+rm -f "$install_dir/sei" "$install_dir/.sei-install-receipt"
+```
+
+`rm -f` does not recursively delete directories. **Copied skills, the source
+library, and configuration remain unchanged.** Remove any PATH profile entry
+you added yourself only if you no longer need it.
+
+## First Run
+
+1. Prepare a library of skill folders, separate from all destination roots. sei does not download skills or create the library.
+2. Run `sei` in the intended project directory, or use `sei --project "$HOME/work/example"` with an existing directory. The launch directory is the default project, never an inferred Git root.
+3. With no config, setup asks for the library and starts with Claude Code, Codex, and OpenCode. Review paths and order, preview, and save to enter the browser.
+4. From the library, select a folder with Up/Down and press `a` to copy to the first agent's local destination. Repeat for three folders without switching panels. Press `1`, select a copied folder and press `x` to remove it; repeat for a second folder, then `q` to quit. **These are real permanent filesystem changes.** Try the disposable example under [Checks](#checks) first.
+
+### Setup And Config
+
+Use global options **before** `setup`:
+
+```sh
+sei setup
+sei --config "$HOME/sei-test.json" setup
+sei --config "$HOME/sei-test.json" --project "$HOME/work/example"
+sei --help
+sei --version
+```
+
+Explicit setup prepopulates valid config, saves and exits. A malformed/unreadable
+existing config fails rather than being overwritten or silently repaired.
+Tab/Up/Down selects a field; type to append, Backspace deletes, Ctrl+U clears.
+Ctrl+A opens the preset/custom agent menu; Ctrl+D removes the selected agent;
+Ctrl+K/J moves it up/down. Enter validates/previews resolved paths and shortcuts;
+`e` edits again, Enter saves, and existing config requires `y` confirmation
+(`n` goes back). Esc/Ctrl+C cancels before saving; during a save, quit waits.
+Recognized paste is ignored, including in setup. Setup creates only config
+parents/files, never library or destination folders.
+
+| Editable Preset | Global | Project-Local |
+| --- | --- | --- |
+| Claude Code | `~/.claude/skills` | `.claude/skills` |
+| Codex | `~/.agents/skills` | `.agents/skills` |
+| OpenCode | `~/.config/opencode/skills` | `.opencode/skills` |
+| Pi | `~/.pi/agent/skills` | `.pi/skills` |
+| Cursor | `~/.cursor/skills` | `.cursor/skills` |
+
+Select 1-9 ordered agents, including custom names/paths. Presets are not discovery;
+see [upstream references and strict JSON schema](prd.md#setup-and-configuration).
+
+| Platform | Default Config (`os.UserConfigDir()`) |
+| --- | --- |
+| Linux | `$XDG_CONFIG_HOME/sei/config.json`, otherwise `~/.config/sei/config.json` |
+| macOS | `~/Library/Application Support/sei/config.json`; ignores XDG |
+
+Relative Linux `XDG_CONFIG_HOME` is rejected. `--config` and `--project` overrides
+resolve relative to launch cwd, not the config's parent. There is no config merging.
+Library/global paths must be absolute or start with `~/`; no other shell expansion
+is performed. Local paths must stay inside the project, both lexically and after
+filesystem resolution. Roots cannot overlap the library or each other; config
+and its aliases are protected. Configured root symlinks are allowed only when
+safety checks pass. Restart after editing JSON; `r` does not reload it.
+
+### Keys
+
+| Input | Action |
+| --- | --- |
+| Up / Down | Move in the focused list, stopping at either end; scroll expanded help. |
+| `0` | Focus library. |
+| `1` ... `9` | Focus configured local slot 1 ... 9. |
+| `g`, then `1` ... `9` | Focus configured global slot 1 ... 9 (two ordinary key presses). |
+| `x` | Permanently remove selected destination folder, never from the library. `X` does nothing. |
+| `r` | Refresh listings, not config; preserve raw-name selection if present, otherwise clamp. |
+| `?` | Toggle help with full sanitized selected name, root path, errors, and mappings. |
+| Esc | Close help or cancel pending `g`; otherwise no action. |
+| `q` / Ctrl+C | Quit; wait for active mutation to finish first. |
+
+All **18 add mappings**, from library focus only; config order determines slots:
+
+| Slot | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Local Add | `a` | `b` | `c` | `d` | `e` | `f` | `h` | `i` | `o` |
+| Global Add | `A` | `B` | `C` | `D` | `E` | `F` | `H` | `I` | `O` |
+
+Unconfigured slots do nothing. Pending `g` is visible, has no timeout, and consumes
+invalid continuations instead of replaying them as actions; Esc cancels and quit
+keeps priority. No enhanced keyboard protocol, special font, or reliable repeat
+detection is required. Paste is not action input. Each panel remembers selection
+only for this run; add retains library focus, delete selects the following row
+(or preceding last row). Navigation does not clear errors.
+
+The library is left, locals above globals on the right. The agent window follows
+focus and labels its visible slot range; not all nine agents need fit at once.
+`*` marks focus and `>` selection. Compact/escaped labels do not alter raw names;
+use help for full resolved targets. At less than **80x24**, new mutations are
+disabled; quit still works and active work finishes normally.
+
+## Safety And Scope
+
+**Add is delete-then-copy, not merging or synchronization.** It removes an existing
+same-named destination completely before copying, losing local edits and
+destination-only files even if content looks identical. Lowercase `x` deletes
+immediately and permanently, including folders absent from the library. Neither
+action asks for confirmation, checks Git, uses trash, backs up, or offers undo.
+Predictable preflight rejection preserves the old tree; later read/write/removal
+failure can leave missing or partial output. There is **no rollback**. Inspect the
+reported target and refreshed listing, then retry add or remove the remainder.
+
+The library stays read-only. Immediate ordinary directories (including dotfolders)
+are listed without parsing `SKILL.md`; loose files are ignored, symlink entries
+are blocked. Links anywhere inside a skill and special files block mutation.
+Missing destinations show `Not created` until first add; inaccessible roots show
+errors, not empty success. Copies include nested/hidden files and preserve bytes
+and executable bits subject to umask, not ownership/timestamps/ACLs/xattrs.
+See [filesystem safety and limits](docs/filesystem-safety.md).
+
+Only one mutation runs at a time. Navigation stays responsive; extra mutations
+are rejected (not queued), refresh is coalesced, and help blocks mutations.
+Normal quit and SIGINT/SIGTERM/SIGHUP wait for active work; repeated signals do
+not force exit. Forced termination can leave partial work; no multi-process lock,
+consistent source snapshot, crash recovery, or hostile-writer sandbox is promised.
+Terminal restoration precedes final errors; HUP restoration is best effort and
+SIGKILL cannot restore anything. [Lifecycle details](docs/terminal-lifecycle.md).
+
+Setup/TUI require terminal stdin and stdout. Help/version need neither config nor
+a terminal and write stdout; errors use stderr. Exit codes: `0` normal quit/cancel,
+`1` startup/config/save/runtime failure or active work failing after pending quit,
+`2` invalid CLI syntax. A recoverable in-TUI error then ordinary later quit is `0`.
+
+Normal setup/TUI operation has **no network access, telemetry, or automatic update
+checks**. The installer separately downloads releases. sei never executes skill
+scripts or launches/manages agent sessions, and does not inspect loaded skills.
+No focus/selection/project/session state is persisted; config and filesystem
+changes persist. Folder labels do not provide agent isolation:
+
+> Other agents may also load skills from these folders. sei shows configured folder contents, not everything an agent discovers or has loaded.
+
+## Support And Measurements
+
+No public compatibility floor is approved yet. Cross-compilation is not native
+execution; newer CI success does not establish minimum-OS or Mac download trust.
+
+| Target | Recorded Evidence | Still Pending |
+| --- | --- | --- |
+| Linux amd64 | Phase J native Ubuntu 24.04 CI, exact archive help/version/PTY; local Debian checks | Ubuntu 22.04 with actual 5.15 host kernel; support approval |
+| Linux arm64 | Phase J native Ubuntu 24.04 CI, exact archive help/version/PTY | Same proposed Linux floor on arm64; support approval |
+| macOS amd64 | Phase J native macOS 15 CI, exact archive help/version/PTY | macOS 13 floor, quarantine/Gatekeeper, signing decision |
+| macOS arm64 | Phase J native macOS 15 CI, exact archive help/version/PTY | macOS 13 floor, quarantine/Gatekeeper, signing decision |
+
+Tasks 31-32 installer changes have local/mock evidence, not new native execution.
+Windows, Homebrew and self-update are not provided. Phase I owner SSH/workflow
+smoke checks passed; broader theme/performance and final-release acceptance remain
+open. [Release evidence](docs/release.md) and
+[prototype decisions](docs/prototype.md#approved-layout-task-22) track those gates.
+
+The approved minimum is 80x24; 143x35 and 148x39 are the owner-selected larger
+geometries. Recorded **Linux amd64 warm-data local PTY** measurements used 25
+skills, 30 files, 384,233 bytes on tmpfs, 20 warm trials per size. At 143x35 / 148x39,
+startup p95 was **62.622 / 64.172 ms**, navigation/render **17.032 / 16.682 ms**,
+add confirmation **33.447 / 33.020 ms**, replacement **33.074 / 33.034 ms**, and
+removal **17.358 / 16.715 ms**. The measured stripped binary was **5,181,600 bytes**.
+These are historical measurements, not current artifact sizes or Mac/SSH/cold-cache
+promises; operation timings include help/render confirmation, not just filesystem
+work. Scoped approved p95 gates are 100/25/50/60/25 ms respectively, binary <=6 MiB.
+[Protocol, sample counts, raw data, and pending human comparison](docs/performance.md).
+
+## Reporting Issues
+
+Include `sei --version`, install method/tag and archive name; OS/version/kernel
+and native CPU (mention Rosetta); filesystem/case behavior; terminal/version,
+`TERM`, dimensions, theme/no-color, and local versus SSH. Provide exact command
+and key sequence, expected/actual result, full error and exit status, and whether
+an operation was active at quit. For install failures include the command,
+download stage and receipt presence, but do not edit the receipt to force a retry.
+Prefer a minimal disposable fixture and redacted config/paths; do not post secrets
+or private skill content. Distinguish a missing destination from an inaccessible
+one, and report any partial output rather than cleaning away evidence first.
+
+## License
+
+MIT, copyright 2026 Prashant Anand. See [LICENSE](LICENSE) and
+[THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) for bundled dependency/runtime notices.
+Publication, tags, pushes, credentials, and branch-protection changes require
+explicit owner authorization; the version policy is not permission to publish.
 
 ## Development
 
@@ -206,37 +448,32 @@ config files. For an interactive browser smoke check with isolated data:
 
 ```sh
 scratch=$(mktemp -d)
-mkdir -p "$scratch/library/.hidden" "$scratch/library/example" "$scratch/global/installed"
-printf '%s\n' '{"library":"~/library","agents":[{"name":"Example","global":"~/global","local":".local/skills"}]}' > "$scratch/config.json"
+mkdir -p "$scratch/skill-library/.hidden" "$scratch/skill-library/example" "$scratch/global/installed"
+printf '%s\n' '{"library":"~/skill-library","agents":[{"name":"Example","global":"~/global","local":".local/skills"}]}' > "$scratch/config.json"
 HOME="$scratch" XDG_CONFIG_HOME="$scratch" ./bin/sei --config "$scratch/config.json" --project "$scratch"
 ```
 
 Browsing alone creates no destinations or skills. The local destination in this
 example stays absent until an add key is used.
-Focused browser checks: `go test -count=1 -run 'TestBrowse' .`.
-Task 7 checks: `go test -count=1 -run 'Test(Navigation|KeySequence|Help|Refresh)' .`.
-Standard/build/race and disposable 1/3/9-agent Linux PTY smoke passed (100x30,
-xterm-256color, no-color); cross-terminal proof remains pending.
+Focused checks:
 
-Task 8 checks: `go test -count=1 -run 'Test(RootSafety|ResolveRoots|SkillName)' .`.
-Focused/standard/build/race checks pass on Linux amd64 with Go 1.27.1, including
-unprivileged permission tests; the disposable filesystem detected case-sensitive names.
-Tasks 8-12 passed all four native jobs in [CI 33994932478](https://github.com/primaprashant/sei/actions/runs/33994932478).
-
-Task 9 checks: `go test -count=1 -run 'TestPTYLifecycle' .`. Linux PTY and full
-race checks pass, including post-raw initialization failure, saved-termios
-restoration without repeated renderer cleanup, and sanitized runtime diagnostics;
-manual Terminal.app evidence remains pending. Existing CI
-full-test jobs automatically include these tests; no workflow was added or changed.
-PTY reads use existing `x/sys` Poll/Read with cancellation. Upstream input bursts
-can leave a reader goroutine until process exit; no in-process reuse is promised.
-
-Phase E adds rooted copy/removal/replacement, preflight and injected-failure tests,
-umask subprocesses, and PTY add-three/remove-two/restart workflows. Linux standard
-and race checks pass; all four native jobs pass in [CI 33999522026](https://github.com/primaprashant/sei/actions/runs/33999522026). The
-scan-to-operation identity audit is Task 17; this is a prototype, not a release.
+```sh
+go test -count=1 -run 'TestBrowse' .
+go test -count=1 -run 'Test(Navigation|KeySequence|Help|Refresh)' .
+go test -count=1 -run 'Test(RootSafety|ResolveRoots|SkillName)' .
+go test -count=1 -run 'TestPTYLifecycle' .
+```
 
 Generated tools, binaries, release output, coverage output, and `/.opencode/`
-remain ignored. GoReleaser Community `v2.18.0` is reserved for the later release
-tasks; Phase A does not install it or create a release configuration. Native
-macOS/arm64 verification and CI are not established by local Linux checks.
+remain ignored. Use `~/skill-library` in Mac fixtures, not `~/library`, which can
+alias native `~/Library` on case-insensitive filesystems. Remove only the recorded
+disposable scratch directory when finished.
+
+Installer checks: `sh -n scripts/install.sh`, `./.bin/shellcheck -s sh scripts/install.sh`,
+and `go test -count=1 -run '^TestInstaller' -v .`. Use verified ShellCheck **v0.11.0**
+and GoReleaser Community **v2.18.0** binaries with the exact installation/provenance
+commands in [release reproduction](docs/release.md#reproduction) and
+[ShellCheck provenance](docs/release.md#shellcheck-provenance), not floating tools.
+See the [current test matrix](docs/test-matrix.md), [performance reproduction](docs/performance.md#reproduce),
+and release runbooks for opt-in checks. Local Linux checks do not prove Mac/arm64
+native behavior, OS floors, or end-user download trust.
