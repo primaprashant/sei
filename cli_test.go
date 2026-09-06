@@ -64,6 +64,15 @@ func TestCLI(t *testing.T) {
 	}
 }
 
+func TestExitStatusCombinedFailure(t *testing.T) {
+	var stderr bytes.Buffer
+	m := browseModel{exitError: errors.New("Add captured target: copy failed\x1b\n")}
+	code := browseExit(m, errors.New("restore terminal state: failed\r"), &stderr)
+	if code != 1 || stderr.String() != "sei: terminal: restore terminal state: failed\\r\\nAdd captured target: copy failed\\x1b\\n\n" {
+		t.Fatalf("lost or unsafe combined diagnostic: code=%d stderr=%q", code, stderr.String())
+	}
+}
+
 func TestCLIConfig(t *testing.T) {
 	isolateConfigHome(t)
 	for _, kind := range []string{"valid", "missing", "missing parent", "malformed", "invalid paths", "directory", "file ancestor", "unreadable", "unreadable ancestor", "dangling", "dangling ancestor", "valid symlink", "symlink loop"} {

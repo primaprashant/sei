@@ -11,8 +11,9 @@ OS signal coalescing is harmless because requests are idempotent.
 Idle quit does not join read-only scans. Task 13 defers ordinary quit until its
 real sequential mutation completes. Navigation remains responsive before quit;
 additional mutations are rejected and refresh coalesces. Pending-quit failure
-returns sanitized stderr/status `1` after restoration. Task 18 busy-quit PTY tests
-pass on Linux; native macOS/manual checks and Task 19 diagnostic coverage remain pending.
+returns sanitized stderr/status `1` after restoration; a later idle quit after a
+recoverable failure returns `0`. Cleanup errors do not hide the operation diagnostic.
+Phase F native checks pass in CI `34002263817`; human checks remain pending.
 HUP follows the same wait-and-restore policy, but a disconnected terminal may no
 longer accept restoration or diagnostics. SIGKILL/forced termination cannot run
 cleanup and mutations may leave partial work.
@@ -108,3 +109,9 @@ of these fixes subsequently passed in runs `33970786802` and `33994932478`.
 Phase E Linux model/race and real add/remove/replace/restart PTY checks pass.
 Help always exposes busy/pending-quit status in its footer. Native execution passed
 all four jobs in CI `33999522026`; ordinary active-operation signal proof is Task 18.
+
+Task 19: gated partial-copy failures under `q`, Ctrl+C, and repeated SIGINT verify
+captured escaped stderr separately from rendering, with modes/cursor/screen restored
+before the write. Later-quit `0`, startup/runtime `1`, syntax `2`, and combined cleanup/
+operation errors pass. Linux standard/full/race, focused 10x/race 5x, and both macOS
+test cross-builds pass; native Task 19 execution and human terminal review remain pending.

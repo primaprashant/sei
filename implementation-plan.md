@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase F implemented; Linux verified. Native macOS and manual acceptance remain pending.
+**Status:** Task 19 implemented; Linux verified. Phase F native checks pass; Task 19 native execution and human acceptance remain pending.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -498,7 +498,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Acceptance criteria:**
 - [x] Revalidate captured names/types/identities and root relationships at mutation time, including a newly created missing ancestor or retargeted configured-root alias; disappearance never redirects an action to a different row.
-- [ ] Detect observed entry replacement, new target children, links, and actual filesystem case aliases; abort safely where observed. Test case-insensitive target behavior, including collisions between nested source names, on an appropriate volume.
+- [x] Detect observed entry replacement, new target children, links, and actual filesystem case aliases; abort safely where observed. Test case-insensitive target behavior, including collisions between nested source names, on an appropriate volume.
 - [x] Coalesce/defer refresh while mutating and discard stale scan/operation results; a scan started before a mutation cannot resurrect deleted rows or erase the newest outcome.
 
 **Verification:** `go test -count=1 -run 'Test(StaleSelection|ObservedChange|CaseCollision|ScanGeneration)' .`, native Linux/macOS tests, and race check. Verify skip reasons only for genuinely unsupported test filesystem features, with required cases covered elsewhere in the matrix.
@@ -532,11 +532,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Checkpoint F: Tasks 16-18
 
-- [ ] Standard, failure-injection, native case/permission, race, and active-operation PTY tests pass.
+- [x] Standard, failure-injection, native case/permission, race, and active-operation PTY tests pass.
 - [x] No destructive action is queued, replayed against a new selection, or canceled by normal quit.
 - [x] Review residual external-writer/forced-termination limits and ensure help/docs do not promise a sandbox or recovery.
 
 **Evidence:** Go 1.27.1 Linux standard/full/race checks, focused tests (10x; race 5x), build, macOS cross-builds, and limits review pass. Combined native macOS and manual acceptance pending.
+
+**Native follow-up (2026-09-06):** [CI 34002263817](https://github.com/primaprashant/sei/actions/runs/34002263817) at `89ed161` passes all four native standard jobs and Linux race, completing Task 17/Checkpoint F native criteria. Human acceptance remains pending.
 
 ### Phase G: Complete Interaction Prototype
 
@@ -545,11 +547,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Complete the subtle failure-after-quit path so the alternate screen cannot swallow the user's only diagnostic.
 
 **Acceptance criteria:**
-- [ ] If active work fails after quit was requested, restore the terminal first, emit the sanitized captured target/failure to stderr, and return status `1`.
-- [ ] An in-TUI recoverable failure followed by a later ordinary quit returns `0`; fatal startup/runtime errors return `1`, and syntax errors remain `2`.
-- [ ] PTY/subprocess tests assert persistent stderr separately from rendered status and verify terminal restoration on both success and failure.
+- [x] If active work fails after quit was requested, restore the terminal first, emit the sanitized captured target/failure to stderr, and return status `1`.
+- [x] An in-TUI recoverable failure followed by a later ordinary quit returns `0`; fatal startup/runtime errors return `1`, and syntax errors remain `2`.
+- [x] PTY/subprocess tests assert persistent stderr separately from rendered status and verify terminal restoration on both success and failure.
 
 **Verification:** `go test -count=1 -run 'Test(PTYQuitFailure|ExitStatus)' .`; capture stdout/stderr/status independently and inspect a failed pending-quit run manually.
+
+**Evidence (2026-09-06):** Linux standard/full/race/build, focused 10x/race 5x, and both macOS test cross-builds pass. Gated real partial-copy failures verify captured escaped stderr after restoration and later-quit `0`; cleanup errors retain operation diagnostics. Native Task 19 and human terminal review pending; Tasks 20-21 untouched.
 
 **Dependencies:** Task 18.
 

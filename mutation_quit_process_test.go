@@ -29,6 +29,7 @@ type mutationQuitProbe struct {
 	ack, release *os.File
 	completed    *atomic.Bool
 	starts       int
+	fail         bool
 }
 
 func (m mutationQuitProbe) report(event string) {
@@ -78,6 +79,9 @@ func (m mutationQuitProbe) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							return n, fmt.Errorf("file closed while waiting: %w", err)
 						}
 					}
+					if m.fail {
+						return n, errors.New("injected copy failure\x1b[31m\nunsafe")
+					}
 					rest, err := io.Copy(w, reader)
 					return n + rest, err
 				}})
@@ -95,12 +99,12 @@ func (m mutationQuitProbe) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				})
 			}
-			if err != nil {
+			if !m.fail && err != nil {
 				panic(err)
 			}
 			m.completed.Store(true)
 			m.report("completed")
-			return mutationResult{r.id, nil}
+			return mutationResult{r.id, err}
 		}
 	}
 	switch msg := msg.(type) {
@@ -113,7 +117,7 @@ func (m mutationQuitProbe) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 type mutationQuitOutput struct {
-	*os.File
+	*lifecycleOutput
 	completed, earlyCleanup *atomic.Bool
 }
 
@@ -121,14 +125,16 @@ func (w mutationQuitOutput) Write(b []byte) (int, error) {
 	if !w.completed.Load() && (bytes.Contains(b, []byte("\x1b[?1049l")) || bytes.Contains(b, []byte("\x1b[?25h"))) {
 		w.earlyCleanup.Store(true)
 	}
-	return w.File.Write(b)
+	return w.lifecycleOutput.Write(b)
 }
 
 // Only the test executable accepts this private wrapper invocation and pipe fds.
 func TestPTYQuitDuringMutationProcess(t *testing.T) {
-	if len(os.Args) < 4 || os.Args[len(os.Args)-2] != "--mutation-quit" {
+	if len(os.Args) < 4 || !strings.HasPrefix(os.Args[len(os.Args)-2], "--mutation-quit") {
 		return
 	}
+	mode := os.Args[len(os.Args)-2]
+	fail := mode != "--mutation-quit"
 	cfg, _, err := loadConfig(os.Args[len(os.Args)-1])
 	if err != nil {
 		t.Fatal(err)
@@ -143,39 +149,70 @@ func TestPTYQuitDuringMutationProcess(t *testing.T) {
 	}
 	ack, release := os.NewFile(3, "ack"), os.NewFile(4, "release")
 	var completed, earlyCleanup atomic.Bool
-	final, err := runLifecycle(mutationQuitProbe{browseModel: newBrowseModel(cfg), ack: ack, release: release, completed: &completed}, os.Stdin, mutationQuitOutput{os.Stdout, &completed, &earlyCleanup})
+	before, err := term.GetState(os.Stdin.Fd())
+	if err != nil {
+		t.Fatal(err)
+	}
+	output := &lifecycleOutput{File: os.Stdout}
+	final, err := runLifecycle(mutationQuitProbe{browseModel: newBrowseModel(cfg), ack: ack, release: release, completed: &completed, fail: fail}, os.Stdin, mutationQuitOutput{output, &completed, &earlyCleanup})
 	if err != nil {
 		t.Fatal(err)
 	}
 	m := final.(mutationQuitProbe)
-	if !completed.Load() || earlyCleanup.Load() || m.starts != 1 || m.nextOperation != 1 || m.active != nil || !m.pendingQuit || m.exitError != nil {
+	wantFailure := mode == "--mutation-quit-failure"
+	if !completed.Load() || earlyCleanup.Load() || m.starts != 1 || m.nextOperation != 1 || m.active != nil || m.pendingQuit != (mode != "--mutation-quit-recoverable") || (m.exitError != nil) != wantFailure {
 		t.Fatalf("premature cleanup, canceled/replayed work or bad final state: completed=%v early=%v model=%+v", completed.Load(), earlyCleanup.Load(), m)
 	}
 	if err := errors.Join(ack.Close(), release.Close()); err != nil {
 		t.Fatal(err)
 	}
-	os.Exit(0)
+	os.Exit(browseExit(m.browseModel, nil, lifecycleDiagnostics{os.Stderr, before, output}))
 }
 
 func TestPTYQuitDuringMutation(t *testing.T) {
+	testPTYMutationExit(t, false)
+}
+
+func TestPTYQuitFailure(t *testing.T) {
+	testPTYMutationExit(t, true)
+}
+
+func testPTYMutationExit(t *testing.T, fail bool) {
+	t.Helper()
 	self, err := os.Executable()
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, operation := range []string{"copy", "delete"} {
-		for _, quit := range []string{"q", "ctrl-c", "repeated-SIGINT"} {
+		if fail && operation != "copy" {
+			continue
+		}
+		quits := []string{"q", "ctrl-c", "repeated-SIGINT"}
+		if fail {
+			quits = append(quits, "later-q")
+		}
+		for _, quit := range quits {
 			t.Run(operation+"/"+quit, func(t *testing.T) {
-				root := t.TempDir()
-				cfg := config{Library: filepath.Join(root, "library"), Agents: []agentConfig{{Name: "Agent", Global: filepath.Join(root, "global"), Local: "local"}}}
-				for _, dir := range []string{"library", "global", "local"} {
-					for _, name := range []string{"active", "survivor"} {
+				root, err := filepath.EvalSymlinks(t.TempDir())
+				if err != nil {
+					t.Fatal(err)
+				}
+				name := "active"
+				local := "local"
+				if fail {
+					name += "\tunsafe"
+					local += "\tpath"
+				}
+				cfg := config{Library: filepath.Join(root, "library"), Agents: []agentConfig{{Name: "Agent", Global: filepath.Join(root, "global"), Local: local}}}
+				for _, dir := range []string{"library", "global", local} {
+					for _, name := range []string{name, "survivor"} {
 						browseMkdir(t, filepath.Join(root, dir, name, "nested"))
 						writeTestFile(t, filepath.Join(root, dir, name, "nested", "file"), "original bytes\x00\xff")
 						writeTestFile(t, filepath.Join(root, dir, name, ".hidden"), "hidden bytes")
 					}
 				}
 				if operation == "copy" {
-					if err := os.RemoveAll(filepath.Join(root, "local", "active")); err != nil {
+					if err := os.RemoveAll(filepath.Join(root, local, name)); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -185,12 +222,19 @@ func TestPTYQuitDuringMutation(t *testing.T) {
 				}
 				library, global := removeSnapshot(t, cfg.Library), removeSnapshot(t, cfg.Agents[0].Global)
 				configBefore := removeSnapshot(t, path)
-				survivor := filepath.Join(root, "local", "survivor")
+				survivor := filepath.Join(root, local, "survivor")
 				survivorBefore := removeSnapshot(t, survivor)
-				target := filepath.Join(root, "local", "active")
+				target := filepath.Join(root, local, name)
 				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 				defer cancel()
-				cmd := exec.CommandContext(ctx, self, "-test.run=^TestPTYQuitDuringMutationProcess$", "--", "--mutation-quit", path)
+				mode := "--mutation-quit"
+				if fail {
+					mode += "-failure"
+					if quit == "later-q" {
+						mode = "--mutation-quit-recoverable"
+					}
+				}
+				cmd := exec.CommandContext(ctx, self, "-test.run=^TestPTYQuitDuringMutationProcess$", "--", mode, path)
 				cmd.Dir = root
 				cmd.Env = []string{"HOME=" + root, "XDG_CONFIG_HOME=" + filepath.Join(root, ".config"), "TERM=xterm-256color", "NO_COLOR=1", "PATH=" + os.Getenv("PATH")}
 				cmd.WaitDelay = 5 * time.Second
@@ -332,6 +376,8 @@ func TestPTYQuitDuringMutation(t *testing.T) {
 				send("?", "?")
 				await("Configured folders")
 				switch quit {
+				case "later-q":
+					// Release and observe the recoverable error before requesting quit.
 				case "repeated-SIGINT":
 					for range 3 {
 						if err := cmd.Process.Signal(syscall.SIGINT); err != nil {
@@ -346,7 +392,9 @@ func TestPTYQuitDuringMutation(t *testing.T) {
 				default:
 					send("q", "q")
 				}
-				await("Exit requested; waiting for work")
+				if quit != "later-q" {
+					await("Exit requested; waiting for work")
+				}
 				for _, key := range []string{"X", "0", "a", "A", "1", "X", "r"} {
 					send(key, key)
 				}
@@ -373,6 +421,10 @@ func TestPTYQuitDuringMutation(t *testing.T) {
 					t.Fatal(err)
 				}
 				ack("completed")
+				if quit == "later-q" {
+					await(`injected copy failure\x1b[31m\nunsafe`)
+					send("q", "q")
+				}
 			waiting:
 				for {
 					select {
@@ -407,7 +459,19 @@ func TestPTYQuitDuringMutation(t *testing.T) {
 						t.Fatal("timeout draining PTY")
 					}
 				}
-				if waitErr != nil || stderr.Len() != 0 {
+				wantCode := 0
+				if fail && quit != "later-q" {
+					wantCode = 1
+					for _, text := range []string{"Add", displayText(fmt.Sprintf("%q", name)), "Agent / Local", displayText(filepath.Dir(target)), `injected copy failure\x1b[31m\nunsafe`} {
+						if !strings.Contains(stderr.String(), text) {
+							t.Errorf("missing persistent diagnostic %q: %q", text, stderr.String())
+						}
+					}
+					if strings.ContainsAny(stderr.String(), "\x1b\r\t") || strings.Count(stderr.String(), "\n") != 1 || strings.Contains(stderr.String(), "survivor") {
+						t.Errorf("unsafe or redirected diagnostic: %q", stderr.String())
+					}
+				}
+				if cmd.ProcessState.ExitCode() != wantCode || (wantCode == 0 && stderr.Len() != 0) {
 					t.Fatalf("exit: %v stderr=%q", waitErr, stderr.String())
 				}
 				for _, pair := range [][2]string{{"\x1b[?1049h", "\x1b[?1049l"}, {"\x1b[?25l", "\x1b[?25h"}} {
@@ -419,8 +483,13 @@ func TestPTYQuitDuringMutation(t *testing.T) {
 				if leave >= 0 && strings.TrimSpace(ansi.Strip(screen.String()[leave+len("\x1b[?1049l"):])) != "" {
 					t.Error("rendered after alternate-screen exit")
 				}
-				if operation == "copy" {
-					source := filepath.Join(cfg.Library, "active")
+				if fail {
+					data, err := os.ReadFile(filepath.Join(target, "nested", "file"))
+					if err != nil || string(data) != "or" {
+						t.Fatalf("failure lost partial output: %q %v", data, err)
+					}
+				} else if operation == "copy" {
+					source := filepath.Join(cfg.Library, name)
 					want, got := removeSnapshot(t, source), removeSnapshot(t, target)
 					if len(want) != len(got) {
 						t.Fatal("incomplete copy")

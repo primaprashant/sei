@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -140,12 +141,17 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 	resolved.ConfigPath = path
 	final, err := runLifecycle(newBrowseModel(resolved), stdin, stdout)
+	result, _ := final.(browseModel)
+	return browseExit(result, err, stderr)
+}
+
+// Called only after lifecycle cleanup, including terminal restoration.
+func browseExit(result browseModel, err error, stderr io.Writer) int {
 	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "sei: terminal: %s\n", displayText(err.Error()))
-		return 1
+		err = fmt.Errorf("terminal: %w", err)
 	}
-	if result, ok := final.(browseModel); ok && result.exitError != nil {
-		_, _ = fmt.Fprintf(stderr, "sei: %s\n", displayText(result.exitError.Error()))
+	if err = errors.Join(err, result.exitError); err != nil {
+		_, _ = fmt.Fprintf(stderr, "sei: %s\n", displayText(err.Error()))
 		return 1
 	}
 	return 0

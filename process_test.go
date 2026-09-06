@@ -183,6 +183,15 @@ func TestPTYLifecycleProcess(t *testing.T) {
 }
 
 func TestPTYLifecycle(t *testing.T) {
+	testPTYLifecycle(t, false)
+}
+
+func TestExitStatus(t *testing.T) {
+	testPTYLifecycle(t, true)
+}
+
+func testPTYLifecycle(t *testing.T, exitOnly bool) {
+	t.Helper()
 	buildDir := t.TempDir()
 	binary := filepath.Join(buildDir, "sei")
 	buildCtx, buildCancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -196,7 +205,11 @@ func TestPTYLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, scenario := range []string{"q", "ctrl-c", "SIGINT", "SIGTERM", "SIGHUP", "repeated-SIGINT", "repeated-SIGTERM", "repeated-SIGHUP", "read-failure", "init-failure", "startup-failure", "stdin-pipe", "stdout-pipe", "help", "version"} {
+	scenarios := []string{"q", "ctrl-c", "SIGINT", "SIGTERM", "SIGHUP", "repeated-SIGINT", "repeated-SIGTERM", "repeated-SIGHUP", "read-failure", "init-failure", "startup-failure", "stdin-pipe", "stdout-pipe", "help", "version"}
+	if exitOnly {
+		scenarios = []string{"q", "read-failure", "startup-failure", "syntax"}
+	}
+	for _, scenario := range scenarios {
 		t.Run(scenario, func(t *testing.T) {
 			root := t.TempDir()
 			path := filepath.Join(root, "config.json")
@@ -222,6 +235,9 @@ func TestPTYLifecycle(t *testing.T) {
 			}
 			if scenario == "help" || scenario == "version" {
 				args = []string{"--" + scenario} // Invalid native config must not be read.
+			}
+			if scenario == "syntax" {
+				args = []string{"--unknown"}
 			}
 			cmd := exec.CommandContext(ctx, program, args...)
 			cmd.WaitDelay = 5 * time.Second
@@ -254,7 +270,7 @@ func TestPTYLifecycle(t *testing.T) {
 			// Explicit terminal fds suffice. A controlling PTY is revoked on Darwin
 			// session-leader exit, invalidating the parent's restoration probe.
 			cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-			interactive := scenario != "stdin-pipe" && scenario != "stdout-pipe" && scenario != "help" && scenario != "version" && scenario != "startup-failure" && scenario != "init-failure"
+			interactive := scenario != "stdin-pipe" && scenario != "stdout-pipe" && scenario != "help" && scenario != "version" && scenario != "startup-failure" && scenario != "init-failure" && scenario != "syntax"
 			if scenario == "stdin-pipe" || scenario == "help" || scenario == "version" {
 				cmd.Stdin = strings.NewReader("")
 				cmd.SysProcAttr = nil
@@ -394,6 +410,12 @@ func TestPTYLifecycle(t *testing.T) {
 			wantCode := 0
 			if scenario == "read-failure" || scenario == "init-failure" || scenario == "startup-failure" || strings.HasSuffix(scenario, "-pipe") {
 				wantCode = 1
+			}
+			if scenario == "syntax" {
+				wantCode = 2
+				if !strings.Contains(stderr.String(), "flag provided but not defined") {
+					t.Errorf("missing syntax diagnostic: %q", stderr.String())
+				}
 			}
 			if ctx.Err() != nil || cmd.ProcessState.ExitCode() != wantCode {
 				t.Fatalf("exit=%d want=%d: %v; stderr=%q", cmd.ProcessState.ExitCode(), wantCode, waitErr, stderr.String())
