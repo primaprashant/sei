@@ -553,7 +553,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Verification:** `go test -count=1 -run 'Test(PTYQuitFailure|ExitStatus)' .`; capture stdout/stderr/status independently and inspect a failed pending-quit run manually.
 
-**Evidence (2026-09-06):** Linux standard/full/race/build, focused 10x/race 5x, and both macOS test cross-builds pass. Gated real partial-copy failures verify captured escaped stderr after restoration and later-quit `0`; cleanup errors retain operation diagnostics. Native Task 19 and human terminal review pending; Tasks 20-21 untouched.
+**Evidence (2026-09-06):** Linux standard/race and gated PTY diagnostic tests pass; macOS test cross-builds pass. Native Phase G and human review pending.
 
 **Dependencies:** Task 18.
 
@@ -572,7 +572,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Verification:** `go test -count=1 -run 'Test(KeyContract|InputPrecedence|Selection)' .`; complete the primary flow with one, three, and nine configured agents in isolated projects.
 
-**Evidence (2026-09-06):** Audit required no production fix. Added all-count (1-9) key/context and cross-state tables; reused existing removal/guard tests and renamed raw-refresh coverage to `TestSelectionRefresh`. Real-filesystem 1/3/9-agent model flows add three to one local destination, remove middle/last, quit/reload config, and snapshot all disposable paths to exclude session persistence. Go 1.27.1 standard/full/race/build and both macOS test cross-builds pass; focused 10x/race 5x and existing add/restart/replacement PTY 10x pass. Exact 1/3/9 primary flows are model integration, not PTY; native Task 20, human terminal/SSH acceptance remain pending. No Task 21 work.
+**Evidence (2026-09-06):** All-count key tables and real-filesystem 1/3/9-agent model flows pass with Linux standard/race checks and macOS cross-builds. No production fix; native/human review pending.
 
 **Dependencies:** Task 19.
 
