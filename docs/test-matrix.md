@@ -1,5 +1,15 @@
 # Destructive And Failure Test Matrix
 
+## Checkpoint J
+
+At clean `f809d10` (2026-09-06), Linux standard/full/race, POSIX syntax and
+pinned ShellCheck pass. Rebuilt `0.0.0-snapshot.f809d10` archives pass all four
+checksum/content/architecture/producer checks with `CI=true` and
+`vcs.modified=false`; extracted Linux amd64 help/version and PTY pass.
+Earlier GNU/BSD tar installer fixtures pass, but native hosted archive/installer
+jobs remain unexecuted. Owner-approved continuation does not waive support-floor
+or Mac Gatekeeper/signing decisions. No credentials, push or publication.
+
 ## Task 30 Installer
 
 2026-09-06, sequentially after `b822902`: fresh-only installer and native CI

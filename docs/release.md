@@ -2,6 +2,13 @@
 
 ## Scope
 
+Checkpoint J (2026-09-06): clean `f809d10` snapshots now occupy `dist/` as
+`0.0.0-snapshot.f809d10`, replacing historical artifacts recorded below.
+All four archive checks pass with the exact producer revision and clean-source
+assertion; native Linux amd64 help/version/PTY and full standard/race/installer
+checks pass. Remote native execution, all minimum-OS hosts, support approval and
+Mac download trust remain release blockers. Nothing was pushed or published.
+
 Task 4 establishes ordinary PR/push CI. Task 27 adds local snapshot packaging
 with GoReleaser Community v2.18.0, not signing, tagging, uploading or publishing.
 Commits, pushes, credentials, branch protection, tags, and publication require
