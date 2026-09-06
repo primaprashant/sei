@@ -43,6 +43,11 @@ func (m mutationQuitProbe) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	next, cmd := previous.Update(msg)
 	m.browseModel = next.(browseModel)
 	if previous.active == nil && m.active != nil {
+		// Exceed the PTY output buffer before acknowledging input, even on
+		// Linux. The parent must keep draining output while waiting for acks.
+		if _, err := io.WriteString(os.Stdout, strings.Repeat("\x1b[0m", 16*1024)); err != nil {
+			panic(err)
+		}
 		m.starts++
 		r, cfg := *m.active, m.config
 		p, d := previous.panels[previous.focused], previous.panels[m.active.destination]
@@ -338,8 +343,25 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 					if err := ackR.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
 						t.Fatal(err)
 					}
-					if !scanner.Scan() || scanner.Text() != want {
-						t.Fatalf("ack=%q want=%q err=%v", scanner.Text(), want, scanner.Err())
+					// A redraw can fill the PTY buffer (especially on Darwin),
+					// blocking Update before it can acknowledge the next event.
+					// Read both streams until the bounded scan finishes.
+					scanned := make(chan bool)
+					go func() { scanned <- scanner.Scan() }()
+					for {
+						select {
+						case ok := <-scanned:
+							if !ok || scanner.Text() != want {
+								t.Fatalf("ack=%q want=%q err=%v", scanner.Text(), want, scanner.Err())
+							}
+							return
+						case chunk, ok := <-chunks:
+							if !ok {
+								chunks = nil
+							} else {
+								screen.WriteString(chunk)
+							}
+						}
 					}
 				}
 				send := func(key, name string) {
