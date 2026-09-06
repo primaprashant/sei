@@ -3,8 +3,9 @@
 ## Status And Owner Input
 
 Automated Linux evidence refreshed after `f0784fa`, 2026-09-06. Checkpoint review
-fixed a P2 harness readiness gap; help now exposes listing state. No Phase H layout,
-minimum, budget, or owner acceptance is implied. Native Mac/human SSH review is pending.
+fixed a P2 harness readiness gap; help now exposes listing state. Native CI passes at
+`8eafad9`; owner feedback is recorded below. No final layout, minimum, budget, or
+complete theme/SSH acceptance is implied.
 
 The owner initially approved a provisional synthetic fixture, then superseded
 its source with [Addy Osmani's agent-skills](https://github.com/addyosmani/agent-skills).
@@ -166,6 +167,24 @@ regenerated together in the isolated 36-case run; standard/race checks ran after
 - The shell-versus-sei workflow comparison, cold/warm native Mac measurements, replacement/larger-tree measurements, and approved budgets belong to the owner review and Task 23. RAM-backed results cannot justify storage budgets.
 
 ## Owner Review
+
+### Feedback Received (2026-09-06)
+
+The owner reports that the workflow is mostly functional, but the layout needs work:
+
+- Around 140 columns, three agents feel crowded; panel titles and trailing add shortcuts clip, including Claude Code Global.
+- Repeated `Root relations checked` text is not useful in the main view; retain actionable problems, not routine internal status.
+- Using `>` for both panel focus and row selection is confusing, especially with one skill; distinguish the two visually.
+- Show home-relative global paths such as `~/.claude/skills` and project-relative local paths such as `.claude/skills`; preserve full paths in help and actual filesystem targets.
+- The UI feels plain and colorless; improve visual hierarchy and color later without losing no-color readability.
+- Exclude `.git` from skill listings was requested as a narrow exception, not a blanket exclusion of dot-directories or a change to nested copying.
+- The owner asked whether lowercase `x` could replace uppercase `X` for removal. Current PRD requires `X`; the binding change is not yet approved.
+
+This records review, not final acceptance. Exact panel arrangement/minimum and the
+removal binding remain undecided; terminal versions, per-Mac results, and theme/SSH
+coverage were not supplied. Task 22 should address clipping using real agent labels.
+
+### Reproduce The Review
 
 Prepare a retained disposable fixture (the path must not already exist):
 

@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase G implemented; all four native CI jobs pass. [Prototype](docs/prototype.md) owner terminal/SSH review remains pending; no Phase H layout or minimum approved.
+**Status:** Phase G implemented; all four native CI jobs pass. [Owner feedback](docs/prototype.md#feedback-received-2026-09-06) recorded; Phase H layout/minimum and complete theme/SSH acceptance remain open.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -602,7 +602,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 ### Checkpoint G: Tasks 19-21
 
 - [x] Standard Linux checks and the automated full primary workflow pass with representative folders; human usability remains owner-reviewed.
-- [ ] Owner reviews the actual three-agent prototype before final dimensions/overflow tests are fixed.
+- [x] Owner reviews the actual three-agent prototype before final dimensions/overflow tests are fixed.
 - [x] Record problems as concrete follow-up work; screenshots alone do not establish startup or copy performance.
 
 **Evidence:** [Refreshed report](docs/prototype.md): P2 readiness/completion waits fixed, isolated 36-case measurements/captures regenerated, then focused/full/race/lint/build checks passed. Owner/native/SSH acceptance remains pending.
@@ -610,6 +610,8 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **CI follow-up (2026-09-06):** Both Macs in [34005706126](https://github.com/primaprashant/sei/actions/runs/34005706126) timed out awaiting truncated browse diagnostics. Long-path regression reproduced on Linux; PTY test now inspects wrapped help. Full/race/lint/build, 10x PTY tests, and macOS cross-builds pass; native rerun pending, production unchanged.
 
 **Native verified (2026-09-06):** [CI 34006222479](https://github.com/primaprashant/sei/actions/runs/34006222479) passes all four Linux/macOS architecture jobs at `8eafad9`, including Linux race. Owner prototype/theme/SSH review remains pending.
+
+**Owner review (2026-09-06):** Mostly functional; fix clipped headers/shortcuts, noisy status, focus markers, and path display. Record `.git` exclusion and lowercase-removal discussion in [feedback](docs/prototype.md#feedback-received-2026-09-06); layout/minimum and theme/SSH acceptance remain open.
 
 ### Phase H: Evidence-Based Polish
 
