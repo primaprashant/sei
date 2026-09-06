@@ -718,6 +718,8 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Evidence (2026-09-06):** Linux offline full PTY, standard/race, setup/busy 10x and race 5x pass; both Mac test cross-builds pass. [Process gate](docs/test-matrix.md#task-26-process-gate) covers fresh-user/restart, empty PATH and disposable native HOME. Native execution and manual SSH/owner acceptance remain open; no push.
 
+**CI follow-up (2026-09-06):** Both Macs in [34014129461](https://github.com/primaprashant/sei/actions/runs/34014129461) rejected `~/library` aliasing native `~/Library`. Fixture renamed; assertions/production unchanged. Linux focused 10x/full/race/standard and Mac cross-builds pass; native rerun pending. No push.
+
 **Dependencies:** Tasks 19, 24, and 25.
 
 **Files likely touched:** `process_test.go`, `.github/workflows/ci.yml`, `docs/test-matrix.md`.

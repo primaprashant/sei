@@ -288,8 +288,12 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 			send("-edited")
 			await("-edited")
 		} else {
-			send("~/library")
-			await("~/library")
+			library := "~/library"
+			if scenario == "complete-flow" {
+				library = "~/skill-library"
+			}
+			send(library)
+			await(library)
 		}
 		if scenario == "cancel-edit" || scenario == "explicit-cancel-edit" {
 			send("\x1b")
@@ -406,7 +410,8 @@ func testPTYFreshUser(t *testing.T, binary string) {
 	}
 	project := filepath.Join(root, "project")
 	browseMkdir(t, project)
-	library := filepath.Join(root, "library")
+	// Keep the source separate from macOS's case-insensitive ~/Library config tree.
+	library := filepath.Join(root, "skill-library")
 	source := filepath.Join(library, "sample")
 	browseMkdir(t, filepath.Join(source, "nested", "empty"))
 	writeTestFile(t, filepath.Join(source, "nested", "SKILL.md"), "original\n\x00\xff")
@@ -480,7 +485,7 @@ func testPTYFreshUser(t *testing.T, binary string) {
 		})
 		if !restart {
 			cfg, missing, err := loadConfig(path)
-			if err != nil || missing || cfg.Library != "~/library" || !reflect.DeepEqual(cfg.Agents, setupPresets[:3]) {
+			if err != nil || missing || cfg.Library != "~/skill-library" || !reflect.DeepEqual(cfg.Agents, setupPresets[:3]) {
 				t.Fatalf("native saved config: %+v missing=%v err=%v", cfg, missing, err)
 			}
 			persisted = removeSnapshot(t, path)

@@ -89,3 +89,29 @@ All `TestPTY` child environments use disposable HOME/XDG and an empty disposable
 | Setup suite 10x; busy success/failure suite 10x; both suites with race 5x | PASS. Standalone `go build` children are uninstrumented; self-exec probes inherit race instrumentation. |
 | Full uncached tests, full race, tidy diff, lint config/format/run, vet, build | PASS; zero lint issues. |
 | macOS amd64/arm64 test cross-builds | PASS compilation only. Native Linux arm64/macOS matrix, manual terminal/theme/SSH and owner acceptance unavailable, not passed; no push authorized. |
+
+### Native CI Follow-Up
+
+2026-09-06: fetched failed logs with `gh run view 34014129461 --repo primaprashant/sei --log-failed`, head `acb04e4e5b129fab9a0e1d10e007ff3e3068002c`.
+
+| Job | Failure Evidence |
+| --- | --- |
+| [macos-15 / darwin arm64](https://github.com/primaprashant/sei/actions/runs/34014129461/job/101434884219) | `TestPTYFirstRunSetup/native-flow`, `setup_process_test.go:423`: `timeout waiting for ["Enter save"]`; screen shows `Error: config must not overlap managed root` ending `/001/library`. |
+| [macos-15-intel / darwin amd64](https://github.com/primaprashant/sei/actions/runs/34014129461/job/101434884248) | Same test, line, timeout and overlap diagnostic. Both jobs reached tests after lint reported `0 issues.` |
+
+Both screens place config at `<HOME>/Library/Application Support/sei/config.json` while setup selects `~/library`. On these case-insensitive filesystems the precreated source aliases macOS's native config ancestor. `configSaveLocation` correctly rejects the overlap via `rootWithin` ancestor identity; preview never appears. The subsequent `setup_process_test.go:231: PTY reader: context deadline exceeded` is fallout from the same deadline, not a separate reader defect.
+
+The test-only fix uses `~/skill-library` for native-flow input, fixture and exact persisted-config expectation on both OS families. Native config lookup (no override), safety guards, timeouts, terminal restoration, add/remove/restart and byte/identity assertions remain unchanged. No production or CI changes. The original run's Linux amd64/arm64 and both fuzz jobs passed; this does not verify the fixed worktree on those remote runners.
+
+Local verification on Go 1.27.1, Linux amd64:
+
+| Check | Result |
+| --- | --- |
+| `go test -count=10 -run '^TestPTYFirstRunSetup$/^native-flow$' .` | PASS, 16.812s. |
+| `go test -count=1 ./...` | PASS, 21.941s. |
+| `CGO_ENABLED=1 go test -race -count=1 ./...` | PASS, 112.816s; standalone built PTY children remain uninstrumented. |
+| Lint config/format/run, `go vet ./...`, `go mod tidy -diff` | PASS, zero lint issues and no format/module diff. |
+| Linux application build, `--help`, `--version` | PASS. |
+| `CGO_ENABLED=0` test and application cross-builds for `darwin/amd64` and `darwin/arm64` | PASS compilation only, not native execution or case-insensitive filesystem evidence. |
+
+Native macOS rerun remains pending; no push or rerun initiated. Manual terminal/SSH/owner gates remain open.
