@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Task 33 documentation implemented after `0de0dbe`; local/offline examples verified. New native execution, live release URLs, support-floor approval and Mac trust gates remain pending.
+**Status:** Phase K implementation complete; Linux standard/race, installer failure suites, documentation rehearsals and clean snapshots pass. New native CI, live release URLs, support-floor approval and Mac trust gates remain pending.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -890,6 +890,8 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 - [x] Installer lint/local integration tests pass, including preservation of an existing binary on failed upgrade.
 - [ ] A new user can follow documentation without Go, agent tooling, sudo, profile edits, or security bypasses.
 - [x] Instructions distinguish persistent copied skills from removable installation files and explain all destructive risks.
+
+**Evidence (2026-09-06):** At `04c5ca3`, Linux standard/full/race, syntax/ShellCheck and four clean snapshot checks pass, including extracted native PTY. GNU/BSD multi-shell and offline documentation rehearsals pass; public/native release acceptance remains open. No push/tag/publication.
 
 ### Phase L: Publish And Verify
 

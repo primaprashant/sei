@@ -1,5 +1,15 @@
 # Destructive And Failure Test Matrix
 
+## Checkpoint K
+
+2026-09-06 at clean `04c5ca3`: Linux standard/full tests (45.208s), full race
+(141.100s), POSIX syntax and pinned ShellCheck pass. All four rebuilt
+`0.0.0-snapshot.04c5ca3` archives pass checksum/content/architecture/producer
+checks with `CI=true` and `vcs.modified=false`; native Linux help/version/PTY
+pass. Installer GNU/BSD multi-shell and offline README rehearsals are recorded
+below. New hosted native results, public URL/fresh-release acceptance, OS-floor
+approval and Mac trust remain unverified. No push/tag/publication.
+
 ## Checkpoint J
 
 At clean `f809d10` (2026-09-06), Linux standard/full/race, POSIX syntax and

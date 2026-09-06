@@ -2,6 +2,13 @@
 
 ## Scope
 
+Checkpoint K (2026-09-06): `dist/` now contains clean
+`0.0.0-snapshot.04c5ca3` artifacts, replacing the historical snapshots below.
+All four archive checks and Linux extracted help/version/PTY pass, alongside
+standard/full/race, installer syntax/ShellCheck and local fixture verification.
+New native installer CI, support-floor approval, Mac trust and live publication
+remain separate gates; nothing was pushed or published in Phase K.
+
 Checkpoint J (2026-09-06): clean `f809d10` snapshots now occupy `dist/` as
 `0.0.0-snapshot.f809d10`, replacing historical artifacts recorded below.
 All four archive checks pass with the exact producer revision and clean-source
