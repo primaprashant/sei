@@ -24,6 +24,16 @@ This PRD refines [product-vision.md](product-vision.md) and contains the product
 - No agent launching, session management, automatic cleanup, skill editing, synchronization, filtering, multi-select, tags, categories, content previews, remote downloads, or loaded-skill inspection.
 - No network access during normal setup or TUI operation. Installation is a separate network-using operation. No telemetry or automatic update checks.
 
+### Owner Scope Override
+
+Owner revision, September 6, 2026: sei is a small personal tool. This note supersedes conflicting gates in earlier plan checkpoints and evidence/runbooks, without changing recorded results or filesystem/installer safety requirements.
+
+- The recorded Debian host testing is sufficient Linux acceptance. It tested Debian 13.6 (trixie), not a distro named Debian testing; no all-distro or minimum-kernel promise is made. Keep the four Linux/macOS amd64/arm64 builds and existing native CI, fuzz, race, PTY, lint and safe installer checks.
+- **WAIVED:** Task 28 external OS-floor/support-host gates; Task 29 extra personal-Mac exact-artifact, quarantine/Gatekeeper, signing/notarization and attestation gates; Phase H and other outstanding human/theme/SSH acceptance, timed shell comparisons and mandatory performance budgets/benchmarking. These are not PASS results. Existing measurements and runbooks are optional historical references. No Apple signup, new credentials, protected-environment ceremony, signing or attestations are required.
+- Mac evidence remains limited to recorded native CI and the owner-reported macOS 15.7.2/M1 source suite; that personal run's source SHA is unknown and its exact archive check did not run. No Mac download-trust or macOS 13 execution claim follows.
+- The owner authorizes implementing a simple release workflow: build/package once, checksum and test those same bytes, then upload them to a draft. Only the final draft-upload job gets `contents: write` via the existing GitHub token; other jobs stay read-only. No new credentials or trust services.
+- Version policy stays `v0.1.0`, then GitHub `v0.x` prereleases; `v1.0.0` is the first usable stable release. Tags, pushes and publication require separate explicit authorization. None is authorized this turn. Public URLs remain pending examples; live URL verification belongs to a future authorized publication, not current work.
+
 ### Setup And Configuration
 
 `sei` starts setup only when the chosen configuration file does not exist. An unreadable or malformed existing file is an error, not permission to overwrite it. `sei setup` explicitly opens setup, prepopulated from a valid existing configuration when present.
@@ -139,7 +149,7 @@ Use **Go + Bubble Tea v2 + Lip Gloss v2 + Bubbles v2**. Prioritize responsive te
 - Go offers a favorable startup/footprint baseline and straightforward per-platform executables. Users need neither a language runtime nor agent tooling installed, and binary installers can provide the primary installation flow.
 - Python/Textual offers greater language familiarity but adds interpreter/import overhead and less direct standalone packaging. Fast `uv` installation does not eliminate application startup costs.
 - Rust/Ratatui adds learning and build complexity without a demonstrated need. TypeScript/OpenTUI/Ink adds runtime and packaging overhead. Go/tview remains viable, but Bubble Tea's update model better suits these custom interactions.
-- Performance advantages are expectations, not measured guarantees. Verify startup, navigation, filesystem responsiveness, and artifact size with representative release builds before setting budgets; never trade correctness for speed.
+- Performance advantages are expectations, not measured guarantees. Measurements are optional; never trade correctness for speed.
 
 ### Versions
 
@@ -168,11 +178,11 @@ Use standard-library `flag`, `encoding/json`, `os`, `io/fs`, `path/filepath`, an
 
 ### Distribution Baseline
 
-Build explicit `linux/amd64`, `linux/arm64`, `darwin/amd64`, and `darwin/arm64` artifacts with `CGO_ENABLED=0`, provided the resolved dependencies permit it. Use baseline CPU targets, stripped release binaries, `.tar.gz` archives, and SHA-256 checksums. Go 1.27 sets a macOS 13 minimum; document it. Determine the tested Linux distribution/kernel floor in the release plan rather than claiming every Linux version works.
+Build explicit `linux/amd64`, `linux/arm64`, `darwin/amd64`, and `darwin/arm64` artifacts with `CGO_ENABLED=0`, provided the resolved dependencies permit it. Use baseline CPU targets, stripped release binaries, `.tar.gz` archives, and SHA-256 checksums. Go 1.27 requires macOS 13 or newer; this toolchain requirement is not evidence of testing on macOS 13. Linux acceptance is the recorded Debian host, not a distribution/kernel floor guarantee.
 
 Provide a one-command Unix installer that detects supported OS/architecture, downloads the matching versioned artifact, verifies its checksum before installation, and installs to a user-writable location such as `~/.local/bin`. Support explicit version and installation-directory selection. Do not automatically invoke `sudo`, overwrite unrelated files, edit shell startup files, or disable macOS security checks. If the directory is not on `PATH`, give an exact follow-up instruction and an immediately usable absolute invocation; do not claim PATH is already configured. Installation and upgrade failures must leave an existing binary usable.
 
-The installer URL depends on the repository identity and is intentionally not invented here. A checksum fetched from the same release protects against corruption, not a compromised release publisher. Decide signing/notarization and provenance details during release planning. Homebrew, Windows, self-update, and package-manager submissions are deferred. Current GoReleaser guidance favors Homebrew casks over its deprecated formula integration, so research that choice again if Homebrew becomes a requirement.
+Public installer URLs remain pending publication. A checksum fetched from the same release protects against corruption, not a compromised release publisher. Signing, notarization and attestations are out of scope. Homebrew, Windows, self-update, and package-manager submissions are deferred.
 
 ### Research Sources
 
@@ -390,9 +400,7 @@ Test public behavior where practical, but same-package tests are appropriate for
 
 Do not claim a startup, operation-latency, terminal-size, or artifact-size budget before measurement. The owner explicitly deferred these decisions to a prototype.
 
-Record an agreed representative library of approximately 30 real-looking folders, including file counts, total bytes, long names, nesting, and executable scripts. Record machine, OS, filesystem, storage, terminal, dimensions, build flags, and artifact size. Use release builds, distinguish first/cold runs from repeated warm runs, and distinguish input-to-render latency from I/O completion. Report distributions and sample counts for startup-to-populated-panels, navigation, fresh copy, replacement, and removal. Assess SSH usability separately from local timings so network latency is not misattributed to application work.
-
-Time the add-three/remove-two/quit task against the user's current shell workflow on the same fixture, resetting data between attempts. Record keystrokes, panel switches, mistakes, readability, and whether targets were unambiguous. Review a three-agent layout with the owner, then set explicit release budgets and layout minimums before declaring the release ready. A rendered screen with placeholder data is not proof of fast folder scanning or copying.
+Existing prototype measurements are historical, scoped observations, not release gates or cross-platform guarantees. Further benchmarking and timed human comparisons are optional. Keep the approved 80x24 minimum, larger layout checks, responsiveness contract and automated regressions.
 
 ## Boundaries
 
@@ -410,8 +418,8 @@ Time the add-three/remove-two/quit task against the user's current shell workflo
 6. Unsafe paths, overlaps, links, special files, and type conflicts are rejected before destructive work. Ordinary mid-operation failures are reported with truthful missing/partial state; no success indication, hidden backup, or rollback is invented.
 7. Filesystem work does not block navigation. Busy mutation inputs are rejected, not queued or replayed against a later selection. Normal quit waits for active work and restores the terminal; partial work after forced termination is a documented limitation.
 8. Unit, integration, terminal smoke, lint/format, module-hygiene, and race checks pass at their documented scope. All destructive/error scenarios have regression coverage, and no test touches the developer's real library or destination folders.
-9. A three-agent prototype and reproducible performance/usability report are reviewed by the owner. The workflow must improve on the existing shell process in real use; if it does not, revise the interaction before release rather than claim success from benchmark numbers alone.
-10. The prototype review resolves terminal minimum/overflow behavior and quantitative performance/artifact budgets, followed by measurement against those agreed targets. Phase H records the approved layout and scoped Linux budgets; human workflow and native terminal acceptance remain release gates.
+9. The primary workflow remains useful for personal use; no timed shell comparison or mandatory performance report is required.
+10. Preserve the approved terminal minimum/overflow behavior and automated layout checks. Outstanding additional human/native terminal acceptance and quantitative budget gates are WAIVED by the owner scope override.
 
 ## Open Questions
 
@@ -420,11 +428,11 @@ These are intentional implementation/prototype follow-ups, not invitations to re
 | Question | When To Resolve |
 | --- | --- |
 | What repository/module path, license, initial release tag, and public installer URL will be used? | Before module initialization and distribution setup. |
-| What three-agent layout and terminal minimum/overflow support one through nine agents safely? | Approved September 6, 2026: local above global, 80x24 minimum, focus-following windows; [decisions/evidence](docs/prototype.md#approved-layout-task-22). Native/human rendering acceptance pending. |
-| What measured latency/artifact budgets and protocol become release gates? | [Scoped Linux warm-fixture budgets](docs/performance.md#budget-decision) approved and passing; owner shell comparison and other environments remain open. |
+| What three-agent layout and terminal minimum/overflow support one through nine agents safely? | Approved September 6, 2026: local above global, 80x24 minimum, focus-following windows; [decisions/evidence](docs/prototype.md#approved-layout-task-22). Extra human acceptance WAIVED. |
+| What measured latency/artifact budgets and protocol become release gates? | None required; [historical measurements](docs/performance.md#budget-decision) remain optional references. |
 | What exact rooted filesystem operations and preflight algorithm enforce no-links/overlap rules, including missing ancestors and observed concurrent changes? | Filesystem implementation plan and platform-specific tests. |
 | How will strict JSON duplicate-key detection and configuration-save failure handling be implemented with minimal standard-library code? | Configuration implementation plan; parser acceptance rules are already fixed. |
-| What Linux floor, native architecture runners, terminal emulators, and SSH environments form the release support matrix? | CI/release plan; Linux/macOS amd64/arm64 scope is fixed. |
-| What macOS signing/notarization and release provenance are needed for a friction-free installer, and what pinned installer-lint/test tools will be used? | Release plan before publishing installation instructions. |
+| What Linux acceptance and native runners are required? | Recorded Debian acceptance and existing four-target native CI; additional floor/terminal hosts WAIVED. |
+| What signing/notarization and release provenance are required? | None beyond existing build metadata/checksums; extra trust gates WAIVED. Keep pinned installer lint/tests. |
 
 All other requirements above are the agreed v1 baseline. Revisit current dependency patches and external agent-path documentation at implementation kickoff; do not silently change product semantics in the name of updating best practices.

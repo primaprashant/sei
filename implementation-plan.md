@@ -4,7 +4,13 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase K implementation complete; Linux standard/race, installer failure suites, documentation rehearsals and clean snapshots pass. New native CI, live release URLs, support-floor approval and Mac trust gates remain pending.
+**Status:** Phase K native CI, Debian artifact verification and owner-reported Mac source suite pass at their recorded scopes. Task 34 workflow implementation is next; no tag, push or publication is authorized this turn.
+
+**Debian follow-up (2026-09-06):** [Exact CI artifact](docs/linux-verification.md) at `11aa829` passes full/race/offline and native workflow/installer checks on Debian 13.6 amd64, sufficient owner-approved Linux acceptance without an all-distro promise.
+
+**Mac follow-up:** Owner reports macOS 15.7.2/M1 source suite PASS (260.798s), installer/PTY and all five case-collision subtests. [Scope/skips](docs/mac-verification.md): exact artifact, Gatekeeper and Mac race not tested; source SHA not supplied.
+
+**Superseding scope:** [PRD owner scope override](prd.md#owner-scope-override) governs all earlier task/checkpoint checkboxes, dependency gates and decision/risk tables below. Outstanding Task 28 floors, Task 29 extra Mac/trust requirements, Phase H budgets and additional human acceptance are **WAIVED, not passed**. Historical evidence is preserved; old floor/trust/performance runbooks are optional, and the Mac handoff is superseded. Existing automated safety/native/fuzz/race/installer checks remain required.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -102,9 +108,8 @@ All manual experiments and tests use disposable HOME/config/project/library/dest
 | Linux arm64 PR/release execution | `ubuntu-24.04-arm` | Native tests and execution of the actual arm64 release archive. |
 | macOS amd64 PR/release execution | `macos-15-intel` | Native tests and actual amd64 release binary; not Rosetta-only evidence. |
 | macOS arm64 PR/release execution | `macos-15` | Native arm64 tests and actual release binary. |
-| Proposed Linux release floor | Ubuntu 22.04 with a 5.15-series kernel, amd64 and arm64 VMs/machines | Record exact image and kernel. A container on a newer host does not validate the kernel floor. Owner approves the measured floor in Task 28. |
-| PRD macOS minimum | macOS 13 machines/VMs on both architectures | Acquire manual/release-test access; newer CI images alone cannot validate this floor. Block the support claim if evidence is unavailable. |
-| Terminal usability | Linux GNOME Terminal/VTE and macOS Terminal.app; OpenSSH from macOS to Linux | Record exact versions, `$TERM`, dimensions, light/dark/no-color behavior, and local versus SSH results. Owner's usual terminal is included in the prototype review. |
+| Personal Linux acceptance | Recorded Debian 13.6 amd64 host | Accepted; no all-distro/kernel-floor promise. |
+| Additional floor and human terminal hosts | Optional only | WAIVED; macOS 13 is a toolchain minimum, not a tested-host claim. |
 
 GitHub's [runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners) lists the selected labels at planning time. They pin OS families, not immutable images; recheck availability and actual architecture during Task 4. Never silently drop an architecture if a runner is unavailable.
 
@@ -900,13 +905,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Connect trusted tags to exact artifacts and required tests, keeping publication separate from ordinary CI and avoiding a build-after-test artifact mismatch.
 
 **Acceptance criteria:**
-- [ ] Add a separate full-history, SHA-pinned, exact-tool-version tag workflow. Validate full approved tag syntax rather than relying only on a loose glob; rerun required checks and complete all approved signing/notarization follow-ups.
-- [ ] Build/sign/package once, checksum the final bytes, and transfer those exact artifacts to native smoke/installer tests. Only after all gates pass may a publishing job upload those same bytes to a draft release, with approved attestations tied to them.
-- [ ] Limit `contents: write` and any approved trust credentials to protected release jobs; PR tests never receive them. Drafts include installer, four archives, checksums, notices, trust metadata, and release notes; failed verification never promotes a partial release to latest.
+- [ ] Add a separate full-history, SHA-pinned, exact-tool-version tag workflow with full tag validation. Preserve existing standard/native, fuzz, Linux race, PTY and safe installer checks; no extra external hosts or human gates.
+- [ ] Build/package once, checksum the final bytes, and pass those exact archives through existing native archive checks. After required checks pass, upload the same four archives, checksums and installer to a draft with release notes; retain packaged notices. Do not rebuild for upload.
+- [ ] Only the final draft-upload job has `contents: write`, using the existing GitHub token. Other jobs stay read-only; no new credentials, signing, attestations, Apple account or protected environment is required. Keep `v0.x` prereleases out of stable latest; never publish automatically.
 
-**Verification:** Validate release config and rehearse on an explicitly authorized candidate tag; inspect job permissions, full history/version metadata, artifact digests before/after upload, and all four native execution results. Do not tag/push merely because the workflow exists.
+**Verification:** Validate workflow/config syntax and contracts locally, including permissions, tag/version policy and same-byte transfer. A live tag/draft rehearsal requires separate execution authorization; inspect required job results and uploaded digests then. No tag, push, upload or public URL test this turn.
 
-**Dependencies:** Tasks 26, 28, 29, and 32, plus completed conditional trust implementation tasks.
+**Dependencies:** Existing Tasks 26, 28 and 32 automated checks; Task 29 extra trust gates WAIVED. Workflow implementation and final-job permission scope are owner-authorized.
 
 **Files likely touched:** `.github/workflows/release.yml`, `.goreleaser.yaml`, `docs/release.md`.
 
@@ -918,16 +923,16 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Acceptance criteria:**
 - [ ] With explicit owner authorization, publish `v0.1.0` as the initial development release and subsequent `v0.x` versions as needed. Mark these GitHub releases as prereleases, keeping them out of stable latest; test the tag-specific public installer URL and manual download instructions without GitHub authentication.
-- [ ] On each supported architecture, install into a fresh user environment with no Go/agent runtime, complete setup/add-three/remove-two/quit, verify persistence/library invariance, and test successful upgrade plus a failed-upgrade fixture. Validate approved macOS trust behavior and support floors.
-- [ ] Run the complete checks and measured budgets on the candidate build; obtain owner sign-off on usability, layout, support evidence, docs, and test matrix. Record any defect as a regression task and create a new candidate rather than replacing an already-published artifact invisibly.
+- [ ] Use the Task 34 automated results and accepted Debian workflow/installer evidence; no additional personal Mac, floor-host, human or benchmark gate. After authorized publication, verify the public installer and primary workflow on the available Debian host with disposable data.
+- [ ] Record candidate checks and limitations. Fix defects with regressions and a new version rather than silently replacing published bytes.
 
-**Verification:** Standard checks, race/fuzz/PTY/installer suites, `goreleaser check`, artifact checksum/provenance verification, all matrix smoke tests, and the Task 23 measurement protocol. Keep a release checklist with links to logs and owner approval.
+**Verification:** Task 34 checks, artifact checksums, future unauthenticated versioned downloads and Debian installer smoke; record logs and publication authorization. No mandatory Task 23 measurements.
 
-**Dependencies:** Tasks 23, 33, and 34; explicit prerelease publication authorization.
+**Dependencies:** Tasks 33 and 34; explicit prerelease tag/push/publication authorization.
 
 **Files likely touched:** `docs/release.md`, `docs/test-matrix.md`.
 
-**Estimated scope:** Medium verification task, 2 evidence files; waiting for native machines/owner review is an external dependency.
+**Estimated scope:** Small verification task, 2 evidence files; publication authorization remains separate.
 
 ### Task 36: Publish The First Usable Release
 
@@ -935,8 +940,8 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Acceptance criteria:**
 - [ ] Obtain explicit `v1.0.0` tag/push/publication approval. Build and verify the final-tag artifacts through the gated workflow; a final version rebuild must be retested even when its source matches the candidate. Publish all required assets and honest release notes, then promote `v1.0.0` to stable latest.
-- [ ] Test the public stable one-command installer URL and tag-specific URL, version/custom directory, checksums/trust metadata, README links, fresh-user primary workflow, and upgrade path on the four architecture targets. Verify the final version reported by the installed binary.
-- [ ] Record tag, commit, artifact digests, URLs, checks, support/budget results, and approval. If publication/install fails, stop advertising it and publish a corrected version through the same gates; do not disable checks, rewrite published tags, or promise automatic rollback.
+- [ ] After authorized publication, test stable and tag-specific public URLs, version/custom directory, checksums, README links and Debian fresh-user/upgrade smoke. Retain four-target native CI; no extra external-host acceptance. Verify the installed version.
+- [ ] Record tag, commit, artifact digests, URLs, required checks, limitations and approval. If publication/install fails, stop advertising it and publish a corrected version through the same checks; do not disable checks, rewrite published tags, or promise automatic rollback.
 
 **Verification:** Use `gh` to inspect release assets/workflow results and verify unauthenticated public download URLs; repeat final artifact smoke/installer checks and a fresh first-run workflow. Close the release checklist only after post-publication verification passes.
 
@@ -949,7 +954,7 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 ### Checkpoint L: Tasks 34-36
 
 - [ ] Public release contains the tested final artifacts and the one-command installer actually works.
-- [ ] All PRD success criteria are evidenced, including owner-reviewed workflow improvement and post-publication native checks.
+- [ ] Current PRD success criteria and required automated checks are met, with waived gates distinguished from actual passes.
 - [ ] Return the release URL, installation entry point, supported systems, and any explicitly documented limitations to users.
 
 ## Requirement Traceability

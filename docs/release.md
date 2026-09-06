@@ -2,6 +2,22 @@
 
 ## Scope
 
+**Current owner scope (2026-09-06):** The [PRD override](../prd.md#owner-scope-override)
+supersedes conflicting blockers and permission proposals in the historical records
+below. Task 28 external floors, Task 29 extra personal Mac/trust/signing/attestation
+gates and outstanding human/performance gates are **WAIVED, not passed**. Their
+runbooks are optional historical references, not work required before Task 34.
+Keep existing native/fuzz/race/PTY/installer safety checks. The authorized next
+workflow builds once, checksums/tests the same bytes and uploads only a draft;
+only its final upload job gets `contents: write` with the existing GitHub token.
+No new credentials, signing, attestations or protected environment. Implementation
+is next, not claimed complete here; no tag, push or publication this turn.
+
+[Debian verification](linux-verification.md) is accepted for personal Linux use,
+without an all-distro promise. [Mac source evidence](mac-verification.md) has an
+unknown source SHA and is not personal exact-artifact or download-trust evidence.
+Public URLs remain pending until separately authorized publication and verification.
+
 Checkpoint K (2026-09-06): `dist/` now contains clean
 `0.0.0-snapshot.04c5ca3` artifacts, replacing the historical snapshots below.
 All four archive checks and Linux extracted help/version/PTY pass, alongside
@@ -328,6 +344,9 @@ again. The earlier hashes above describe only the recorded Task 27 run.
 
 ## Task 28 Exact Native Archives
 
+Historical gate wording below is superseded by [current scope](#scope); external
+floor acceptance is WAIVED. Existing native archive CI remains required.
+
 Phase J implementation and logical commits are authorized sequentially, without pushes or
 tags. Support-floor access and macOS Gatekeeper are **release blockers**, not
 waivers or support claims. Task 28 acceptance remains open until native evidence
@@ -459,6 +478,11 @@ artifacts, replacing Checkpoint I output, not promising reproducible rebuilds:
 | darwin/arm64 | `97ab4a28a6ac789e8b3c0838df73d11f35c7f5d998c4a24833268a6f046310f4` |
 
 ## Task 29 Trust Policy
+
+Historical policy, superseded by [current scope](#scope): signing, notarization,
+attestations, extra Mac trust tests and protected-environment requirements are
+WAIVED. The old proposals/runbooks below are optional references, not approvals
+to provision credentials or instructions required for release.
 
 2026-09-06, sequentially after `8ad23fe`: owner approves local/CI slices while
 floor/Mac gates remain blocked, verified ShellCheck v0.11.0, and GitHub artifact

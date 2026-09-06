@@ -1,5 +1,9 @@
 # Task 21: Representative Prototype
 
+Historical evidence and optional reproduction. The [owner scope override](../prd.md#owner-scope-override)
+WAIVES outstanding extra human/theme/SSH and performance gates below, not the
+approved layout or existing automated regressions. Unperformed checks are not passes.
+
 ## Status And Owner Input
 
 Automated Linux evidence refreshed after `f0784fa`, 2026-09-06. Checkpoint review

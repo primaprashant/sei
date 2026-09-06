@@ -1,5 +1,9 @@
 # Task 23: Performance Evidence
 
+Optional historical measurements/runbook. The [owner scope override](../prd.md#owner-scope-override)
+WAIVES mandatory budgets, benchmarking and timed human comparison; results below
+retain their original measured scope, not current release-gate status.
+
 ## Protocol
 
 Owner approved this protocol on 2026-09-06; shell baseline is **typed `cp`/`rm`

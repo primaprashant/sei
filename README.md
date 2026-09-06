@@ -134,8 +134,9 @@ Run `"$HOME/.local/bin/sei" --version`; for current-shell PATH use
 `export PATH="$HOME/.local/bin":$PATH`. Manual installation creates **no receipt**.
 Checksums from the same release detect corruption, not a compromised publisher;
 neither checksum checks nor executing `--version` sandbox downloaded code.
-[Provenance and Mac trust gates](docs/release.md#task-29-trust-policy) are still
-pending. Do not remove quarantine or bypass Gatekeeper if macOS refuses launch.
+Signing, notarization and attestations are out of scope for this personal tool;
+Mac download trust is not verified. Do not remove quarantine or bypass Gatekeeper
+if macOS refuses launch.
 
 ### Upgrade And Uninstall
 
@@ -299,21 +300,17 @@ changes persist. Folder labels do not provide agent isolation:
 
 ## Support And Measurements
 
-No public compatibility floor is approved yet. Cross-compilation is not native
-execution; newer CI success does not establish minimum-OS or Mac download trust.
+This is a small personal tool. [Debian 13.6 amd64 verification](docs/linux-verification.md)
+is sufficient owner-approved Linux acceptance, not an all-distro or kernel-floor
+promise. Existing native CI covers Linux/macOS amd64/arm64, including archive
+help/version/PTY and installer tests at the recorded revisions.
 
-| Target | Recorded Evidence | Still Pending |
-| --- | --- | --- |
-| Linux amd64 | Phase J native Ubuntu 24.04 CI, exact archive help/version/PTY; local Debian checks | Ubuntu 22.04 with actual 5.15 host kernel; support approval |
-| Linux arm64 | Phase J native Ubuntu 24.04 CI, exact archive help/version/PTY | Same proposed Linux floor on arm64; support approval |
-| macOS amd64 | Phase J native macOS 15 CI, exact archive help/version/PTY | macOS 13 floor, quarantine/Gatekeeper, signing decision |
-| macOS arm64 | Phase J native macOS 15 CI, exact archive help/version/PTY | macOS 13 floor, quarantine/Gatekeeper, signing decision |
-
-Tasks 31-32 installer changes have local/mock evidence, not new native execution.
-Windows, Homebrew and self-update are not provided. Phase I owner SSH/workflow
-smoke checks passed; broader theme/performance and final-release acceptance remain
-open. [Release evidence](docs/release.md) and
-[prototype decisions](docs/prototype.md#approved-layout-task-22) track those gates.
+The [owner-reported Mac source suite](docs/mac-verification.md) passed on macOS
+15.7.2/M1; its source SHA is unknown and the personal exact-archive test did not
+run. Go requires macOS 13+, but that minimum and Mac download trust are not tested
+claims. Extra floor hosts, personal Mac artifact/trust checks and human acceptance
+are [waived, not passed](prd.md#owner-scope-override). Windows, Homebrew and
+self-update are not provided. Public installation remains pending publication.
 
 The approved minimum is 80x24; 143x35 and 148x39 are the owner-selected larger
 geometries. Recorded **Linux amd64 warm-data local PTY** measurements used 25
@@ -323,8 +320,8 @@ add confirmation **33.447 / 33.020 ms**, replacement **33.074 / 33.034 ms**, and
 removal **17.358 / 16.715 ms**. The measured stripped binary was **5,181,600 bytes**.
 These are historical measurements, not current artifact sizes or Mac/SSH/cold-cache
 promises; operation timings include help/render confirmation, not just filesystem
-work. Scoped approved p95 gates are 100/25/50/60/25 ms respectively, binary <=6 MiB.
-[Protocol, sample counts, raw data, and pending human comparison](docs/performance.md).
+work. Former p95/binary budgets and timed human comparison are no longer release
+gates. [Protocol and raw data](docs/performance.md) are optional historical references.
 
 ## Reporting Issues
 
@@ -475,5 +472,5 @@ and GoReleaser Community **v2.18.0** binaries with the exact installation/proven
 commands in [release reproduction](docs/release.md#reproduction) and
 [ShellCheck provenance](docs/release.md#shellcheck-provenance), not floating tools.
 See the [current test matrix](docs/test-matrix.md), [performance reproduction](docs/performance.md#reproduce),
-and release runbooks for opt-in checks. Local Linux checks do not prove Mac/arm64
+and optional historical floor/trust/performance runbooks. Local Linux checks do not prove Mac/arm64
 native behavior, OS floors, or end-user download trust.

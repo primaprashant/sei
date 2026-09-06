@@ -1,5 +1,29 @@
 # Destructive And Failure Test Matrix
 
+**Current scope:** [Owner override](../prd.md#owner-scope-override) supersedes old
+blocker wording below. Task 28 external floors, Task 29 extra Mac/trust gates and
+outstanding human/performance acceptance are **WAIVED, not passed**. Existing
+automated native/fuzz/race/PTY/installer safety checks remain required; historical
+results and skips retain their original scope. Public URLs are still pending.
+
+## Actual Mac Source Suite
+
+Owner-reported macOS 15.7.2, native Apple M1/arm64, Go 1.27.1:
+`go test -count=1 -v ./...` passes (260.798s), including sh/Bash POSIX/dash
+installer tests, PTY lifecycle and all five case-collision subtests.
+[Evidence and skips](mac-verification.md). Source SHA was not supplied;
+`TestReleaseArchives` skipped without inputs. This is not personal-host exact
+artifact, Gatekeeper, race, or macOS 13 evidence.
+
+## Actual Debian Host
+
+2026-09-06: [exact CI artifact verification](linux-verification.md) at producer
+`11aa829251221cee049b12acbf6e784bfcdcd051` passes on Debian 13.6 amd64:
+full/race, offline installer/PTY, exact-binary fresh-user workflow, receipt/failure
+rehearsal and empty-chroot help/version. Native hosted run 34025005746 is successful;
+this is accepted personal Linux evidence, not an all-distro/floor claim. Extra
+personal Mac/floor/trust gates are waived; publication remains separately authorized.
+
 ## Checkpoint K
 
 2026-09-06 at clean `04c5ca3`: Linux standard/full tests (45.208s), full race
