@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase H automated work implemented; local-first 80x24 layout, approved Linux budgets, and display regressions pass. Owner shell comparison, native/human rendering, and release gates remain open.
+**Status:** Phase I automated work implemented; Linux safety/fuzz/coverage/PTY checks and four snapshot archives pass. Native CI, manual SSH/owner acceptance, and release gates remain open.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -745,9 +745,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Checkpoint I: Tasks 25-27
 
-- [ ] Standard, fuzz, race, coverage-audit, and full PTY checks pass at their documented scope.
+- [x] Standard, fuzz, race, coverage-audit, and full PTY checks pass at their documented scope.
 - [x] Four snapshot artifacts exist with verified checksums and no unexpected archive content.
 - [ ] Test matrix links every destructive/failure requirement to evidence; unresolved mandatory coverage is a blocker.
+
+**Evidence (2026-09-06):** At `049000d`, Linux standard/full PTY/race, both 30s fuzz targets, coverage (88.6%), and rebuilt four-archive checks pass. [Matrix](docs/test-matrix.md) maps requirements; current native case-volume/PTY and manual SSH acceptance remain blockers. No push/tag/publication.
 
 ### Phase J: Install A Verified Release
 

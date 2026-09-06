@@ -301,3 +301,8 @@ artifact PTY flows, signing/notarization, independent attestations, and actual
 publication remain external/later-task gates. Cross-compilation and header
 inspection do not satisfy those gates. No tag, push, upload, or release
 publication occurred.
+
+Checkpoint I rebuilt all four archives from clean commit `049000d` as
+`0.0.0-snapshot.049000d`; those now replace the earlier Task 27 artifacts in
+`dist/`. All checksums, archive/metadata tests and native help/version passed
+again. The earlier hashes above describe only the recorded Task 27 run.

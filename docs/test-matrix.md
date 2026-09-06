@@ -1,5 +1,9 @@
 # Destructive And Failure Test Matrix
 
+Checkpoint I at `049000d`: Linux standard/full PTY/race, both 30s fuzz targets
+(332,274 config / 792,541 path executions), coverage (88.6%), and four rebuilt
+snapshot archive checks pass. Native/SSH gates below remain open; no push.
+
 Task 25 audit, 2026-09-06. References below are existing executable tests, not proposed names. Scope is the PRD's setup, keyboard/display, filesystem and testing/CI contracts; installer/release requirements remain Tasks 27-35. A mapped test is not evidence that every platform or branch passed.
 
 ## Isolation And Fuzzing
