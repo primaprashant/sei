@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase E and Task 16 implemented; Phase E passes all four native CI jobs. Task 16 verified on native Linux only. Human terminal reviews and later-phase audits remain pending.
+**Status:** Phase E and Tasks 16-17 implemented; Phase E passes all four native CI jobs. Tasks 16-17 verified on native Linux only; Task 17 native-volume acceptance remains open. Human terminal reviews and later-phase audits remain pending.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -497,11 +497,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Exercise observed external changes between selection, scan, preflight, and mutation without pretending to provide concurrent-writer isolation.
 
 **Acceptance criteria:**
-- [ ] Revalidate captured names/types/identities and root relationships at mutation time, including a newly created missing ancestor or retargeted configured-root alias; disappearance never redirects an action to a different row.
+- [x] Revalidate captured names/types/identities and root relationships at mutation time, including a newly created missing ancestor or retargeted configured-root alias; disappearance never redirects an action to a different row.
 - [ ] Detect observed entry replacement, new target children, links, and actual filesystem case aliases; abort safely where observed. Test case-insensitive target behavior, including collisions between nested source names, on an appropriate volume.
-- [ ] Coalesce/defer refresh while mutating and discard stale scan/operation results; a scan started before a mutation cannot resurrect deleted rows or erase the newest outcome.
+- [x] Coalesce/defer refresh while mutating and discard stale scan/operation results; a scan started before a mutation cannot resurrect deleted rows or erase the newest outcome.
 
 **Verification:** `go test -count=1 -run 'Test(StaleSelection|ObservedChange|CaseCollision|ScanGeneration)' .`, native Linux/macOS tests, and race check. Verify skip reasons only for genuinely unsupported test filesystem features, with required cases covered elsewhere in the matrix.
+
+**Evidence (2026-09-06):** Go 1.27.1 Linux: focused regressions (10 repetitions), existing observed-change audits, full/race tests, lint/format/config checks, vet, module hygiene, and build pass. Scans now retain entry/root identities; commands reject drift. Existing collision and generation guards retained. Native macOS unavailable: case-sensitive Linux skips `TestCaseCollision`; existing four-platform CI will require a case-insensitive Mac target with an isolated HFSX source. Native-volume acceptance remains unchecked; no push or Task 18 work.
 
 **Dependencies:** Task 16.
 

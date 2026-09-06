@@ -18,6 +18,7 @@ type browsePanel struct {
 	err           error
 	safetyChecked bool
 	safetyErr     error
+	root          resolvedRoot
 }
 
 type browseModel struct {
@@ -146,6 +147,7 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		p.loading, p.missing, p.err = false, msg.missing, msg.err
+		p.root = msg.root
 		oldName := p.selectedName
 		p.entries, p.selectedName = nil, ""
 		if !msg.missing && msg.err == nil {
@@ -261,7 +263,11 @@ func (m browseModel) startMutation(destination panelID, add bool) (tea.Model, te
 		m.panels[i].generation++
 	}
 	cfg := m.config
+	entry := p.entries[p.selected]
 	return m, func() tea.Msg {
+		if err := validateScannedSelection(cfg, r, p.root, d.root, entry); err != nil {
+			return mutationResult{r.id, err}
+		}
 		if r.add {
 			return mutationResult{r.id, addSkill(cfg, r.destination, r.name)}
 		}

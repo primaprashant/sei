@@ -21,6 +21,21 @@ type resolvedRoot struct {
 	err       error
 }
 
+// Only components created by the active copy may consume a missing suffix.
+func sameResolvedRoot(initial, current resolvedRoot, created int) bool {
+	if initial.err != nil || current.err != nil || len(initial.ancestors) == 0 ||
+		current.path != initial.path || len(current.missing) != len(initial.missing)-created || len(current.ancestors) != len(initial.ancestors)+created {
+		return false
+	}
+	for i, ancestor := range initial.ancestors {
+		now := current.ancestors[i+created]
+		if now.path != ancestor.path || !os.SameFile(now.info, ancestor.info) {
+			return false
+		}
+	}
+	return true
+}
+
 // resolveRoot traverses raw components before doing any lexical normalization.
 // A missing suffix containing .. is unprovable until its directories exist.
 func resolveRoot(raw string) (r resolvedRoot) {

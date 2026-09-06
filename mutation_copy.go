@@ -91,14 +91,8 @@ func revalidateCopyDestination(cfg config, destination panelID, name string, ini
 	if err != nil {
 		return resolvedRoot{}, err
 	}
-	if current.path != initial.path || len(current.missing) != len(initial.missing)-created || len(current.ancestors) != len(initial.ancestors)+created {
+	if !sameResolvedRoot(initial, current, created) {
 		return resolvedRoot{}, fmt.Errorf("destination resolution changed")
-	}
-	for i, ancestor := range initial.ancestors {
-		now := current.ancestors[i+created]
-		if now.path != ancestor.path || !os.SameFile(now.info, ancestor.info) {
-			return resolvedRoot{}, fmt.Errorf("destination ancestor changed: %q", ancestor.path)
-		}
 	}
 	return current, nil
 }
