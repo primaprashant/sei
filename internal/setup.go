@@ -27,14 +27,16 @@ type setupResult struct {
 type setupModel struct {
 	cfg, resolved                     config
 	project, path                     string
-	field, offset, height             int
+	field, offset, width, height      int
+	theme                             uiTheme
+	details                           bool
 	preview, busy, pendingQuit, saved bool
 	replace, confirm, adding          bool
 	err, fatal                        error
 }
 
 func newSetupModel(project, path string) setupModel {
-	return setupModel{cfg: config{Agents: append([]agentConfig(nil), setupPresets[:3]...)}, project: project, path: path, height: 24}
+	return setupModel{cfg: config{Agents: append([]agentConfig(nil), setupPresets[:3]...)}, project: project, path: path, width: 80, height: 24}
 }
 
 func (setupModel) Init() tea.Cmd { return nil }
@@ -55,6 +57,9 @@ func (m *setupModel) value() *string {
 }
 
 func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if handled, cmd := m.theme.update(msg); handled {
+		return m, cmd
+	}
 	switch msg := msg.(type) {
 	case exitRequestMsg:
 		if m.busy {
@@ -63,7 +68,7 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, tea.Quit
 	case tea.WindowSizeMsg:
-		m.height = msg.Height
+		m.width, m.height = msg.Width, msg.Height
 	case setupResult:
 		m.busy = false
 		m.err, m.resolved, m.saved = msg.err, msg.resolved, msg.saved
@@ -86,6 +91,24 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.busy {
 			return m, nil
 		}
+		if m.details {
+			switch key {
+			case "f1":
+				m.details = false
+				m.offset = 0
+			case "up":
+				m.offset = max(0, m.offset-1)
+			case "down":
+				m.offset++
+			}
+			return m, nil
+		}
+		if key == "f1" && !m.confirm && !m.adding {
+			m.details = true
+			m.offset = 0
+			return m, nil
+		}
+
 		if m.confirm {
 			if key == "n" {
 				m.confirm = false
@@ -196,56 +219,4 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, nil
-}
-
-func (m setupModel) View() tea.View {
-	lines := []string{"sei setup", "Config: " + displayText(m.path)}
-	if m.confirm {
-		v := tea.NewView(strings.Join(append(lines, "Replace existing configuration? y confirm / n back / Esc cancel"), "\n"))
-		v.AltScreen = true
-		return v
-	}
-	if m.adding {
-		v := tea.NewView(strings.Join(append(lines, "Add agent: 1 Claude Code | 2 Codex | 3 OpenCode | 4 Pi | 5 Cursor | 6 Custom", "Other keys return; Esc cancels setup."), "\n"))
-		v.AltScreen = true
-		return v
-	}
-	if m.preview {
-		lines = append(lines, "Preview | Enter save | e edit | Up/Down scroll | Esc cancel", "Library: "+displayText(m.resolved.Library))
-		for i, a := range m.resolved.Agents {
-			lines = append(lines, fmt.Sprintf("%d %s | local %c / global %c | focus %d / g%d", i+1, displayText(a.Name), "abcdefhio"[i], "ABCDEFHIO"[i], i+1, i+1), "  Global: "+displayText(a.Global), "  Local: "+displayText(a.Local))
-		}
-	} else {
-		lines = append(lines, "Tab/Up/Down field | type appends | Backspace | Ctrl+U clear | Enter preview | Esc cancel")
-		lines = append(lines, "Ctrl+A add agent | Ctrl+D remove selected agent | Ctrl+K/J move agent up/down")
-		fields := []string{"Library: " + displayText(m.cfg.Library)}
-		for _, a := range m.cfg.Agents {
-			fields = append(fields, "Name: "+displayText(a.Name), "Global: "+displayText(a.Global), "Local: "+displayText(a.Local))
-		}
-		start := max(0, m.field-max(1, m.height-12)+1)
-		for i := start; i < len(fields) && i < start+max(1, m.height-12); i++ {
-			marker := "  "
-			if i == m.field {
-				marker = "> "
-			}
-			lines = append(lines, marker+fields[i])
-		}
-	}
-	lines = append(lines, "Replacement loses local edits and destination-only files: delete first, then copy.", "Deletion is permanent. No confirmation, trash, backup, or rollback; failures may leave partial output.", sharedDiscovery)
-	if m.err != nil {
-		lines = append(lines, "Error: "+displayText(m.err.Error()))
-	}
-	if m.busy {
-		lines = append(lines, "Working; quit waits for completion.")
-	}
-	if m.pendingQuit {
-		lines = append(lines, "Exit requested; waiting.")
-	}
-	if m.preview {
-		start := min(m.offset, max(0, len(lines)-max(1, m.height-1)))
-		lines = lines[start:min(len(lines), start+max(1, m.height-1))]
-	}
-	v := tea.NewView(strings.Join(lines, "\n"))
-	v.AltScreen = true
-	return v
 }

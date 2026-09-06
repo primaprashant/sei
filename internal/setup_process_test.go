@@ -283,14 +283,14 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 	if restart {
 		finishBrowse()
 	} else {
-		await("Enter preview")
+		await("Enter review")
 		raw, err := term.GetState(slave.Fd())
 		if err != nil || reflect.DeepEqual(before, raw) {
 			t.Fatalf("setup did not enter raw mode: %v", err)
 		}
 		if explicit && scenario != "explicit-new" {
 			await("Library: ~/library")
-			await("Name: Existing1")
+			await("Name:", "Existing1")
 			send("-edited")
 			await("-edited")
 		} else {
@@ -312,6 +312,9 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 			}
 			if scenario == "explicit-nine" {
 				slot = 9
+			}
+			if slot == 9 {
+				send(strings.Repeat("\x1b[B", 70))
 			}
 			await(fmt.Sprintf("focus %d / g%d", slot, slot))
 			if scenario != "save-failure" && scenario != "complete-flow" {

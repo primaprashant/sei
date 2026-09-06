@@ -99,19 +99,33 @@ func (m browseModel) View() tea.View {
 		return v
 	}
 	if m.showHelp {
+		s := m.theme.styles()
 		lines := m.helpLines()
 		offset := max(0, min(m.helpOffset, len(lines)-m.helpHeight()))
+		visible := append([]string(nil), lines[offset:min(len(lines), offset+m.helpHeight())]...)
+		for i, line := range visible {
+			switch {
+			case line == "SELECTION AND PATHS" || line == "NAVIGATION" || line == "COPY AND REMOVE" || line == "ERRORS AND BEHAVIOR":
+				visible[i] = s.section.Render(line)
+			case strings.HasPrefix(line, "Error:") || strings.HasPrefix(line, "Root safety blocked:"):
+				visible[i] = s.danger.Render(line)
+			case strings.HasPrefix(line, "Root path:"):
+				visible[i] = s.muted.Render(line)
+			}
+		}
+		for len(visible) < m.helpHeight() {
+			visible = append(visible, "")
+		}
 		quit := "q quit"
 		if m.pendingQuit {
 			quit = "Exit requested; waiting for work"
 		} else if m.active != nil {
 			quit = "Working; q waits for completion"
 		}
-		v := tea.NewView(strings.Join(lines[offset:min(len(lines), offset+m.helpHeight())], "\n") +
-			fmt.Sprintf("\nHelp %d/%d | up/down scroll | ?/Esc close |\n%s%s", offset+1, len(lines), quit, m.sequenceHint()))
-		v.AltScreen = true
-		return v
+		return boundedView(s.accent.Render("sei | Help")+"\n"+strings.Join(visible, "\n")+
+			"\n"+s.muted.Render(fmt.Sprintf("Help %d/%d | up/down scroll | ?/Esc close |", offset+1, len(lines)))+"\n"+s.warning.Render(quit+m.sequenceHint()), m.width, m.height)
 	}
+
 	s := m.theme.styles()
 	leftWidth, columns, rows, visibleRows, firstRow := m.layout()
 	rightWidth := m.width - leftWidth - 1
@@ -252,11 +266,11 @@ func (m browseModel) labeledPanel(id int) browsePanel {
 	return p
 }
 
-func (m browseModel) helpHeight() int { return max(1, m.height-2) }
+func (m browseModel) helpHeight() int { return max(1, m.height-3) }
 
 func (m browseModel) helpLines() []string {
 	p := m.panels[m.focused]
-	text := "sei | Help\nFocused: " + displayText(p.label) + "\nRoot path: " + displayText(p.path) +
+	text := "SELECTION AND PATHS\nFocused: " + displayText(p.label) + "\nRoot path: " + displayText(p.path) +
 		"\nSelected name: " + displayText(p.selectedName)
 	if p.selectedName == "" {
 		text += "(none)"
@@ -271,6 +285,9 @@ func (m browseModel) helpLines() []string {
 	default:
 		text += fmt.Sprintf("\nListing: ready (%d entries)", len(p.entries))
 	}
+	if p.selected >= 0 && p.selected < len(p.entries) && p.entries[p.selected].blocked {
+		text += "\nSelected folder blocked: symlink"
+	}
 	if p.err != nil {
 		text += "\nError: " + displayText(p.err.Error())
 	}
@@ -281,11 +298,13 @@ func (m browseModel) helpLines() []string {
 	} else {
 		text += "\nRoot relations checked; every mutation revalidates."
 	}
-	text += "\n0 library; 1-9 local; g then 1-9 global. Unconfigured slots do nothing.\nUp/Down clamp selection; in help scroll. r refreshes listings, not config.\ng has no timeout; invalid continuation is consumed. Esc cancels/closes; q/Ctrl+C quit. Paste ignored.\nAdd from library only (existing same-named targets are deleted first, then copied):"
+	text += "\n\nNAVIGATION\n0 library · 1–9 project · g then 1–9 global · Up/Down select\nr refresh · ? help · Esc close/cancel · q/Ctrl+C quit\nUnconfigured slots do nothing. g has no timeout; invalid keys cancel it.\n\nCOPY AND REMOVE\nUse these keys from the library to copy a skill:"
+
 	for i := range m.agents {
 		text += fmt.Sprintf("\n%c: %s; %c: %s", addKeys[i], displayText(m.panels[1+m.agents+i].label), strings.ToUpper(string(addKeys[i]))[0], displayText(m.panels[1+i].label))
 	}
-	text += "\nReplacement loses local edits and destination-only files, even if content seems identical. Not merge or sync.\nx: permanently remove from destination only; X does nothing. No confirmation, trash, backup, or undo.\nCopy failure may leave a missing or partial destination; no rollback. Retry add or remove the partial skill.\nWhile working, navigation remains available; extra mutations are ignored and refresh waits. Quit waits for completion.\nOther agents may also load skills from these folders. sei shows configured folder contents, not everything an agent discovers or has loaded."
+	text += "\n\nERRORS AND BEHAVIOR\nCopy always replaces the entire destination, including local edits.\nx permanently removes a destination skill. No confirmation or undo.\nNo trash, backup, or rollback. Failures may leave missing or partial output.\nRetry copy or remove the partial skill after inspecting the destination.\nWhile working: navigation stays available; refresh and quit wait.\nAdditional copy/remove keys are ignored during work. Paste is ignored.\n" + ansi.Wrap(sharedDiscovery, max(1, m.width), "")
+
 	if m.status != "" {
 		text += "\nResult: " + displayText(m.status)
 	}

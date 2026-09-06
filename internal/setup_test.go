@@ -75,7 +75,7 @@ func TestSetupDefaultsAndEditing(t *testing.T) {
 		}
 	}
 	m, _ = setupUpdate(t, m, tea.WindowSizeMsg{Height: 13, Width: 40})
-	if v := m.View(); !v.AltScreen || !strings.Contains(v.Content, "> Local: value") {
+	if v := m.View(); !v.AltScreen || !strings.Contains(v.Content, "> Project: value") {
 		t.Fatalf("focused field not visible: %s", v.Content)
 	}
 	m, _ = setupUpdate(t, m, tea.KeyPressMsg{Code: 'u', Mod: tea.ModCtrl})
@@ -136,25 +136,25 @@ func TestSetupAsyncValidationAndSave(t *testing.T) {
 
 func TestSetupPreview(t *testing.T) {
 	m := newSetupModel("/project", "/config\n.json")
-	m.preview, m.height = true, 60
+	m.preview, m.height = true, 100
 	m.resolved.Library = "/library"
 	for i := 0; i < 9; i++ {
 		m.resolved.Agents = append(m.resolved.Agents, agentConfig{fmt.Sprintf("Agent%d", i+1), fmt.Sprintf("/global/%d", i), fmt.Sprintf("/project/local/%d", i)})
 	}
 	view := m.View().Content
 	for _, text := range []string{`Config: /config\n.json`, "Library: /library", "Replacement loses local edits and destination-only files: delete first, then copy.", "Deletion is permanent. No confirmation, trash, backup, or rollback; failures may leave partial output.", sharedDiscovery} {
-		if !strings.Contains(view, text) {
+		if !strings.Contains(strings.ReplaceAll(view, "\n", ""), text) && !strings.Contains(strings.Join(strings.Fields(view), " "), text) {
 			t.Errorf("preview missing %q: %s", text, view)
 		}
 	}
 	for i, a := range m.resolved.Agents {
-		for _, text := range []string{fmt.Sprintf("%d %s | local %c / global %c | focus %d / g%d", i+1, a.Name, "abcdefhio"[i], "ABCDEFHIO"[i], i+1, i+1), "Global: " + a.Global, "Local: " + a.Local} {
-			if !strings.Contains(view, text) {
+		for _, text := range []string{fmt.Sprintf("%d %s", i+1, a.Name), fmt.Sprintf("focus %d / g%d · copy %c / %c", i+1, i+1, addKeys[i], strings.ToUpper(string(addKeys[i]))[0]), "Global: " + a.Global, "Project: " + a.Local} {
+			if !strings.Contains(strings.ReplaceAll(view, "\n", ""), text) && !strings.Contains(strings.Join(strings.Fields(view), " "), text) {
 				t.Errorf("preview missing mapping/path %q", text)
 			}
 		}
 	}
-	m, _ = setupUpdate(t, m, tea.WindowSizeMsg{Height: 5})
+	m, _ = setupUpdate(t, m, tea.WindowSizeMsg{Width: 80, Height: 24})
 	m, _ = setupUpdate(t, m, tea.KeyPressMsg{Code: tea.KeyUp})
 	if m.offset != 0 {
 		t.Fatal("scroll escaped top")
@@ -162,7 +162,7 @@ func TestSetupPreview(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		m, _ = setupUpdate(t, m, tea.KeyPressMsg{Code: tea.KeyDown})
 	}
-	if view := m.View().Content; len(strings.Split(view, "\n")) > 4 || !strings.Contains(view, sharedDiscovery) {
+	if view := m.View().Content; len(strings.Split(view, "\n")) > 24 || !strings.Contains(strings.Join(strings.Fields(view), " "), sharedDiscovery) {
 		t.Fatalf("bottom scroll: %s", view)
 	}
 	m, cmd := setupUpdate(t, m, tea.KeyPressMsg{Code: 'e', Text: "e"})
@@ -264,7 +264,7 @@ func TestSetupFailuresAndPendingQuit(t *testing.T) {
 						t.Fatalf("quit did not wait: %+v", m)
 					}
 				}
-				if !strings.Contains(m.View().Content, "Working; quit waits for completion.") || !strings.Contains(m.View().Content, "Exit requested; waiting.") {
+				if !strings.Contains(m.View().Content, "Exit requested; waiting for work") {
 					t.Fatal("missing pending status")
 				}
 				if save && fail {

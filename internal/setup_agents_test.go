@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func TestSetupAgents(t *testing.T) {
@@ -46,7 +47,7 @@ func TestSetupAgents(t *testing.T) {
 			m := newSetupModel("", "")
 			m.cfg.Agents = []agentConfig{{Name: "Other"}}
 			m, _ = setupUpdate(t, m, ctrl('a'))
-			if !m.adding || !strings.Contains(m.View().Content, "5 Cursor | 6 Custom") {
+			if !m.adding || !strings.Contains(m.View().Content, "5  Cursor") || !strings.Contains(m.View().Content, "6  Custom") {
 				t.Fatal("missing chooser")
 			}
 			before := m.cfg.Agents
@@ -122,9 +123,17 @@ func TestSetupAgents(t *testing.T) {
 		}
 		m.height = 100
 		for i, a := range m.cfg.Agents {
-			mapping := fmt.Sprintf("%d %s | local %c / global %c | focus %d / g%d", i+1, a.Name, "abcdefhio"[i], "ABCDEFHIO"[i], i+1, i+1)
-			if !strings.Contains(m.View().Content, mapping) || !strings.Contains(m.View().Content, m.resolved.Agents[i].Global) || !strings.Contains(m.View().Content, m.resolved.Agents[i].Local) {
-				t.Fatalf("missing reordered mapping/paths: %s", mapping)
+			mapping := fmt.Sprintf("focus %d / g%d · copy %c / %c", i+1, i+1, addKeys[i], strings.ToUpper(string(addKeys[i]))[0])
+			view := m.View().Content
+			if !strings.Contains(view, displayText(a.Name)) || !strings.Contains(view, mapping) {
+				t.Fatalf("missing mapping/name: %s", mapping)
+			}
+			for _, path := range []string{"Global: " + displayText(m.resolved.Agents[i].Global), "Project: " + displayText(m.resolved.Agents[i].Local)} {
+				for _, line := range strings.Split(ansi.Hardwrap(path, m.width-4, true), "\n") {
+					if !strings.Contains(view, line) {
+						t.Fatalf("missing resolved path segment: %q", line)
+					}
+				}
 			}
 			setupAbsent(t, m.resolved.Agents[i].Global, m.resolved.Agents[i].Local)
 		}
@@ -165,7 +174,7 @@ func TestExplicitSetup(t *testing.T) {
 			}
 			if outcome != "cancel-edit" && outcome != "cancel-preview" {
 				m, cmd = setupUpdate(t, m, tea.KeyPressMsg{Code: tea.KeyEnter})
-				if cmd != nil || !m.confirm || m.busy || !strings.Contains(m.View().Content, "y confirm / n back") {
+				if cmd != nil || !m.confirm || m.busy || !strings.Contains(m.View().Content, "y confirm · n back") {
 					t.Fatal("missing separate confirmation")
 				}
 				for _, key := range []tea.KeyPressMsg{{Code: tea.KeyEnter}, {Code: 'e', Text: "e"}, {Code: 'a', Mod: tea.ModCtrl}} {

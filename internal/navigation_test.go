@@ -153,18 +153,21 @@ func TestHelp(t *testing.T) {
 	var inspected strings.Builder
 	for range len(m.helpLines()) {
 		view := m.View().Content
-		inspected.WriteString(strings.Split(view, "\n")[0])
+		inspected.WriteString(strings.Split(view, "\n")[1])
 		if strings.ContainsRune(view, '\x1b') {
 			t.Fatal("unsafe help")
 		}
 		m, _ = press(m, tea.KeyDown)
 	}
 	// Include the final viewport, which remains clamped at the end.
-	inspected.WriteString(strings.ReplaceAll(m.View().Content, "\n", ""))
-	for _, want := range []string{displayText(m.panels[9].path), displayText(m.panels[9].selectedName), "Other agents may also load skills from these folders. sei shows configured folder contents, not everything an agent discovers or has loaded."} {
+	inspected.WriteString(strings.Join(strings.Split(m.View().Content, "\n")[1:], ""))
+	for _, want := range []string{displayText(m.panels[9].path), displayText(m.panels[9].selectedName)} {
 		if !strings.Contains(inspected.String(), want) {
 			t.Fatalf("full help text not inspectable: %q", want)
 		}
+	}
+	if !strings.Contains(strings.Join(strings.Fields(strings.Join(m.helpLines(), "\n")), " "), sharedDiscovery) {
+		t.Fatal("discovery explanation missing")
 	}
 	for i, key := range "abcdefhio" {
 		text := strings.Join(m.helpLines(), "")

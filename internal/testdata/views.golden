@@ -65,29 +65,29 @@ Check panel errors; ? for details
 Copy using panel keys \u00b7 Replaces existing folders; no undo
 
 === busy-help (80x24) ===
-0 library; 1-9 local; g then 1-9 global. Unconfigured slots do nothing.
-Up/Down clamp selection; in help scroll. r refreshes listings, not config.
-g has no timeout; invalid continuation is consumed. Esc cancels/closes; q/Ctrl+C
- quit. Paste ignored.
-Add from library only (existing same-named targets are deleted first, then copie
-d):
+sei | Help
+r refresh \u00b7 ? help \u00b7 Esc close/cancel \u00b7 q/Ctrl+C quit
+Unconfigured slots do nothing. g has no timeout; invalid keys cancel it.
+
+COPY AND REMOVE
+Use these keys from the library to copy a skill:
 a: Claude Code / Project; A: Claude Code / Global
 b: Codex / Project; B: Codex / Global
 c: OpenCode / Project; C: OpenCode / Global
-Replacement loses local edits and destination-only files, even if content seems
-identical. Not merge or sync.
-x: permanently remove from destination only; X does nothing. No confirmation, tr
-ash, backup, or undo.
-Copy failure may leave a missing or partial destination; no rollback. Retry add
-or remove the partial skill.
-While working, navigation remains available; extra mutations are ignored and ref
-resh waits. Quit waits for completion.
-Other agents may also load skills from these folders. sei shows configured folde
-r contents, not everything an agent discovers or has loaded.
+
+ERRORS AND BEHAVIOR
+Copy always replaces the entire destination, including local edits.
+x permanently removes a destination skill. No confirmation or undo.
+No trash, backup, or rollback. Failures may leave missing or partial output.
+Retry copy or remove the partial skill after inspecting the destination.
+While working: navigation stays available; refresh and quit wait.
+Additional copy/remove keys are ignored during work. Paste is ignored.
+Other agents may also load skills from these folders. sei shows configured
+folder contents, not everything an agent discovers or has loaded.
 Result: Add \\\"look-safe\\\\x1b[2J\\\\r\\\\nspoof\\\" to Claude Code / Project (/project/
 long-path/long-path/long-path/long-path/long-path/long-path/long-path/long-path/
 ): working
-Help 7/28 | up/down scroll | ?/Esc close |
+Help 10/30 | up/down scroll | ?/Esc close |
 Working; q waits for completion | g pending: 1-9 global, Esc cancel
 
 === busy-quit (80x24) ===

@@ -1,0 +1,245 @@
+
+=== edit (80x24) ===
+sei setup  Edit → Review
+
+╭ * Library ───────────────────────────────────────────────────────────────────╮
+│ > Library: ~/skill-library▏                                                  │
+╰ source collection ───────────────────────────────────────────────────────────╯
+
+╭ 1 · Claude Code ─────────────────────────────────────────────────────────────╮
+│   Name:    Claude Code                                                       │
+│   Global:  ~/.claude/skills                                                  │
+│   Project: .claude/skills                                                    │
+╰ Agent 1 / 3 ─────────────────────────────────────────────────────────────────╯
+
+╭ 2 · Codex ───────────────────────────────────────────────────────────────────╮
+│   Name:    Codex                                                             │
+│   Global:  ~/.agents/skills                                                  │
+│   Project: .agents/skills                                                    │
+╰ Agent 2 / 3 ─────────────────────────────────────────────────────────────────╯
+↓ More agents · Tab continues
+
+
+
+Source stays unchanged. Type appends; Backspace erases.
+Tab/↑↓ field  Ctrl+U clear  Enter review  F1 details  Esc cancel
+Ctrl+A add agent  Ctrl+D remove agent  Ctrl+K/J reorder
+
+=== last-agent (80x24) ===
+sei setup  Edit → Review
+
+↑ Earlier fields
+│   Name:    Claude Code                                                       │
+│   Global:  ~/.claude/skills                                                  │
+│   Project: .claude/skills                                                    │
+╰ Agent 1 / 3 ─────────────────────────────────────────────────────────────────╯
+
+╭ 2 · Codex ───────────────────────────────────────────────────────────────────╮
+│   Name:    Codex                                                             │
+│   Global:  ~/.agents/skills                                                  │
+│   Project: .agents/skills                                                    │
+╰ Agent 2 / 3 ─────────────────────────────────────────────────────────────────╯
+
+╭ * 3 · OpenCode ──────────────────────────────────────────────────────────────╮
+│   Name:    OpenCode                                                          │
+│   Global:  ~/.config/opencode/skills                                         │
+│ > Project: .opencode/skills▏                                                 │
+╰ Agent 3 / 3 ─────────────────────────────────────────────────────────────────╯
+
+
+Project folder: relative path inside the current project.
+Tab/↑↓ field  Ctrl+U clear  Enter review  F1 details  Esc cancel
+Ctrl+A add agent  Ctrl+D remove agent  Ctrl+K/J reorder
+
+=== chooser (80x24) ===
+sei setup  Add agent
+
+╭ Add agent ───────────────────────────────────────────────────────────────────╮
+│ 1  Claude Code                                                               │
+│ 2  Codex                                                                     │
+│ 3  OpenCode                                                                  │
+│ 4  Pi                                                                        │
+│ 5  Cursor                                                                    │
+│ 6  Custom                                                                    │
+╰ 1–6 choose ──────────────────────────────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+
+Choose a preset or start with blank fields.
+1–6 choose  Other keys back  Esc cancel setup
+
+
+=== review (100x35) ===
+      sei setup  Review configuration
+
+      Config: /home/demo/.config/sei/config.json
+
+      ╭ Library ─────────────────────────────────────────────────────────────────────────────╮
+      │ Library: /home/demo/skill-library                                                    │
+      ╰ source stays unchanged ──────────────────────────────────────────────────────────────╯
+
+      ╭ 1 Claude Code ───────────────────────────────────────────────────────────────────────╮
+      │ Global: /home/demo/.claude/skills                                                    │
+      │ Project: /work/project/.claude/skills                                                │
+      ╰ focus 1 / g1 · copy a / A ───────────────────────────────────────────────────────────╯
+
+      ╭ 2 Codex ─────────────────────────────────────────────────────────────────────────────╮
+      │ Global: /home/demo/.agents/skills                                                    │
+      │ Project: /work/project/.agents/skills                                                │
+      ╰ focus 2 / g2 · copy b / B ───────────────────────────────────────────────────────────╯
+
+      ╭ 3 OpenCode ──────────────────────────────────────────────────────────────────────────╮
+      │ Global: /home/demo/.config/opencode/skills                                           │
+      │ Project: /work/project/.opencode/skills                                              │
+      ╰ focus 3 / g3 · copy c / C ───────────────────────────────────────────────────────────╯
+
+      Replacement loses local edits and destination-only files: delete first, then copy.
+      Deletion is permanent. No confirmation, trash, backup, or rollback; failures may
+      leave partial output.
+      Other agents may also load skills from these folders. sei shows configured folder
+      contents, not everything an agent discovers or has loaded.
+
+
+
+
+      Rows 1–26 / 26
+      Enter save  e edit  ↑↓ scroll  F1 details  Esc cancel
+      Copy replaces destination edits; removal is permanent. No undo.
+
+=== replace (80x24) ===
+sei setup  Replace configuration
+
+╭ Configuration ───────────────────────────────────────────────────────────────╮
+│ Replace existing configuration?                                              │
+│                                                                              │
+│ /home/demo/.config/sei/config.json                                           │
+╰ y confirm · n back ──────────────────────────────────────────────────────────╯
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Replace only the configuration shown above.
+y confirm  n back  Esc cancel
+
+
+=== error (80x24) ===
+sei setup  Edit → Review
+
+╭ * Library ───────────────────────────────────────────────────────────────────╮
+│ > Library: ~/skill-library▏                                                  │
+╰ source collection ───────────────────────────────────────────────────────────╯
+
+╭ 1 · Claude Code ─────────────────────────────────────────────────────────────╮
+│   Name:    Claude Code                                                       │
+│   Global:  ~/.claude/skills                                                  │
+│   Project: .claude/skills                                                    │
+╰ Agent 1 / 3 ─────────────────────────────────────────────────────────────────╯
+
+╭ 2 · Codex ───────────────────────────────────────────────────────────────────╮
+│   Name:    Codex                                                             │
+│   Global:  ~/.agents/skills                                                  │
+│   Project: .agents/skills                                                    │
+╰ Agent 2 / 3 ─────────────────────────────────────────────────────────────────╯
+↓ More agents · Tab continues
+
+
+Error: library must be absolute or start with ~/ · F1 details
+Source stays unchanged. Type appends; Backspace erases.
+Tab/↑↓ field  Ctrl+U clear  Enter review  F1 details  Esc cancel
+Ctrl+A add agent  Ctrl+D remove agent  Ctrl+K/J reorder
+
+=== saving (80x24) ===
+sei setup  Review configuration
+
+Config: /home/demo/.config/sei/config.json
+
+╭ Library ─────────────────────────────────────────────────────────────────────╮
+│ Library: /home/demo/skill-library                                            │
+╰ source stays unchanged ──────────────────────────────────────────────────────╯
+
+╭ 1 Claude Code ───────────────────────────────────────────────────────────────╮
+│ Global: /home/demo/.claude/skills                                            │
+│ Project: /work/project/.claude/skills                                        │
+╰ focus 1 / g1 · copy a / A ───────────────────────────────────────────────────╯
+
+╭ 2 Codex ─────────────────────────────────────────────────────────────────────╮
+│ Global: /home/demo/.agents/skills                                            │
+│ Project: /work/project/.agents/skills                                        │
+╰ focus 2 / g2 · copy b / B ───────────────────────────────────────────────────╯
+
+╭ 3 OpenCode ──────────────────────────────────────────────────────────────────╮
+│ Global: /home/demo/.config/opencode/skills                                   │
+Saving configuration; quit waits for completion.
+Rows 1–18 / 27
+Enter save  e edit  ↑↓ scroll  F1 details  Esc cancel
+Copy replaces destination edits; removal is permanent. No undo.
+
+=== quit (80x24) ===
+sei setup  Review configuration
+
+Config: /home/demo/.config/sei/config.json
+
+╭ Library ─────────────────────────────────────────────────────────────────────╮
+│ Library: /home/demo/skill-library                                            │
+╰ source stays unchanged ──────────────────────────────────────────────────────╯
+
+╭ 1 Claude Code ───────────────────────────────────────────────────────────────╮
+│ Global: /home/demo/.claude/skills                                            │
+│ Project: /work/project/.claude/skills                                        │
+╰ focus 1 / g1 · copy a / A ───────────────────────────────────────────────────╯
+
+╭ 2 Codex ─────────────────────────────────────────────────────────────────────╮
+│ Global: /home/demo/.agents/skills                                            │
+│ Project: /work/project/.agents/skills                                        │
+╰ focus 2 / g2 · copy b / B ───────────────────────────────────────────────────╯
+
+╭ 3 OpenCode ──────────────────────────────────────────────────────────────────╮
+│ Global: /home/demo/.config/opencode/skills                                   │
+Exit requested; waiting for work
+Rows 1–18 / 27
+Enter save  e edit  ↑↓ scroll  F1 details  Esc cancel
+Copy replaces destination edits; removal is permanent. No undo.
+
+=== details (80x24) ===
+sei setup  Details
+
+SETUP DETAILS
+Config: /home/demo/.config/sei/config.json
+Project: /work/project
+
+Current field: ~/skill-library
+Source stays unchanged. Type appends; Backspace erases.
+
+Tab/Up/Down selects fields; typing appends; Backspace erases; Ctrl+U clears.
+Ctrl+A adds an agent, Ctrl+D removes it, Ctrl+K/J changes its slot.
+Enter reviews resolved paths before saving. Recognized paste is ignored.
+
+Other agents may also load skills from these folders. sei shows configured folde
+r contents, not everything an agent discovers or has loaded.
+
+
+
+
+
+
+Rows 1–13 / 13
+↑↓ scroll  F1 back  Esc cancel setup
+
