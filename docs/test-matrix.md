@@ -4,7 +4,9 @@
 blocker wording below. Task 28 external floors, Task 29 extra Mac/trust gates and
 outstanding human/performance acceptance are **WAIVED, not passed**. Existing
 automated native/fuzz/race/PTY/installer safety checks remain required; historical
-results and skips retain their original scope. Public URLs are still pending.
+results and skips retain their original scope. [v0.1.0 public verification](release-v0.1.0.md)
+now records passing anonymous downloads, installer checks and exact installed
+fresh-user PTY execution, including offline execution, on Debian Linux amd64.
 
 ## Actual Mac Source Suite
 

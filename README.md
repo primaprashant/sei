@@ -5,35 +5,33 @@ configured agent destinations and removing installed copies. Not a skill
 marketplace, agent launcher, or agent skill. See [the PRD](prd.md) for the product
 contract and [the implementation plan](implementation-plan.md) for progress.
 
-**Development status:** setup, browsing, copying/replacement, removal, and the
-receipt-owned installer are implemented. **No public release or installer asset
-exists yet. All sei download URLs below are pending examples, not working install
-claims.** For use now, [build from source](#development) and try disposable data.
-The owner has authorized `v0.1.0` as a normal release, to become stable/latest
-after publication. Only tags with a SemVer prerelease suffix such as `-rc.1`
-are GitHub prereleases; there is no mandatory `v1.0.0` release gate.
+**Released:** [v0.1.0](https://github.com/primaprashant/sei/releases/tag/v0.1.0)
+is public and stable/latest. Setup, browsing, copying/replacement, removal, and
+the receipt-owned installer are available. Public downloads and disposable Debian
+installation were [verified on 2026-09-06](docs/release-v0.1.0.md).
+Try disposable data first: removal and replacement have no undo.
 
 ## Install
 
-The future released binary needs no Go, agent tooling, or language runtime.
+The released binary needs no Go, agent tooling, or language runtime.
 The installer needs POSIX shell/core utilities, curl, GNU/BSD tar, gzip, mktemp,
 and either `sha256sum` or `shasum -a 256` (available on macOS). It detects the
 host, verifies the selected archive, and defaults to `$HOME/.local/bin`. It never
 uses sudo, edits shell profiles, or disables macOS security checks.
 
-### One Command (Pending Publication)
+### One Command
 
-This explicit-version example downloads the **complete** script before executing
+This latest-release command downloads the **complete** script before executing
 it, and cleans its private temporary directory on exit. Do not use `curl | sh`:
 a failed/truncated transfer can otherwise execute a dangerous partial script.
 
 ```sh
-sh -c 'set -eu; d=$(mktemp -d); trap '\''rm -rf "$d"'\'' 0; trap '\''exit 1'\'' HUP INT TERM; curl -q --fail --silent --show-error --location --proto "=https" --proto-redir "=https" --tlsv1.2 --output "$d/install.sh" "https://github.com/primaprashant/sei/releases/download/v0.1.0/install.sh"; sh "$d/install.sh" --version v0.1.0'
+sh -c 'set -eu; d=$(mktemp -d); trap '\''rm -rf "$d"'\'' 0; trap '\''exit 1'\'' HUP INT TERM; curl -q --fail --silent --show-error --location --proto "=https" --proto-redir "=https" --tlsv1.2 --output "$d/install.sh" "https://github.com/primaprashant/sei/releases/latest/download/install.sh"; sh "$d/install.sh"'
 ```
 
 This still trusts downloaded shell code. Prefer reviewing it first:
 
-### Inspect Then Run (Pending Publication)
+### Inspect Then Run
 
 ```sh
 installer_dir=$(mktemp -d)
@@ -61,15 +59,14 @@ invocation instead. Quote custom directories, including spaces or apostrophes.
 
 `--version latest` (the default) resolves GitHub's latest **stable** release once,
 then pins both downloads to that tag. It does not select GitHub prereleases.
-The future stable script URL is
+The stable script URL is
 `https://github.com/primaprashant/sei/releases/latest/download/install.sh`;
-it is intended to serve `v0.1.0` after normal publication and latest promotion.
-Publication and live URL verification remain pending. For any
+it served `v0.1.0` during live verification on 2026-09-06. For any
 explicit target, use the script asset and `--version` from the **same tag**.
 
-### Manual Archive (Pending Publication)
+### Manual Archive
 
-Choose your native platform; these are the four planned `v0.1.0` artifacts:
+Choose your native platform; these are the four released `v0.1.0` artifacts:
 
 | OS / CPU | Archive |
 | --- | --- |
@@ -311,7 +308,7 @@ The [owner-reported Mac source suite](docs/mac-verification.md) passed on macOS
 run. Go requires macOS 13+, but that minimum and Mac download trust are not tested
 claims. Extra floor hosts, personal Mac artifact/trust checks and human acceptance
 are [waived, not passed](prd.md#owner-scope-override). Windows, Homebrew and
-self-update are not provided. Public installation remains pending publication.
+self-update are not provided. See [public release verification](docs/release-v0.1.0.md).
 
 The approved minimum is 80x24; 143x35 and 148x39 are the owner-selected larger
 geometries. Recorded **Linux amd64 warm-data local PTY** measurements used 25

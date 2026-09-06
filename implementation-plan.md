@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase K native CI, Debian artifact verification and owner-reported Mac source suite pass at their recorded scopes. Task 34 is implemented locally; hosted tagged-release/draft execution remains untested. No tag, push or publication is authorized this turn.
+**Status:** Complete at the owner-approved personal-tool scope. [v0.1.0](https://github.com/primaprashant/sei/releases/tag/v0.1.0) is published as normal/latest; tagged native CI and public Debian installation/workflow verification pass. Waived checks remain distinct from passes.
 
 **Debian follow-up (2026-09-06):** [Exact CI artifact](docs/linux-verification.md) at `11aa829` passes full/race/offline and native workflow/installer checks on Debian 13.6 amd64, sufficient owner-approved Linux acceptance without an all-distro promise.
 
@@ -31,7 +31,7 @@ Build and publish the `sei` terminal application described in [product-vision.md
 - Publish `v0.1.0` as a normal release and promote it to stable/latest under the current owner authorization. Only SemVer prerelease suffixes mark prereleases; subsequent releases use semantic versioning, without a mandatory `v1.0.0` gate.
 - Use versioned assets under `https://github.com/primaprashant/sei/releases/download/<tag>/`.
 - Publish `scripts/install.sh` as a release asset named `install.sh`. The planned stable entry point is `https://github.com/primaprashant/sei/releases/latest/download/install.sh`; reproducible instructions use `/releases/download/<tag>/install.sh` and an explicit version.
-- These are intended URLs, not claims that the repository or assets already exist. Record the approved version policy in Task 1; individual tag/push/publication actions still require explicit authorization. Verify actual URLs before advertising installation in Task 36.
+- The repository and `v0.1.0` versioned/latest assets are public and [verified](docs/release-v0.1.0.md). Individual future tag/push/publication actions still require explicit authorization.
 
 ### Architecture
 
@@ -906,25 +906,25 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 **Acceptance criteria:**
 - [x] Implement a full-history tag path with full tag validation and existing action/build/lint pins. Reuse standard/native, fuzz, Linux race, PTY and installer checks; no extra hosts/human gates. Final uploader uses runner-provided `gh`, logging its version rather than adding a new tool pin.
-- [x] Implement build-once, same-artifact-ID native verification and draft transfer of four archives, manifest, installer and separate installer checksum; retain notices. No upload rebuild. Hosted execution remains untested.
+- [x] Implement build-once, same-artifact-ID native verification and draft transfer of four archives, manifest, installer and separate installer checksum; retain notices. No upload rebuild; hosted execution passed for `v0.1.0`.
 - [x] Only the final draft-upload job has `contents: write`, using the existing GitHub token. Other jobs stay read-only; no new credentials, signing, attestations, Apple account or protected environment. Only SemVer prerelease suffixes mark prereleases; every automated upload remains draft/not-latest until authorized publication.
 
-**Verification:** Validate workflow/config syntax and contracts locally, including permissions, tag/version policy and same-byte transfer. The parent release task has owner authorization for `v0.1.0` execution; inspect required job results and uploaded digests there. This local policy update performs no remote actions.
+**Verification:** Local contracts and the authorized tagged workflow pass, including permissions, tag/version policy and same-byte transfer.
 
 **Dependencies:** Existing Tasks 26, 28 and 32 automated checks; Task 29 extra trust gates WAIVED. Workflow implementation and final-job permission scope are owner-authorized.
 
-**Evidence (2026-09-06):** Reused CI and draft-only upload implemented; standard/race/fuzz, ShellCheck, mock contracts and Linux snapshot checks pass. Review pinned the triggering tag for same-commit RC/stable builds. [Runbook](docs/release.md#task-34-draft-runbook). Hosted tag/draft execution remains untested and separately authorized.
+**Evidence (2026-09-06):** All eight jobs in [34029551890](https://github.com/primaprashant/sei/actions/runs/34029551890) pass at tagged `d8c5ca5`; exact uploaded assets verified before authorized publication.
 
 ### Task 35: Publish v0.1.0 Normally
 
 **Description:** Publish the owner-authorized `v0.1.0` as a normal release and promote it to stable/latest, superseding the earlier prerelease / first-usable `v1.0.0` plan.
 
 **Acceptance criteria:**
-- [ ] Under the explicit owner authorization, tag/push `v0.1.0`, inspect all Task 34 required results and exact draft assets/digests, then publish with prerelease false and latest true. Do not rebuild or replace tested assets during publication.
-- [ ] Use the Task 34 automated results and accepted Debian workflow/installer evidence; no additional personal Mac, floor-host, human or benchmark gate. After authorized publication, verify the public installer and primary workflow on the available Debian host with disposable data.
-- [ ] Record candidate checks and limitations. Fix defects with regressions and a new version rather than silently replacing published bytes.
+- [x] Under the explicit owner authorization, tag/push `v0.1.0`, inspect all Task 34 required results and exact draft assets/digests, then publish with prerelease false and latest true. Do not rebuild or replace tested assets during publication.
+- [x] Use the Task 34 automated results and accepted Debian workflow/installer evidence; no additional personal Mac, floor-host, human or benchmark gate. After authorized publication, verify the public installer and primary workflow on the available Debian host with disposable data.
+- [x] Record candidate checks and limitations. Fix defects with regressions and a new version rather than silently replacing published bytes.
 
-**Verification:** Task 34 checks, artifact checksums, future unauthenticated versioned downloads and Debian installer smoke; record logs and publication authorization. No mandatory Task 23 measurements.
+**Verification:** Task 34 checks, asset checksums, unauthenticated versioned/latest downloads and Debian installer smoke pass. No mandatory Task 23 measurements.
 
 **Dependencies:** Tasks 33 and 34; `v0.1.0` tag/push/normal publication and latest promotion are explicitly owner-authorized.
 
@@ -937,9 +937,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Verify the published `v0.1.0` stable/latest installation experience. No mandatory `v1.0.0` promotion or separate release ceremony.
 
 **Acceptance criteria:**
-- [ ] Confirm `v0.1.0` is public, not a prerelease, and selected by `/releases/latest`; verify the stable installer asset URL and tag-specific assets match the tested release bytes.
-- [ ] After authorized publication, test stable and tag-specific public URLs, version/custom directory, checksums, README links and Debian fresh-user/upgrade smoke. Retain four-target native CI; no extra external-host acceptance. Verify the installed version.
-- [ ] Record tag, commit, artifact digests, URLs, required checks, limitations and approval. If publication/install fails, stop advertising it and publish a corrected version through the same checks; do not disable checks, rewrite published tags, or promise automatic rollback.
+- [x] Confirm `v0.1.0` is public, not a prerelease, and selected by `/releases/latest`; verify the stable installer asset URL and tag-specific assets match the tested release bytes.
+- [x] After authorized publication, test stable and tag-specific public URLs, version/custom directory, checksums, README links and Debian fresh-user/upgrade smoke. Retain four-target native CI; no extra external-host acceptance. Verify the installed version.
+- [x] Record tag, commit, artifact digests, URLs, required checks, limitations and approval. If publication/install fails, stop advertising it and publish a corrected version through the same checks; do not disable checks, rewrite published tags, or promise automatic rollback.
+
+Evidence for Tasks 35-36: [v0.1.0 public verification](docs/release-v0.1.0.md).
 
 **Verification:** Use `gh` to inspect release assets/workflow results and verify unauthenticated public download URLs; repeat final artifact smoke/installer checks and a fresh first-run workflow. Close the release checklist only after post-publication verification passes.
 
@@ -951,9 +953,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 ### Checkpoint L: Tasks 34-36
 
-- [ ] Public release contains the tested final artifacts and the one-command installer actually works.
-- [ ] Current PRD success criteria and required automated checks are met, with waived gates distinguished from actual passes.
-- [ ] Return the release URL, installation entry point, supported systems, and any explicitly documented limitations to users.
+- [x] Public release contains the tested final artifacts and the one-command installer actually works.
+- [x] Current PRD success criteria and required automated checks are met, with waived gates distinguished from actual passes.
+- [x] Release URL, installation entry point, supported systems and limitations are recorded in README and release evidence.
+
+**Verified (2026-09-06):** Normal/latest `v0.1.0`; seven assets match tested bytes through both public URL routes. Debian fresh install, custom paths, reinstall/failure preservation and installed-binary PTY workflow pass. [Evidence](docs/release-v0.1.0.md).
 
 ## Requirement Traceability
 
@@ -1003,7 +1007,7 @@ Repository identity, MIT licensing, and the release-version policy are confirmed
 | Quantitative budgets | [Scoped Linux protocol/limits](docs/performance.md) approved and passing; owner shell comparison and other environments open. | Task 23 partial; owner permits Task 24 sequencing. |
 | Native support floor access | Approve/test proposed Ubuntu 22.04/5.15 floor; arrange macOS 13 amd64/arm64 access or explicitly revise an unsupported claim. | Task 28, begin arranging during Task 4. |
 | Signing/notarization/provenance | Decide using clean-machine evidence; approve credentials/permissions and enumerate small implementation follow-ups if needed. | Task 29; blocks Task 34. |
-| Public remote actions | Owner explicitly authorized `v0.1.0` tag/push/normal publication, latest promotion and verification in the parent release task. This local policy update performs none. | Tasks 35-36 pending execution/evidence. |
+| Public remote actions | Owner explicitly authorized `v0.1.0` tag/push/normal publication, latest promotion and verification in the parent release task; publication completed. This verification update performs no remote mutations. | Tasks 35-36 verified; see [evidence](docs/release-v0.1.0.md). |
 
 ## Risks And Mitigations
 

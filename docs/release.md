@@ -2,24 +2,32 @@
 
 ## Scope
 
+**Current release:** [v0.1.0](https://github.com/primaprashant/sei/releases/tag/v0.1.0)
+was published normally and promoted to latest on 2026-09-06 at 11:22:35Z under
+owner authorization. All eight tagged workflow jobs passed. Anonymous versioned
+and latest downloads match all seven tested draft assets; disposable Debian
+installs and the exact installed binary's fresh-user PTY flow passed, also offline.
+See [publication identity, hashes, URLs and limitations](release-v0.1.0.md).
+Historical checkpoints below retain their original scope, not current blockers.
+
 **Current owner scope (2026-09-06):** The [PRD override](../prd.md#owner-scope-override)
 supersedes conflicting blockers and permission proposals in the historical records
 below. Task 28 external floors, Task 29 extra personal Mac/trust/signing/attestation
 gates and outstanding human/performance gates are **WAIVED, not passed**. Their
 runbooks are optional historical references, not work required before Task 34.
-Keep existing native/fuzz/race/PTY/installer safety checks. The authorized next
+Keep existing native/fuzz/race/PTY/installer safety checks. The release
 workflow builds once, checksums/tests the same bytes and uploads only a draft;
 only its final upload job gets `contents: write` with the existing GitHub token.
 No new credentials, signing, attestations or protected environment. Task 34 is
-implemented locally below; hosted tag execution is untested. The owner explicitly
+implemented locally below; hosted tag execution has now passed. The owner explicitly
 authorizes the parent release task to tag/push/publish `v0.1.0` as a normal release
 and promote it to stable/latest, superseding the first-usable `v1.0.0` plan.
-This local policy update performs no remote actions.
+The parent performed publication; this verification update performs no remote mutations.
 
 [Debian verification](linux-verification.md) is accepted for personal Linux use,
 without an all-distro promise. [Mac source evidence](mac-verification.md) has an
 unknown source SHA and is not personal exact-artifact or download-trust evidence.
-Public URLs remain pending until authorized publication and verification are recorded.
+Public URLs are verified in the current release evidence linked above.
 
 ## Task 34 Draft Runbook
 
