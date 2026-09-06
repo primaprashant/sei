@@ -1,0 +1,21 @@
+Production View snapshot; paths substituted before layout; not a terminal screenshot.
+
+sei | Configured folders
+> [0] Library              | [g 1] Agent1 / Global [~ [g 2] Agent2 / Global [~
+<FIXTURE>/skills             <FIXTURE>/global1        <FIXTURE>/global2
+Root relations checked       Root relations checked   Root relations checked
+> api-and-interface-design   Not created              Not created
+  browser-testing-with-de~
+  ci-cd-and-automation
+  code-review-and-quality
+  code-simplification
+  constraint-driven-devel~   [1] Agent1 / Local [add~ [2] Agent2 / Local [add~
+  context-engineering        <FIXTURE>/local1         <FIXTURE>/local2
+  debugging-and-error-rec~   Root relations checked   Root relations checked
+  deprecation-and-migrati~   Not created              Not created
+  documentation-and-adrs
+  doubt-driven-development
+Rows 1-11 / 25
+Focused: Library | Selected: api-and-interface-design
+0 library | 1-9 local | g 1-9 global | up/down | r refresh | ? full targets/help
+Add from library using header keys; X permanently removes. q / ctrl+c quit

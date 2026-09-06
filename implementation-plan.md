@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Task 20 implemented; Linux verified. Phase F native checks pass; Tasks 19-20 native execution and human acceptance remain pending. Task 21 untouched.
+**Status:** Task 21 automated Linux evidence recorded in [the prototype report](docs/prototype.md); native Phase G and owner terminal/SSH acceptance remain pending. No Phase H layout or minimum approved.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -585,11 +585,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Put the working application in front of the owner with realistic data before fixing dimensions or announcing performance targets.
 
 **Acceptance criteria:**
-- [ ] Create a reproducible disposable fixture of about 30 real-looking skills with agreed names, long/Unicode names, dotfiles, nesting, scripts, file counts, and total bytes; never commit private skill content.
+- [x] Prepare the owner-selected 25 actual upstream skills with pinned provenance/counts/bytes; keep supplemental long/Unicode/dot/nested test cases separate and commit no private skill content.
 - [ ] Capture the three-agent screen at the owner's normal dimensions and candidate smaller/larger sizes; inspect full targets, help, failures, one-agent and nine-agent reachability in light/dark/no-color terminals and SSH.
 - [ ] Measure an initial stripped CGO-disabled release-style build, not `go run`, for startup-to-populated-panels, input/render latency, and filesystem operations. Record observations and owner feedback without inventing pass/fail budgets.
 
 **Verification:** `go test -count=1 -run 'TestRepresentativeFixture' .`; `CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o ./bin/sei .`; record machine/OS/filesystem/storage/terminal/build flags and artifact bytes in the prototype report.
+
+**Evidence:** [Report, captures, measurements, and reproduction](docs/prototype.md): Linux checks and opt-in PTY matrix pass with the owner-selected source and geometries. Human/native Mac/SSH review and acceptance remain pending.
 
 **Dependencies:** Task 20.
 
