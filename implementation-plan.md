@@ -4,7 +4,7 @@
 
 Build and publish the `sei` terminal application described in [product-vision.md](product-vision.md) and [prd.md](prd.md). The deliverable is a self-contained skill-folder manager, not a new agent skill, skill marketplace, or agent launcher. This document contains implementation plan for the tasks: small vertical slices, explicit dependencies, tests inside each feature, and checkpoints every three tasks.
 
-**Status:** Phase I automated work implemented; Linux safety/fuzz/coverage/PTY checks and four snapshot archives pass. Native CI, manual SSH/owner acceptance, and release gates remain open.
+**Status:** Phase I accepted with owner-waived macOS offline execution; native CI and owner SSH/workflow/quit checks pass. Earlier Phase H acceptance and later release gates remain separate.
 
 **Starting point:** Docs-only local repository; existing `origin` and `.gitignore` preserved.
 
@@ -712,13 +712,15 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Acceptance criteria:**
 - [x] Automate first-run setup, explicit setup/cancellation, actual focus/add/remove key bytes, refresh, help, paste rejection, resize, normal quit, restart persistence, and unchanged library under a PTY.
 - [x] Include deterministic busy-success and busy-failure quit tests with repeated interrupts, persistent stderr/status, and restored terminal state; keep model-only and process-level coverage distinct.
-- [ ] Exercise with no live agent tooling and no application network access after dependencies/tools are prepared; test configuration isolation on both platforms and capture actionable CI diagnostics without sleep synchronization.
+- [x] Exercise with no live agent tooling and no application network access after dependencies/tools are prepared; test configuration isolation on both platforms and capture actionable CI diagnostics without sleep synchronization. Owner exception: offline execution verified on Linux only; macOS offline run waived, not passed.
 
 **Verification:** `go test -count=1 -run 'TestPTY' .` on the native matrix, standard checks, and manual SSH first-run/primary-flow/quit smoke tests recorded in the test matrix.
 
 **Evidence (2026-09-06):** Linux offline full PTY, standard/race, setup/busy 10x and race 5x pass; both Mac test cross-builds pass. [Process gate](docs/test-matrix.md#task-26-process-gate) covers fresh-user/restart, empty PATH and disposable native HOME. Native execution and manual SSH/owner acceptance remain open; no push.
 
 **CI follow-up (2026-09-06):** Both Macs in [34014129461](https://github.com/primaprashant/sei/actions/runs/34014129461) rejected `~/library` aliasing native `~/Library`. Fixture renamed; assertions/production unchanged. Linux focused 10x/full/race/standard and Mac cross-builds pass; native rerun pending. No push.
+
+**Accepted (2026-09-06):** [34014725152](https://github.com/primaprashant/sei/actions/runs/34014725152) at `1566603` passes all six jobs. Owner reports native Mac tests and manual SSH/primary-flow/busy-quit checks pass; expected filename-capability skips reviewed. Mac offline run waived for unavailable isolated environment, not verified.
 
 **Dependencies:** Tasks 19, 24, and 25.
 
@@ -749,9 +751,11 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 
 - [x] Standard, fuzz, race, coverage-audit, and full PTY checks pass at their documented scope.
 - [x] Four snapshot artifacts exist with verified checksums and no unexpected archive content.
-- [ ] Test matrix links every destructive/failure requirement to evidence; unresolved mandatory coverage is a blocker.
+- [x] Test matrix links every destructive/failure requirement to evidence; unresolved mandatory coverage is a blocker.
 
 **Evidence (2026-09-06):** At `049000d`, Linux standard/full PTY/race, both 30s fuzz targets, coverage (88.6%), and rebuilt four-archive checks pass. [Matrix](docs/test-matrix.md) maps requirements; current native case-volume/PTY and manual SSH acceptance remain blockers. No push/tag/publication.
+
+**Closure (2026-09-06):** Native rerun and owner manual checks above close Phase I with the explicit Mac offline exception. No release-readiness, minimum-OS, or Phase H performance/theme acceptance inferred.
 
 ### Phase J: Install A Verified Release
 

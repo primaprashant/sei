@@ -1,5 +1,26 @@
 # Destructive And Failure Test Matrix
 
+## Phase I Acceptance
+
+2026-09-06: [CI 34014725152](https://github.com/primaprashant/sei/actions/runs/34014725152)
+at `1566603` passes all four native and both fuzz jobs, including Linux race/coverage.
+Owner reports native Mac tests, manual SSH first-run/primary-flow/restart/cancel,
+and Step 4 quit checks worked as expected. Exact personal Mac/terminal versions,
+dimensions and transcripts were not supplied; this is owner-reported acceptance.
+
+Reported `TestAddSkill/raw_root1`, `raw_root2`, `raw_nested1`, `raw_nested2`
+skips probe invalid UTF-8 filenames unsupported by the Mac filesystem.
+`distinct_case_names` skips when case variants alias. These are expected
+capability differences, covered on case-sensitive Linux, not disabled safety
+assertions. Native Mac case-collision tests cover the opposite behavior.
+
+Owner waived the separate macOS offline run because no isolated Mac environment
+was available. Linux offline execution remains verified; macOS offline execution
+is **not tested**, not a pass. Phase I is accepted with this scoped exception;
+earlier historical open-gate notes below are superseded only to that extent.
+Phase H performance/theme acceptance and later release/floor/trust gates remain
+separate. No application-network or security policy was relaxed.
+
 Checkpoint I at `049000d`: Linux standard/full PTY/race, both 30s fuzz targets
 (332,274 config / 792,541 path executions), coverage (88.6%), and four rebuilt
 snapshot archive checks pass. Native/SSH gates below remain open; no push.
