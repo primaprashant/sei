@@ -149,7 +149,7 @@ A recoverable in-TUI error followed by a later ordinary quit returns `0`.
 
 This is a personal tool, not an enterprise platform. Keep changes and process small.
 
-- [Product vision](https://github.com/primaprashant/sei/blob/main/product-vision.md): original motivation and wording, preserved as written; its PRD reference is historical.
+- [Product vision](https://github.com/primaprashant/sei/blob/main/docs/product-vision.md): original motivation and wording, preserved as written; its PRD reference is historical.
 - [Development guide](https://github.com/primaprashant/sei/blob/main/docs/development.md): build/tests, source map, and UI changes.
 - [Filesystem safety](https://github.com/primaprashant/sei/blob/main/docs/filesystem-safety.md): constraints to preserve when changing destructive operations.
 - [Release guide](https://github.com/primaprashant/sei/blob/main/docs/release.md): existing automation and installer behavior.
