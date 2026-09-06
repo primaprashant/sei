@@ -27,43 +27,45 @@ or control what it has already loaded.
 
 ## Install
 
-Download from [GitHub Releases](https://github.com/primaprashant/sei/releases).
-Binaries are available for Linux and macOS, on amd64 and arm64; Go is not required.
+Available for **Linux and macOS**, on **amd64 and arm64**.
 
-### One Command
-
-This downloads the complete installer before running it. It still executes
-downloaded code; review the [installer source](https://github.com/primaprashant/sei/blob/main/scripts/install.sh)
-first if preferred.
+### Install script
 
 ```sh
-sh -c 'set -eu; d=$(mktemp -d); trap '\''rm -rf "$d"'\'' 0; trap '\''exit 1'\'' HUP INT TERM; curl -q --fail --silent --show-error --location --proto "=https" --proto-redir "=https" --tlsv1.2 --output "$d/install.sh" "https://github.com/primaprashant/sei/releases/latest/download/install.sh"; sh "$d/install.sh"'
+curl -fsSL https://github.com/primaprashant/sei/releases/latest/download/install.sh | bash
 ```
 
-The installer requires curl, tar, gzip, mktemp, and `sha256sum` or `shasum`.
-It verifies the archive and installs to `~/.local/bin`, without sudo or shell-profile
-changes. Follow its printed PATH instructions, or run `~/.local/bin/sei` directly.
-For a custom install, download the release's `install.sh`, review it, then run:
+The script verifies the archive checksum and installs to `~/.local/bin`, without
+sudo or Go. Follow its printed PATH instructions if `sei` is not found.
+
+### Go
+
+With Go **1.27.1 or later**:
 
 ```sh
-sh install.sh --version v0.1.0 --install-dir "$HOME/.local/bin"
+go install github.com/primaprashant/sei@latest
 ```
 
-Use the script and version from the same release. Checksums detect corruption,
-not a compromised publisher. Releases are not signed or notarized; do not bypass
-Gatekeeper or remove quarantine if macOS refuses to launch them.
+Make sure your Go binary directory (`GOBIN`, or `GOPATH/bin`, usually `~/go/bin`)
+is on your PATH.
 
-### Upgrade And Uninstall
+### Release archive
 
-Repeat installation into the same directory to upgrade. The installer only
-replaces a binary matching its adjacent `.sei-install-receipt`; it refuses manual,
-modified, symlinked, or mismatched installations. Do not edit receipts to force an
-upgrade. If refused, inspect and move the old binary/receipt aside before a fresh
-install, keeping the old copy until the new one works.
+Download a matching `.tar.gz` from [GitHub Releases](https://github.com/primaprashant/sei/releases),
+extract it, and put the `sei` binary in a directory on your PATH.
+Choose `darwin` for macOS or `linux` for Linux, and `arm64` for Apple Silicon/ARM64
+or `amd64` for Intel/AMD 64-bit processors. No Go installation is needed.
 
-To uninstall, quit sei, inspect your actual install directory, and remove only
-`sei` and `.sei-install-receipt`. Your config, library, and copied skills remain.
-Remove any PATH entry you added only if no longer needed.
+### Upgrade and uninstall
+
+To upgrade, repeat your installation method: rerun the script or `go install`,
+or replace the binary with one from a newer release archive.
+The script only replaces installations it recognizes; keep its adjacent
+`.sei-install-receipt` file and use the same install directory.
+
+To uninstall, quit sei and remove its binary from your install directory, along
+with `.sei-install-receipt` if you used the script. Your configuration, library,
+and copied skills remain.
 
 ## Setup
 

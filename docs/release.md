@@ -60,6 +60,21 @@ Reruns do not repair drafts. Never force tags, clobber assets or silently rebuil
 
 ## Installer And Support
 
+The installer requires curl, tar, gzip, mktemp, and `sha256sum` or `shasum`.
+For a pinned version or custom directory, download `install.sh` from that release,
+review it, then run:
+
+```sh
+sh install.sh --version v0.1.0 --install-dir "$HOME/.local/bin"
+```
+
+Use the script and version from the same release. If an upgrade is refused,
+inspect and move the old binary/receipt aside before a fresh install, keeping the
+old copy until the new one works. Do not edit receipts to force an upgrade.
+Manual and Go installations must be upgraded using their original method.
+Go-installed binaries currently report `sei dev`; release archives embed the
+release version during packaging.
+
 `scripts/install.sh` resolves latest once to a concrete tag, verifies archive SHA-256
 before inspection, accepts exactly four regular members, and checks the staged
 binary's exact version. It never runs an existing binary to establish ownership.
