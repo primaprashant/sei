@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"syscall"
 	"testing"
@@ -29,9 +30,12 @@ func TestPTYFirstRunSetup(t *testing.T) {
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build: %v\n%s", err, output)
 	}
-	for _, scenario := range []string{"cancel-edit", "cancel-preview", "complete-restart", "explicit-new", "explicit-one", "explicit-nine", "explicit-refuse"} {
+	t.Run("native-flow", func(t *testing.T) { testPTYFreshUser(t, binary) })
+	for _, scenario := range []string{"cancel-edit", "cancel-preview", "complete-restart", "explicit-new", "explicit-one", "explicit-nine", "explicit-refuse", "explicit-cancel-edit", "explicit-cancel-preview", "explicit-cancel-confirm"} {
 		t.Run(scenario, func(t *testing.T) {
 			root := t.TempDir()
+			t.Setenv("HOME", root)
+			t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, ".config"))
 			if err := os.Mkdir(filepath.Join(root, "project"), 0o700); err != nil {
 				t.Fatal(err)
 			}
@@ -52,7 +56,8 @@ func TestPTYFirstRunSetup(t *testing.T) {
 				}
 			}
 			var before []byte
-			if scenario == "explicit-refuse" {
+			preserve := scenario == "explicit-refuse" || strings.HasPrefix(scenario, "explicit-cancel-")
+			if preserve {
 				var err error
 				before, err = os.ReadFile(path)
 				if err != nil {
@@ -75,14 +80,14 @@ func TestPTYFirstRunSetup(t *testing.T) {
 					setupAbsent(t, filepath.Dir(path))
 				} else {
 					cfg, missing, err := loadConfig(path)
-					if explicit && scenario != "explicit-new" && scenario != "explicit-refuse" {
+					if explicit && scenario != "explicit-new" && !preserve {
 						want.Library += "-edited"
 					}
 					if err != nil || missing || !reflect.DeepEqual(cfg, want) {
 						t.Fatalf("persisted first-run config: %+v, %v, %v", cfg, missing, err)
 					}
 				}
-				if scenario == "explicit-refuse" {
+				if preserve {
 					after, err := os.ReadFile(path)
 					if err != nil || !bytes.Equal(before, after) {
 						t.Fatal("PTY refusal changed config")
@@ -160,18 +165,23 @@ func TestConfigSaveFailurePTY(t *testing.T) {
 	}
 }
 
-func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool) string {
+type setupPTYBrowse func(send func(string), await func(...string), resize func(uint16, uint16))
+
+func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool, browse ...setupPTYBrowse) string {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	args := []string{"--config", path}
+	if scenario == "complete-flow" {
+		args = nil // Exercise the native default, not an override.
+	}
 	explicit := strings.HasPrefix(scenario, "explicit-")
 	if explicit {
 		args = append(args, "setup")
 	}
 	cmd := exec.CommandContext(ctx, binary, args...)
 	cmd.Dir = filepath.Join(root, "project")
-	cmd.Env = []string{"HOME=" + root, "XDG_CONFIG_HOME=" + filepath.Join(root, ".config"), "TERM=xterm-256color", "NO_COLOR=1", "PATH=" + os.Getenv("PATH")}
+	cmd.Env = []string{"HOME=" + root, "XDG_CONFIG_HOME=" + filepath.Join(root, ".config"), "TERM=xterm-256color", "NO_COLOR=1", "PATH=" + t.TempDir()}
 	cmd.WaitDelay = 5 * time.Second
 	master, slave, err := pty.Open()
 	if err != nil {
@@ -222,18 +232,23 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 		}
 	}()
 	var screen strings.Builder
-	awaitFrom := 0
-	await := func(text string) {
+	terminal := newPTYScreen(t, 200, 40)
+	await := func(text ...string) {
 		t.Helper()
-		for !strings.Contains(screen.String()[awaitFrom:], text) {
+		for !performanceScreenMatches(terminal, text...) {
 			select {
 			case chunk, ok := <-chunks:
 				if !ok {
-					t.Fatalf("PTY closed waiting for %q: %s", text, screen.String())
+					t.Fatalf("PTY closed waiting for %q: reader=%v screen=%s raw=%q", text, readerErr, terminal.String(), screen.String())
 				}
 				screen.WriteString(chunk)
+				if _, err := terminal.WriteString(chunk); err != nil {
+					t.Fatal(err)
+				}
+			case <-wait:
+				t.Fatalf("exited waiting for %q: %v stderr=%q screen=%s", text, waitErr, stderr.String(), terminal.String())
 			case <-ctx.Done():
-				t.Fatalf("timeout waiting for %q: %s", text, screen.String())
+				t.Fatalf("timeout waiting for %q: screen=%s raw=%q", text, terminal.String(), screen.String())
 			}
 		}
 	}
@@ -243,9 +258,24 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 			t.Fatal(err)
 		}
 	}
-	if restart {
+	finishBrowse := func() {
 		await("Configured folders")
+		for _, flow := range browse {
+			flow(send, await, func(cols, rows uint16) {
+				t.Helper()
+				terminal.Resize(int(cols), int(rows))
+				if err := pty.Setsize(master, &pty.Winsize{Cols: cols, Rows: rows}); err != nil {
+					t.Fatal(err)
+				}
+				if err := cmd.Process.Signal(syscall.SIGWINCH); err != nil {
+					t.Fatal(err)
+				}
+			})
+		}
 		send("q")
+	}
+	if restart {
+		finishBrowse()
 	} else {
 		await("Enter preview")
 		raw, err := term.GetState(slave.Fd())
@@ -261,7 +291,7 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 			send("~/library")
 			await("~/library")
 		}
-		if scenario == "cancel-edit" {
+		if scenario == "cancel-edit" || scenario == "explicit-cancel-edit" {
 			send("\x1b")
 		} else {
 			send("\r")
@@ -274,13 +304,13 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 				slot = 9
 			}
 			await(fmt.Sprintf("focus %d / g%d", slot, slot))
-			if scenario != "save-failure" {
+			if scenario != "save-failure" && scenario != "complete-flow" {
 				setupAbsent(t, filepath.Join(root, "library"))
 			}
 			if !explicit || scenario == "explicit-new" {
 				setupAbsent(t, filepath.Dir(path))
 			}
-			if scenario == "cancel-preview" {
+			if scenario == "cancel-preview" || scenario == "explicit-cancel-preview" {
 				send("\x1b")
 			} else {
 				if scenario == "save-failure" {
@@ -296,19 +326,19 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 				if explicit {
 					if scenario != "explicit-new" {
 						await("Replace existing configuration?")
-						if scenario == "explicit-refuse" {
-							awaitFrom = screen.Len()
+						switch scenario {
+						case "explicit-cancel-confirm":
+							send("\x03")
+						case "explicit-refuse":
 							send("n")
 							await("Enter save")
-							awaitFrom = 0
 							send("\x1b")
-						} else {
+						default:
 							send("y")
 						}
 					}
 				} else if scenario != "save-failure" {
-					await("Configured folders")
-					send("q")
+					finishBrowse()
 				}
 			}
 		}
@@ -363,8 +393,122 @@ waiting:
 			t.Errorf("missing terminal restoration %q", pair)
 		}
 	}
-	if scenario != "complete-restart" && strings.Contains(screen.String(), "Configured folders") {
+	if scenario != "complete-restart" && scenario != "complete-flow" && strings.Contains(screen.String(), "Configured folders") {
 		t.Fatal("cancel entered browse")
 	}
 	return screen.String()
+}
+
+func testPTYFreshUser(t *testing.T, binary string) {
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	project := filepath.Join(root, "project")
+	browseMkdir(t, project)
+	library := filepath.Join(root, "library")
+	source := filepath.Join(library, "sample")
+	browseMkdir(t, filepath.Join(source, "nested", "empty"))
+	writeTestFile(t, filepath.Join(source, "nested", "SKILL.md"), "original\n\x00\xff")
+	writeTestFile(t, filepath.Join(source, ".hidden"), "hidden")
+	before := removeSnapshot(t, library)
+	native := ".config"
+	if runtime.GOOS == "darwin" {
+		native = "Library/Application Support"
+	}
+	path := filepath.Join(root, native, "sei", "config.json")
+	setupAbsent(t, path)
+	var persisted map[string]removeSnapshotEntry
+	for _, restart := range []bool{false, true} {
+		runSetupPTY(t, binary, root, path, "complete-flow", restart, func(send func(string), await func(...string), resize func(uint16, uint16)) {
+			closeHelp := func() { send("?"); await("Configured folders") }
+			help := func(focus, selected, listing string) {
+				send("?")
+				await("sei | Help", "Focused: "+focus, "Selected name: "+selected, "Listing: "+listing, "Root relations checked; every mutation revalidates.")
+			}
+			await("Ready", "> sample")
+			help("Library", "sample", "ready (1 entries)")
+			closeHelp()
+			if !restart {
+				for _, a := range setupPresets[:3] {
+					setupAbsent(t, filepath.Join(project, a.Local), filepath.Join(root, strings.TrimPrefix(a.Global, "~/")))
+				}
+				// The trailing help key acknowledges processing beyond the paste.
+				send("\x1b[200~aA1xq\x03\x1b[201~?")
+				await("sei | Help", "Focused: Library", "Selected name: sample")
+				for _, a := range setupPresets[:3] {
+					setupAbsent(t, filepath.Join(project, a.Local), filepath.Join(root, strings.TrimPrefix(a.Global, "~/")))
+				}
+				closeHelp()
+				for i, key := range "abc" {
+					send(string(key) + "?")
+					await("Result: " + displayText(fmt.Sprintf("Add %q to %s / Local (%s): complete", "sample", setupPresets[i].Name, filepath.Join(project, setupPresets[i].Local))))
+					closeHelp()
+				}
+			}
+			for i, a := range setupPresets[:3] {
+				send(fmt.Sprint(i + 1))
+				selected, listing := "sample", "ready (1 entries)"
+				if restart && i < 2 {
+					selected, listing = "(none)", "ready (0 entries)"
+					if i == 1 {
+						selected, listing = "external", "ready (1 entries)"
+					}
+				}
+				help(a.Name+" / Local", selected, listing)
+				closeHelp()
+				if !restart && i < 2 {
+					send("x?")
+					await("Result: " + displayText(fmt.Sprintf("Remove %q from %s / Local (%s): complete", "sample", a.Name, filepath.Join(project, a.Local))))
+					closeHelp()
+				}
+			}
+			if !restart {
+				// An external destination change proves r actually rescans.
+				browseMkdir(t, filepath.Join(project, ".agents/skills/external"))
+				send("2r")
+				help("Codex / Local", "external", "ready (1 entries)")
+				closeHelp()
+				send("g1")
+				help("Claude Code / Global", "(none)", "not created")
+				closeHelp()
+				resize(79, 24)
+				await("Resize to at least 80x24")
+				resize(200, 40)
+				await("Configured folders", "Focused: Claude Code / Global")
+			}
+		})
+		if !restart {
+			cfg, missing, err := loadConfig(path)
+			if err != nil || missing || cfg.Library != "~/library" || !reflect.DeepEqual(cfg.Agents, setupPresets[:3]) {
+				t.Fatalf("native saved config: %+v missing=%v err=%v", cfg, missing, err)
+			}
+			persisted = removeSnapshot(t, path)
+		}
+		assertRemoveSnapshot(t, path, persisted)
+		assertRemoveSnapshot(t, library, before)
+		for i, a := range setupPresets[:3] {
+			setupAbsent(t, filepath.Join(root, strings.TrimPrefix(a.Global, "~/")))
+			target := filepath.Join(project, a.Local, "sample")
+			if i < 2 {
+				setupAbsent(t, target)
+				continue
+			}
+			got := removeSnapshot(t, target)
+			want := removeSnapshot(t, source)
+			if len(got) != len(want) {
+				t.Fatalf("copy entry count: got=%d want=%d", len(got), len(want))
+			}
+			for path, entry := range want {
+				rel, err := filepath.Rel(source, path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				copy, ok := got[filepath.Join(target, rel)]
+				if !ok || copy.data != entry.data || copy.info.Mode().Type() != entry.info.Mode().Type() || os.SameFile(copy.info, entry.info) {
+					t.Fatalf("missing, corrupt or shared copy: %s", rel)
+				}
+			}
+		}
+	}
 }

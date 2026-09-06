@@ -710,11 +710,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Extend the early PTY tests into a fresh-user end-to-end release gate against a built executable.
 
 **Acceptance criteria:**
-- [ ] Automate first-run setup, explicit setup/cancellation, actual focus/add/remove key bytes, refresh, help, paste rejection, resize, normal quit, restart persistence, and unchanged library under a PTY.
-- [ ] Include deterministic busy-success and busy-failure quit tests with repeated interrupts, persistent stderr/status, and restored terminal state; keep model-only and process-level coverage distinct.
+- [x] Automate first-run setup, explicit setup/cancellation, actual focus/add/remove key bytes, refresh, help, paste rejection, resize, normal quit, restart persistence, and unchanged library under a PTY.
+- [x] Include deterministic busy-success and busy-failure quit tests with repeated interrupts, persistent stderr/status, and restored terminal state; keep model-only and process-level coverage distinct.
 - [ ] Exercise with no live agent tooling and no application network access after dependencies/tools are prepared; test configuration isolation on both platforms and capture actionable CI diagnostics without sleep synchronization.
 
 **Verification:** `go test -count=1 -run 'TestPTY' .` on the native matrix, standard checks, and manual SSH first-run/primary-flow/quit smoke tests recorded in the test matrix.
+
+**Evidence (2026-09-06):** Linux offline full PTY, standard/race, setup/busy 10x and race 5x pass; both Mac test cross-builds pass. [Process gate](docs/test-matrix.md#task-26-process-gate) covers fresh-user/restart, empty PATH and disposable native HOME. Native execution and manual SSH/owner acceptance remain open; no push.
 
 **Dependencies:** Tasks 19, 24, and 25.
 

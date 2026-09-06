@@ -246,7 +246,7 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 				}
 				cmd := exec.CommandContext(ctx, self, "-test.run=^TestPTYQuitDuringMutationProcess$", "--", mode, path)
 				cmd.Dir = root
-				cmd.Env = []string{"HOME=" + root, "XDG_CONFIG_HOME=" + filepath.Join(root, ".config"), "TERM=xterm-256color", "NO_COLOR=1", "PATH=" + os.Getenv("PATH")}
+				cmd.Env = []string{"HOME=" + root, "XDG_CONFIG_HOME=" + filepath.Join(root, ".config"), "TERM=xterm-256color", "NO_COLOR=1", "PATH=" + t.TempDir()}
 				// Self-exec coverage output is disposable, never application stderr.
 				cmd.Env = append(cmd.Env, "GOCOVERDIR="+t.TempDir())
 				cmd.WaitDelay = 5 * time.Second

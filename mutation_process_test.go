@@ -72,7 +72,7 @@ func runMutationPTY(t *testing.T, binary, root, path, scope string, restart bool
 	defer cancel()
 	cmd := exec.CommandContext(ctx, binary, "--config", path)
 	cmd.Dir = root
-	cmd.Env = []string{"HOME=" + root, "XDG_CONFIG_HOME=" + filepath.Join(root, ".config"), "TERM=xterm-256color", "NO_COLOR=1", "PATH=" + os.Getenv("PATH")}
+	cmd.Env = []string{"HOME=" + root, "XDG_CONFIG_HOME=" + filepath.Join(root, ".config"), "TERM=xterm-256color", "NO_COLOR=1", "PATH=" + t.TempDir()}
 	cmd.WaitDelay = 5 * time.Second
 	master, slave, err := pty.Open()
 	if err != nil {
