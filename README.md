@@ -9,8 +9,9 @@ contract and [the implementation plan](implementation-plan.md) for progress.
 receipt-owned installer are implemented. **No public release or installer asset
 exists yet. All sei download URLs below are pending examples, not working install
 claims.** For use now, [build from source](#development) and try disposable data.
-Planned `v0.1.0` and subsequent `v0.x` releases are GitHub **prereleases**, even
-when the tag has no `-rc` suffix; `v1.0.0` is reserved for the first usable release.
+The owner has authorized `v0.1.0` as a normal release, to become stable/latest
+after publication. Only tags with a SemVer prerelease suffix such as `-rc.1`
+are GitHub prereleases; there is no mandatory `v1.0.0` release gate.
 
 ## Install
 
@@ -62,8 +63,8 @@ invocation instead. Quote custom directories, including spaces or apostrophes.
 then pins both downloads to that tag. It does not select GitHub prereleases.
 The future stable script URL is
 `https://github.com/primaprashant/sei/releases/latest/download/install.sh`;
-it will not serve the planned `v0.1.0` prerelease. Until a stable release exists,
-use an explicit published prerelease tag and its versioned script URL. For any
+it is intended to serve `v0.1.0` after normal publication and latest promotion.
+Publication and live URL verification remain pending. For any
 explicit target, use the script asset and `--version` from the **same tag**.
 
 ### Manual Archive (Pending Publication)

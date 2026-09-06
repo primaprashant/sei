@@ -11,13 +11,15 @@ Keep existing native/fuzz/race/PTY/installer safety checks. The authorized next
 workflow builds once, checksums/tests the same bytes and uploads only a draft;
 only its final upload job gets `contents: write` with the existing GitHub token.
 No new credentials, signing, attestations or protected environment. Task 34 is
-implemented locally below; hosted tag execution is untested. No tag, push or
-publication this turn.
+implemented locally below; hosted tag execution is untested. The owner explicitly
+authorizes the parent release task to tag/push/publish `v0.1.0` as a normal release
+and promote it to stable/latest, superseding the first-usable `v1.0.0` plan.
+This local policy update performs no remote actions.
 
 [Debian verification](linux-verification.md) is accepted for personal Linux use,
 without an all-distro promise. [Mac source evidence](mac-verification.md) has an
 unknown source SHA and is not personal exact-artifact or download-trust evidence.
-Public URLs remain pending until separately authorized publication and verification.
+Public URLs remain pending until authorized publication and verification are recorded.
 
 ## Task 34 Draft Runbook
 
@@ -26,9 +28,9 @@ existing read-only CI with `release: true`. The producer rejects anything except
 `vMAJOR.MINOR.PATCH` with optional SemVer prerelease identifiers (no leading
 numeric zeros, build metadata, whitespace or extra suffixes). This matches the
 installer's supported version syntax, not every possible SemVer spelling.
-`v0.x` always becomes a GitHub prerelease, even without a SemVer prerelease
-suffix; any `-rc.1`-style tag does too. Stable `v1.x` and later tags have no
-GitHub prerelease flag, but still remain drafts and never become latest automatically.
+Only tags containing a `-rc.1`-style SemVer prerelease suffix become GitHub
+prereleases. Unsuffixed tags, including `v0.1.0`, have prerelease false, but
+still remain drafts and never become latest automatically.
 
 Only release producers fetch full history; ordinary push/PR CI remains shallow
 snapshot CI. The final upload checkout also fetches history to validate the tag.
@@ -65,21 +67,22 @@ download/dependency. This is a scoped exception to the historical exact-tool-pin
 proposal, not an immutable runner or independent publisher-authentication claim.
 Notes describe unsigned, unnotarized personal-tool scope and waived gates honestly.
 
-Future execution, **only after separate owner authorization**:
+Parent execution, **explicitly owner-authorized for normal/latest `v0.1.0`**:
 
-1. Review and commit the implementation separately, choose the approved source
-   commit and next version (initial development release `v0.1.0`), then authorize
-   its tag and push explicitly. Example eventual commands: `git tag v0.1.0
+1. Review and commit the implementation separately and choose the approved source
+   commit for `v0.1.0`. The owner has authorized its tag and push.
+   Example commands for the parent release task: `git tag v0.1.0
    <approved-commit>` and `git push origin refs/tags/v0.1.0`. Do not run these as
    part of local verification. Use immutable tags, not force updates.
 2. Inspect the release workflow's producer, four native and both fuzz results,
    source SHA, version, artifact ID and draft assets/digests. A successful ordinary
    snapshot CI run is not tagged-release evidence. The draft is not public and
    does not make unauthenticated installer/download URLs work.
-3. Obtain separate publication authorization for Tasks 35/36. Inspect the draft
-   and notes before manual publication; keep every `v0.x`/SemVer prerelease out
-   of stable latest. Promote the approved `v1.0.0` only with that authorization,
-   then verify public URLs and installation. Nothing here claims those steps ran.
+3. Inspect the draft and notes, then publish `v0.1.0` with prerelease false and
+   latest true under the existing authorization, preserving the tested bytes.
+   Verify unauthenticated stable/latest and tag-specific URLs and Debian
+   installation; update current README status only after verification. No
+   `v1.0.0` gate applies. Nothing here claims publication or URL checks ran.
 
 Local validation uses credential-free Go mocks for tag/ref/commit/version policy,
 manifest/installer corruption, API failure, existing-release refusal and exact

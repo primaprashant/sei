@@ -21,7 +21,7 @@ func TestReleaseDraft(t *testing.T) {
 		valid      bool
 	}{
 		{"v0.1.0", "", true}, {"v1.0.0", "", true}, {"v12.34.56", "", true},
-		{"v1.2.3-rc.1", "", true}, {"v1.2.3-0.a-b", "", true},
+		{"v0.1.0-rc.1", "", true}, {"v1.2.3-rc.1", "", true}, {"v1.2.3-0.a-b", "", true},
 		{"v01.2.3", "", false}, {"v1.2", "", false}, {"v1.2.3+build", "", false},
 		{"v1.2.3-01", "", false}, {"v1.2.3-rc..1", "", false}, {"v1.2.3\n", "", false},
 		{"v1.2.3;touch bad", "", false}, {"1.2.3", "", false},
@@ -112,7 +112,7 @@ esac
 				}
 				return
 			}
-			pre := strings.HasPrefix(tc.tag, "v0.") || strings.Contains(tc.tag, "-")
+			pre := strings.Contains(tc.tag, "-")
 			want := []string{"release", "create", tc.tag}
 			for _, target := range []string{"linux_amd64", "linux_arm64", "darwin_amd64", "darwin_arm64"} {
 				want = append(want, "sei_"+v+"_"+target+".tar.gz")

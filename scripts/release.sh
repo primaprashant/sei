@@ -47,7 +47,7 @@ while IFS= read -r released; do
     [[ $released != "$tag" ]] || fail 'release already exists; refusing overwrite'
 done <<< "$existing"
 prerelease=false
-if [[ $tag == v0.* || $tag == *-* ]]; then prerelease=true; fi
+if [[ $tag == *-* ]]; then prerelease=true; fi
 gh release create "$tag" "${assets[@]}" --repo "$repo" --draft --verify-tag \
     "--prerelease=$prerelease" --latest=false --title "sei $tag" \
     --notes "Personal-tool draft from $commit. Four native CI archive checks, source/installer tests, fuzz and Linux race checks passed before upload. Assets are the tested producer bytes; install.sh matches the tested source. Unsigned and not notarized; no attestations or macOS download-trust/minimum-OS claims. Same-release SHA-256 checksums detect corruption, not a compromised publisher. External floor and additional human/performance/trust gates were waived, not passed. Draft is not public; publication and public URL verification require separate owner authorization."

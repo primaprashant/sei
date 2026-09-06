@@ -23,12 +23,12 @@ Build and publish the `sei` terminal application described in [product-vision.md
 | Public repository | `https://github.com/primaprashant/sei` |
 | Go module | `github.com/primaprashant/sei` |
 | License | MIT; confirm the copyright attribution when creating `LICENSE`. |
-| Release versions | Initial published release `v0.1.0`, followed by `v0.x` development releases; first usable release `v1.0.0`. |
+| Release versions | Owner-authorized `v0.1.0` normal release, promoted to stable/latest; no mandatory `v1.0.0` gate. |
 | Product and engineering contracts | The PRD remains authoritative; this plan sequences its implementation. |
 
 ### Publication Identity
 
-- Start published versions at `v0.1.0`, continuing with `v0.x` development releases as needed. Reserve `v1.0.0` for the first usable release meeting the PRD and release-readiness gates; subsequent releases continue from `v1.0.0` using semantic versioning.
+- Publish `v0.1.0` as a normal release and promote it to stable/latest under the current owner authorization. Only SemVer prerelease suffixes mark prereleases; subsequent releases use semantic versioning, without a mandatory `v1.0.0` gate.
 - Use versioned assets under `https://github.com/primaprashant/sei/releases/download/<tag>/`.
 - Publish `scripts/install.sh` as a release asset named `install.sh`. The planned stable entry point is `https://github.com/primaprashant/sei/releases/latest/download/install.sh`; reproducible instructions use `/releases/download/<tag>/install.sh` and an explicit version.
 - These are intended URLs, not claims that the repository or assets already exist. Record the approved version policy in Task 1; individual tag/push/publication actions still require explicit authorization. Verify actual URLs before advertising installation in Task 36.
@@ -134,7 +134,7 @@ GitHub's [runner reference](https://docs.github.com/en/actions/reference/runners
                              27 + 29 -> 30 -> 31 -> 32    Installer slices
                          23 + 24 + 28 + 29 + 32 -> 33    User documentation
                          26 + 28 + 29 + 32 -> 34         Draft-release pipeline
-                         23 + 33 + 34 -> 35 -> 36        RC rehearsal, publication
+                         23 + 33 + 34 -> 35 -> 36        Publication, URL verification
 ```
 
 Task numbers below are the default execution order; Tasks 27-32 can move earlier along their dependency branch. Checkpoints still occur after each two or three completed tasks in a parallel branch. Do not interpret the diagram as permission to edit shared files concurrently without coordination.
@@ -907,43 +907,43 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Acceptance criteria:**
 - [x] Implement a full-history tag path with full tag validation and existing action/build/lint pins. Reuse standard/native, fuzz, Linux race, PTY and installer checks; no extra hosts/human gates. Final uploader uses runner-provided `gh`, logging its version rather than adding a new tool pin.
 - [x] Implement build-once, same-artifact-ID native verification and draft transfer of four archives, manifest, installer and separate installer checksum; retain notices. No upload rebuild. Hosted execution remains untested.
-- [x] Only the final draft-upload job has `contents: write`, using the existing GitHub token. Other jobs stay read-only; no new credentials, signing, attestations, Apple account or protected environment. `v0.x` and SemVer prerelease tags remain prereleases; every release is draft/not-latest.
+- [x] Only the final draft-upload job has `contents: write`, using the existing GitHub token. Other jobs stay read-only; no new credentials, signing, attestations, Apple account or protected environment. Only SemVer prerelease suffixes mark prereleases; every automated upload remains draft/not-latest until authorized publication.
 
-**Verification:** Validate workflow/config syntax and contracts locally, including permissions, tag/version policy and same-byte transfer. A live tag/draft rehearsal requires separate execution authorization; inspect required job results and uploaded digests then. No tag, push, upload or public URL test this turn.
+**Verification:** Validate workflow/config syntax and contracts locally, including permissions, tag/version policy and same-byte transfer. The parent release task has owner authorization for `v0.1.0` execution; inspect required job results and uploaded digests there. This local policy update performs no remote actions.
 
 **Dependencies:** Existing Tasks 26, 28 and 32 automated checks; Task 29 extra trust gates WAIVED. Workflow implementation and final-job permission scope are owner-authorized.
 
 **Evidence (2026-09-06):** Reused CI and draft-only upload implemented; standard/race/fuzz, ShellCheck, mock contracts and Linux snapshot checks pass. Review pinned the triggering tag for same-commit RC/stable builds. [Runbook](docs/release.md#task-34-draft-runbook). Hosted tag/draft execution remains untested and separately authorized.
 
-### Task 35: Publish Pre-1.0 Development Releases
+### Task 35: Publish v0.1.0 Normally
 
-**Description:** Start public development releases at `v0.1.0` and iterate through subsequent `v0.x` versions as needed, exercising the complete distribution path before declaring `v1.0.0` the first usable release.
+**Description:** Publish the owner-authorized `v0.1.0` as a normal release and promote it to stable/latest, superseding the earlier prerelease / first-usable `v1.0.0` plan.
 
 **Acceptance criteria:**
-- [ ] With explicit owner authorization, publish `v0.1.0` as the initial development release and subsequent `v0.x` versions as needed. Mark these GitHub releases as prereleases, keeping them out of stable latest; test the tag-specific public installer URL and manual download instructions without GitHub authentication.
+- [ ] Under the explicit owner authorization, tag/push `v0.1.0`, inspect all Task 34 required results and exact draft assets/digests, then publish with prerelease false and latest true. Do not rebuild or replace tested assets during publication.
 - [ ] Use the Task 34 automated results and accepted Debian workflow/installer evidence; no additional personal Mac, floor-host, human or benchmark gate. After authorized publication, verify the public installer and primary workflow on the available Debian host with disposable data.
 - [ ] Record candidate checks and limitations. Fix defects with regressions and a new version rather than silently replacing published bytes.
 
 **Verification:** Task 34 checks, artifact checksums, future unauthenticated versioned downloads and Debian installer smoke; record logs and publication authorization. No mandatory Task 23 measurements.
 
-**Dependencies:** Tasks 33 and 34; explicit prerelease tag/push/publication authorization.
+**Dependencies:** Tasks 33 and 34; `v0.1.0` tag/push/normal publication and latest promotion are explicitly owner-authorized.
 
 **Files likely touched:** `docs/release.md`, `docs/test-matrix.md`.
 
-**Estimated scope:** Small verification task, 2 evidence files; publication authorization remains separate.
+**Estimated scope:** Small release task, 2 evidence files plus authorized parent remote operations.
 
-### Task 36: Publish The First Usable Release
+### Task 36: Verify v0.1.0 Public Installation
 
-**Description:** Publish `v1.0.0` as the first usable release and verify the public installation experience, rather than ending the project at a successful upload.
+**Description:** Verify the published `v0.1.0` stable/latest installation experience. No mandatory `v1.0.0` promotion or separate release ceremony.
 
 **Acceptance criteria:**
-- [ ] Obtain explicit `v1.0.0` tag/push/publication approval. Build and verify the final-tag artifacts through the gated workflow; a final version rebuild must be retested even when its source matches the candidate. Publish all required assets and honest release notes, then promote `v1.0.0` to stable latest.
+- [ ] Confirm `v0.1.0` is public, not a prerelease, and selected by `/releases/latest`; verify the stable installer asset URL and tag-specific assets match the tested release bytes.
 - [ ] After authorized publication, test stable and tag-specific public URLs, version/custom directory, checksums, README links and Debian fresh-user/upgrade smoke. Retain four-target native CI; no extra external-host acceptance. Verify the installed version.
 - [ ] Record tag, commit, artifact digests, URLs, required checks, limitations and approval. If publication/install fails, stop advertising it and publish a corrected version through the same checks; do not disable checks, rewrite published tags, or promise automatic rollback.
 
 **Verification:** Use `gh` to inspect release assets/workflow results and verify unauthenticated public download URLs; repeat final artifact smoke/installer checks and a fresh first-run workflow. Close the release checklist only after post-publication verification passes.
 
-**Dependencies:** Task 35 and explicit final publication authorization.
+**Dependencies:** Task 35; current owner authorization covers `v0.1.0` publication and verification.
 
 **Files likely touched:** `README.md`, `docs/release.md`; GitHub release metadata/assets through the reviewed workflow.
 
@@ -994,7 +994,7 @@ Repository identity, MIT licensing, and the release-version policy are confirmed
 
 | Gate | Recommendation / Question | Resolve Before |
 | --- | --- | --- |
-| Copyright and tag execution | Confirm copyright attribution and record the approved `v0.1.0` onward / first-usable `v1.0.0` policy. | Task 1 metadata; individual tags still need explicit execution authorization. |
+| Copyright and tag execution | Confirm copyright attribution; current override authorizes `v0.1.0` normal/latest, superseding first-usable `v1.0.0`. | Task 1 metadata; `v0.1.0` execution explicitly authorized. |
 | New test tooling | PTY/terminal helper, Task 23 test-only VT emulator and integrity-verified ShellCheck v0.11.0 approved. No installed-user runtime added. | Tasks 9/23 approved; Task 29 tooling verified, trust acceptance partial. |
 | Unverifiable root safety | Keep inspection usable; allow removal with unavailable library contents if root relationships remain provable. Block only affected mutations when aliases/permissions make safety unknowable. | Task 8 safety review. |
 | Config write placement | Recommend rejecting config-file symlinks for writes and config saves inside any managed library/destination root; preserve read-only loading where safe. Config-parent creation must not create skill destinations. Clarify before implementing because PRD does not specify config symlink/placement semantics. | Task 10 saving, verified in Task 12. |
@@ -1003,7 +1003,7 @@ Repository identity, MIT licensing, and the release-version policy are confirmed
 | Quantitative budgets | [Scoped Linux protocol/limits](docs/performance.md) approved and passing; owner shell comparison and other environments open. | Task 23 partial; owner permits Task 24 sequencing. |
 | Native support floor access | Approve/test proposed Ubuntu 22.04/5.15 floor; arrange macOS 13 amd64/arm64 access or explicitly revise an unsupported claim. | Task 28, begin arranging during Task 4. |
 | Signing/notarization/provenance | Decide using clean-machine evidence; approve credentials/permissions and enumerate small implementation follow-ups if needed. | Task 29; blocks Task 34. |
-| Public remote actions | Confirm repository creation/push, candidate publication, and final publication separately. This plan itself grants none of those actions. | Tasks 1, 35, 36 as applicable. |
+| Public remote actions | Owner explicitly authorized `v0.1.0` tag/push/normal publication, latest promotion and verification in the parent release task. This local policy update performs none. | Tasks 35-36 pending execution/evidence. |
 
 ## Risks And Mitigations
 
