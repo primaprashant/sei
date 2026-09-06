@@ -131,6 +131,74 @@ jobs:
           CGO_ENABLED: '1'
         run: go test -race -count=1 ./...
 
+      - name: Linux amd64 coverage report
+        if: matrix.runner == 'ubuntu-24.04'
+        env:
+          HOME: ${{ runner.temp }}/sei-home
+          XDG_CONFIG_HOME: ${{ runner.temp }}/sei-config
+        run: |
+          go test -count=1 -coverprofile=coverage.out ./...
+          go tool cover -func=coverage.out | tee "$RUNNER_TEMP/coverage-functions.txt"
+          {
+            printf '### Go Statement Coverage\n\n```text\n'
+            cat "$RUNNER_TEMP/coverage-functions.txt"
+            printf '```\n\nNo global percentage gate; reviewed gaps: docs/test-matrix.md.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Reject tracked-file changes
+        if: always()
+        run: git diff --exit-code HEAD -- .
+
+  fuzz:
+    name: Fuzz (${{ matrix.target }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [FuzzParseConfig, FuzzPathName]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install verified Go archive
+        run: |
+          printf 'Runner OS=%s arch=%s image=%s version=%s\n' \
+            "$RUNNER_OS" "$RUNNER_ARCH" "${ImageOS:-unknown}" "${ImageVersion:-unknown}"
+          uname -a
+          test "$(uname -s)/$(uname -m)" = Linux/x86_64
+          tools=$(mktemp -d "$RUNNER_TEMP/sei-fuzz-tools.XXXXXX")
+          curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            --output "$tools/go.tar.gz" https://go.dev/dl/go1.27.1.linux-amd64.tar.gz
+          printf '%s  %s\n' 63d339f0da5ab53635a56f2490a7984dfe12dfcff22ad749f63edaf590168445 \
+            "$tools/go.tar.gz" | shasum -a 256 --check -
+          tar -xzf "$tools/go.tar.gz" -C "$tools"
+          mkdir -p "$RUNNER_TEMP/sei-home" "$RUNNER_TEMP/sei-config"
+          printf '%s\n' "$tools/go/bin" >> "$GITHUB_PATH"
+          printf 'GOROOT=%s\n' "$tools/go" >> "$GITHUB_ENV"
+
+      - name: Fuzz one target in the root package
+        env:
+          HOME: ${{ runner.temp }}/sei-home
+          XDG_CONFIG_HOME: ${{ runner.temp }}/sei-config
+          FUZZ_TARGET: ${{ matrix.target }}
+        run: |
+          go version
+          test "$(go env GOVERSION)" = go1.27.1
+          test "$(go env GOOS)/$(go env GOARCH)" = linux/amd64
+          go mod download
+          go mod verify
+          go test . -run='^$' -fuzz="^${FUZZ_TARGET}$" -fuzztime=30s -parallel=2 -timeout=2m
+
+      - name: Print regression inputs on failure
+        if: failure()
+        run: |
+          if [ -d testdata/fuzz ]; then
+            find testdata/fuzz -type f -print -exec cat {} \;
+          fi
+
       - name: Reject tracked-file changes
         if: always()
         run: git diff --exit-code HEAD -- .

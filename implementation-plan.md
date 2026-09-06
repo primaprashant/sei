@@ -691,11 +691,13 @@ Task numbers below are the default execution order; Tasks 27-32 can move earlier
 **Description:** Turn the existing feature tests into a traceable safety gate with bounded fuzzing and reviewed coverage gaps.
 
 **Acceptance criteria:**
-- [ ] Add `FuzzParseConfig` and `FuzzPathName` with non-destructive invariants, seeded duplicate/path/name edge cases, no panics, and no escape from disposable roots; preserve discovered failures as regression inputs.
-- [ ] CI runs one fuzz target/package per bounded job, existing race checks, and coverage reporting. Review mutation/validation/input-state gaps without imposing a global percentage threshold.
-- [ ] Map every specified destructive and failure scenario to a regression test, including failed preflight preservation, failed removal stopping copy, partial copy, unchanged library, permissions/umask, links/special files, aliases, and stale selections.
+- [x] Add `FuzzParseConfig` and `FuzzPathName` with non-destructive invariants, seeded duplicate/path/name edge cases, no panics, and no escape from disposable roots; preserve discovered failures as regression inputs.
+- [x] CI runs one fuzz target/package per bounded job, existing race checks, and coverage reporting. Review mutation/validation/input-state gaps without imposing a global percentage threshold.
+- [x] Map every specified destructive and failure scenario to a regression test, including failed preflight preservation, failed removal stopping copy, partial copy, unchanged library, permissions/umask, links/special files, aliases, and stale selections.
 
 **Verification:** `go test . -run='^$' -fuzz='^FuzzParseConfig$' -fuzztime=30s`; separately `go test . -run='^$' -fuzz='^FuzzPathName$' -fuzztime=30s`; `go test -coverprofile=coverage.out ./...`; `go tool cover -func=coverage.out`; full race check.
+
+**Evidence (2026-09-06):** Both 30s fuzz targets, Linux coverage (88.6%), full race and focused/standard checks pass; PTY coverage stderr isolation fixed. [Matrix/gaps](docs/test-matrix.md). New CI/native case-volume execution and manual acceptance remain open; no push.
 
 **Dependencies:** Tasks 17 and 20.
 

@@ -243,6 +243,9 @@ func testPTYLifecycle(t *testing.T, exitOnly bool) {
 			cmd.WaitDelay = 5 * time.Second
 			cmd.Dir = root
 			cmd.Env = []string{"HOME=" + root, "XDG_CONFIG_HOME=" + filepath.Join(root, ".config"), "TERM=xterm-256color", "NO_COLOR=1", "PATH=" + os.Getenv("PATH")}
+			// Instrumented self-execs call os.Exit; keep runtime coverage warnings
+			// out of stderr without relaxing the application diagnostic assertions.
+			cmd.Env = append(cmd.Env, "GOCOVERDIR="+t.TempDir())
 			master, slave, err := pty.Open()
 			if err != nil {
 				t.Fatal(err)
