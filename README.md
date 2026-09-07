@@ -52,8 +52,8 @@ The script only replaces installations it recognizes; keep its adjacent
 `.sei-install-receipt` file and use the same install directory.
 
 To uninstall, quit sei and remove its binary from your install directory, along
-with `.sei-install-receipt` if you used the script. Your configuration, library,
-and copied skills remain.
+with `.sei-install-receipt` if you used the script. Your configuration, stats history,
+library, and copied skills remain.
 
 ## Setup
 
@@ -106,6 +106,18 @@ usual meaning. Nested overlaps and overlaps between different agents remain bloc
 Configure 1–9 agents; their order determines the keyboard slots below.
 Restart sei after editing the file. Use `sei --config /path/to/config.json`
 to choose a different config, or `sei --help` for all options.
+
+## Stats
+
+```sh
+sei stats
+sei --config /path/to/config.json stats
+```
+
+See your total **skill actions**, copies, removals, active days, actions this
+calendar month, and your five most-copied skills both **all time** and over the
+**last 30 days**. The recent window includes today and the previous 29 local
+calendar dates. Use `q` or Ctrl+C to quit; reopen the screen to update it.
 
 ## Controls
 

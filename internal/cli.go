@@ -10,11 +10,12 @@ import (
 	"github.com/charmbracelet/x/term"
 )
 
-const usage = `Usage: sei [options] [setup]
+const usage = `Usage: sei [options] [setup|stats]
 
 Copy skills from a personal library into agents' project or global folders,
 and remove them when done. Run sei setup to change configuration.
-Options must precede setup.
+Run sei stats to see your local copy/removal history.
+Options must precede setup or stats.
 
 Options:
   --help       Show this help without configuration or a terminal
@@ -25,6 +26,7 @@ Options:
 Examples:
   sei --config /tmp/sei.json --project ./example
   sei --config /tmp/sei.json setup
+  sei stats
 
 Browser controls:
   Up/Down          Move selection
@@ -67,7 +69,7 @@ func Run(version string, args []string, stdin io.Reader, stdout, stderr io.Write
 		}
 		return 2
 	}
-	if flags.NArg() > 1 || (flags.NArg() == 1 && flags.Arg(0) != "setup") {
+	if flags.NArg() > 1 || (flags.NArg() == 1 && flags.Arg(0) != "setup" && flags.Arg(0) != "stats") {
 		_, _ = fmt.Fprintf(stderr, "sei: unexpected argument %q; use --help\n", flags.Arg(0))
 		return 2
 	}
@@ -101,6 +103,9 @@ func Run(version string, args []string, stdin io.Reader, stdout, stderr io.Write
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "sei: %s\n", displayText(err.Error()))
 		return 1
+	}
+	if flags.Arg(0) == "stats" {
+		return runStats(path, stdin, stdout, stderr)
 	}
 	cfg, missing, err := loadConfig(path)
 	if err != nil {

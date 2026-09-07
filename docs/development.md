@@ -12,6 +12,7 @@ See [README](../README.md) for usage/configuration. A root entry point calls pac
 | `internal/skills.go`, `internal/roots.go` | Listings and filesystem boundary validation |
 | `internal/mutation_fs.go`, `internal/mutation_copy.go` | Rooted removal, add and delete-then-copy replacement |
 | `internal/model.go`, `internal/view.go`, `internal/styles.go` | Browser state/commands, keyboard handling, layout/display |
+| `internal/stats.go`, `internal/stats_store.go`, `internal/stats_view.go` | Daily activity, local history saves, stats command UI |
 | `scripts/`, `.github/workflows/`, `.goreleaser.yaml` | Installer and release automation |
 | `internal/testdata/*.golden` | Browser and setup view snapshots |
 
@@ -60,7 +61,7 @@ Enter previews and saves; F1 opens/closes scrollable field/path/error details; `
 `y` confirms replacing config. Esc/Ctrl+C cancels.
 Recognized paste is ignored. Explicit `sei setup` edits valid config and exits
 after saving; malformed config fails rather than being replaced. Global CLI
-options must precede `setup`.
+options must precede `setup` or `stats`.
 
 Panel IDs are **library, configured globals, corresponding locals**; rendering puts library left,
 **locals above globals**, with up to three agent columns. Never reorder IDs to match rendering:
@@ -74,11 +75,13 @@ and fresh filesystem validation. Refresh recomputes this state.
 Below 80x24, new mutations are blocked; active work continues and quit stays available.
 Preserve raw names through escaping/truncation; full escaped targets remain in help.
 
-Intentional snapshot changes: `SEI_TEST_UPDATE_VIEWS=1 go test -run '^(TestViewSnapshots|TestSetupSnapshots)$' ./internal`,
+Intentional snapshot changes: `SEI_TEST_UPDATE_VIEWS=1 go test -run '^(TestViewSnapshots|TestSetupSnapshots|TestStatsViewSnapshots)$' ./internal`,
 then review `git diff -- internal/testdata`. Normal tests only compare snapshots.
 The `TestPTYThemeAndNavigation` check covers real light/dark/monochrome rendering
 and panel cycling. Set `SEI_TEST_CAPTURES` to an existing disposable directory
 to capture its styled terminal frames as `.ansi` files.
+`TestPTYStats` covers copy, replacement, removal, and reopening stats with disposable
+configuration and skill folders. It also supports `SEI_TEST_CAPTURES`.
 
 Color-profile messages choose shared light/dark styles; `NO_COLOR` retains plain
 text focus cues. Terminal background replies take precedence over `COLORFGBG`.
@@ -94,10 +97,16 @@ while idle quit need not join read-only scans. Repeated signals do not force exi
 `lifecycle.go` owns signal handling and explicitly restores termios after Tea exits,
 without repeating renderer cleanup. Errors reach escaped stderr after restoration;
 pending-quit operation failure exits 1, later idle quit after recoverable failure 0.
+Successful browser mutations attempt to record stats inside the same command before
+returning completion, so quit also waits for recording. Stats failures are separate
+warnings and do not change the operation's success or exit status. Lock acquisition
+waits at most about one second. Stats loading is read-only command work; `sei stats`
+does not load configuration or resolve project/agent paths. Both rankings and totals
+come from daily summaries, using local calendar dates and deterministic name ties.
 SIGKILL cannot clean up; disconnected terminals may reject restoration. See
 [filesystem safety](filesystem-safety.md) for mutation guarantees and limits.
 
-Setup and browsing require terminal stdin/stdout; help/version do not. Exit status
+Setup, browsing, and stats require terminal stdin/stdout; help/version do not. Exit status
 is `0` for ordinary quit/cancel, `1` for startup/save/runtime failure, and `2` for
 invalid CLI syntax. Focus and selections are not saved between runs.
 
