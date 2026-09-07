@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"image/color"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -26,17 +27,24 @@ func populatedStatsModel() statsModel {
 
 func TestStatsViewSnapshots(t *testing.T) {
 	var corpus strings.Builder
-	for _, scenario := range []string{"populated", "desktop", "empty", "loading", "undersized", "long-names"} {
+	for _, scenario := range []string{"populated", "desktop", "odd-width", "empty", "loading", "removals-only", "undersized", "long-names", "large-counts"} {
 		m := populatedStatsModel()
 		switch scenario {
 		case "desktop":
 			m.width, m.height = 110, 30
+		case "odd-width":
+			m.width = 81
 		case "empty", "loading":
 			m.since, m.summary, m.loaded = "", statsSummary{}, scenario == "empty"
+		case "removals-only":
+			m.summary = statsSummary{removals: 12, activeDays: 3, monthActions: 4}
 		case "undersized":
 			m.width, m.height = 79, 23
 		case "long-names":
 			m.summary.allTime = []skillCount{{strings.Repeat("界", 50), 1234}, {"bad\xff\x1b[2J\r\nname", 2}}
+		case "large-counts":
+			m.summary.copies, m.summary.removals, m.summary.monthActions = math.MaxInt64-1, 1, math.MaxInt64
+			m.summary.allTime = []skillCount{{"code-review", math.MaxInt64 - 1}}
 		}
 		view := m.View()
 		assertViewBounds(t, view.Content, m.width, m.height)
@@ -83,7 +91,7 @@ func TestStatsViewThemesAndKeys(t *testing.T) {
 		if strings.ContainsRune(view, '\x1b') != (profile != "no-color") {
 			t.Fatal("incorrect color profile")
 		}
-		for _, want := range []string{"1,248", "934 copies", "314 removals", "86 active days", "42 actions this month", "All time", "Last 30 days", "q / Ctrl+C quit"} {
+		for _, want := range []string{"1,248", "934 copies", "314 removals", "86", "active days", "42", "actions this month", "All time", "Last 30 days", "q / Ctrl+C quit"} {
 			if !strings.Contains(ansi.Strip(view), want) {
 				t.Fatalf("missing %q", want)
 			}
@@ -118,6 +126,51 @@ func TestStatsViewThemesAndKeys(t *testing.T) {
 	}
 	if dark == light {
 		t.Fatal("light and dark themes identical")
+	}
+}
+
+func TestStatsRankingAlignment(t *testing.T) {
+	for _, items := range [][]skillCount{
+		{{"code-review", 1234}, {strings.Repeat("界", 30), 42}, {"bad\x1b\r\nname", 1}},
+		{{"large-count", math.MaxInt64}, {"small-count", 1}},
+	} {
+		for _, width := range []int{37, 38, 49, 50} {
+			view := statsRanking("All time", "Ranked by copies", items, width, true, uiStyles{}, uiStyles{}.accent)
+			var countEdge int
+			for _, line := range strings.Split(view, "\n") {
+				if ansi.StringWidth(line) != width {
+					t.Fatalf("misaligned border at width %d: %q", width, line)
+				}
+				if strings.Contains(line, "COPIES") {
+					countEdge = ansi.StringWidth(strings.Split(line, "COPIES")[0]) + len("COPIES")
+				}
+				for i, item := range items {
+					if !strings.HasPrefix(line, fmt.Sprintf("│ %d  ", i+1)) {
+						continue
+					}
+					content := strings.TrimRight(strings.TrimSuffix(line, "│"), " ")
+					if !strings.HasSuffix(content, statsNumber(item.count)) || ansi.StringWidth(content) != countEdge {
+						t.Fatalf("count lost or misaligned: %q", line)
+					}
+				}
+			}
+		}
+	}
+}
+
+func TestStatsBarProportions(t *testing.T) {
+	for _, test := range []struct {
+		count, total int64
+		width, want  int
+	}{
+		{0, 0, 8, 0}, {0, 10, 8, 0}, {10, 10, 8, 8},
+		{5, 10, 8, 4}, {1, 1000, 8, 1}, {1, 1, 0, 0},
+		{math.MaxInt64 / 2, math.MaxInt64, 8, 4},
+		{math.MaxInt64, math.MaxInt64, 8, 8},
+	} {
+		if got := statsBarCells(test.count, test.total, test.width); got != test.want {
+			t.Errorf("bar(%d, %d, %d) = %d, want %d", test.count, test.total, test.width, got, test.want)
+		}
 	}
 }
 
