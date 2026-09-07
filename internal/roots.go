@@ -133,10 +133,18 @@ func rootWithin(parent, child resolvedRoot) bool {
 	return false
 }
 
+const duplicateProjectReason = "Same folder as global; use global panel"
+
+// Equality must be provable in both directions, including physical aliases.
+func sameRoot(a, b resolvedRoot) bool {
+	return a.err == nil && b.err == nil && rootWithin(a, b) && rootWithin(b, a)
+}
+
 type rootSafety struct {
-	roots     []resolvedRoot // Same order as browser panels.
-	blocked   []error
-	protected []resolvedRoot // Home, project, and the active config's locations.
+	duplicateProject []bool         // Only the project half of an identical same-agent pair.
+	roots            []resolvedRoot // Same order as browser panels.
+	blocked          []error
+	protected        []resolvedRoot // Home, project, and the active config's locations.
 }
 
 // Represent a protected file using its physical parent and final component;
@@ -160,10 +168,14 @@ func resolveRoots(cfg config) rootSafety {
 	for _, a := range cfg.Agents {
 		paths = append(paths, a.Local)
 	}
-	s := rootSafety{roots: make([]resolvedRoot, len(paths)), blocked: make([]error, len(paths))}
+	s := rootSafety{roots: make([]resolvedRoot, len(paths)), blocked: make([]error, len(paths)), duplicateProject: make([]bool, len(paths))}
 	for i, path := range paths {
 		s.roots[i] = resolveRoot(path)
 		s.blocked[i] = s.roots[i].err
+	}
+	for i := range cfg.Agents {
+		global, local := 1+i, 1+len(cfg.Agents)+i
+		s.duplicateProject[local] = sameRoot(s.roots[global], s.roots[local])
 	}
 	s.protected = []resolvedRoot{resolveRoot(cfg.Home), resolveRoot(cfg.Project)}
 	if cfg.ConfigPath != "" {
@@ -187,7 +199,8 @@ func resolveRoots(cfg config) rootSafety {
 			}
 		}
 		for j := 0; j < len(paths); j++ {
-			if i == j {
+			if i == j || (s.duplicateProject[i] && j == i-len(cfg.Agents)) ||
+				(s.duplicateProject[j] && i == j-len(cfg.Agents)) {
 				continue
 			}
 			a, b := s.roots[i], s.roots[j]
@@ -223,6 +236,9 @@ func revalidateSkillRoot(cfg config, destination panelID, name string) (resolved
 	s := resolveRoots(cfg)
 	if destination <= 0 || int(destination) >= len(s.roots) {
 		return resolvedRoot{}, fmt.Errorf("invalid destination")
+	}
+	if s.duplicateProject[destination] {
+		return resolvedRoot{}, fmt.Errorf("project disabled: %s", duplicateProjectReason)
 	}
 	if err := s.blocked[destination]; err != nil {
 		return resolvedRoot{}, err

@@ -67,7 +67,10 @@ Panel IDs are **library, configured globals, corresponding locals**; rendering p
 slot/key mappings depend on config order. Tab/Shift+Tab cycle library, all project
 panels, then all global panels, in configuration order. Help ignores Tab; pending
 `g` consumes it, busy work permits navigation, and pending quit ignores it.
-Focus windows retain access to all nine agents.
+Focus windows retain access to all nine agents. Project panels identical to their
+paired globals stay visible and focusable but dimmed, with a textual explanation;
+copy/remove hints are suppressed and operations are blocked in both the model
+and fresh filesystem validation. Refresh recomputes this state.
 Below 80x24, new mutations are blocked; active work continues and quit stays available.
 Preserve raw names through escaping/truncation; full escaped targets remain in help.
 

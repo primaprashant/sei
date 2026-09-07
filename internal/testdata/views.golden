@@ -38,6 +38,32 @@ Ready
 \u2191\u2193 select  Tab panel  0 library  1-9 project  g global  ? help  q quit
 Copy using panel keys \u00b7 Replaces existing folders; no undo
 
+=== duplicate-project (80x24) ===
+sei  /project                                                     Agents 1-1 / 3
+\u256d Library \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e PROJECT
+\u2502 ~/library              \u2502 \u256d * Claude Code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e
+\u2502   .dot                 \u2502 \u2502 focus 1                                           \u2502
+\u2502   e\u0301-\u754c-wide            \u2502 \u2502 Disabled \u00b7 same as global                         \u2502
+\u2502   long-name-long-name~ \u2502 \u2502 Folder not created                                \u2502
+\u2502   look-safe\\x1b[2J\\r\\~ \u2502 \u2502                                                   \u2502
+\u2502   [blocked] linked     \u2502 \u2502                                                   \u2502
+\u2502                        \u2502 \u2502                                                   \u2502
+\u2502                        \u2502 \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f
+\u2502                        \u2502 GLOBAL
+\u2502                        \u2502 \u256d Claude Code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e
+\u2502                        \u2502 \u2502 focus g 1                                         \u2502
+\u2502                        \u2502 \u2502 Folder not created                                \u2502
+\u2502                        \u2502 \u2502                                                   \u2502
+\u2502                        \u2502 \u2502                                                   \u2502
+\u2502                        \u2502 \u2502                                                   \u2502
+\u2502                        \u2502 \u2502                                                   \u2502
+\u2502                        \u2502 \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f
+\u2570 focus 0 \u00b7 5 skills \u2500\u2500\u2500\u2500\u256f
+Claude Code / Project \u00b7 /home/example/.agent1/skills
+Duplicate project panels disabled; use global panels
+\u2191\u2193 select  Tab panel  0 library  1-9 project  g global  ? help  q quit
+Same folder as global; use global panel
+
 === minimum-mixed (80x24) ===
 sei  /project                                                     Agents 1-1 / 3
 \u256d * Library \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e PROJECT

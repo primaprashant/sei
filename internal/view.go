@@ -18,6 +18,9 @@ func displayText(raw string) string {
 }
 
 func (s uiStyles) panelView(p browsePanel, library, focused bool, width, height int) string {
+	if p.safetyChecked && p.duplicateProject {
+		s.title, s.accent, s.selected = s.muted, s.muted, s.muted
+	}
 	title := p.label
 	if !library {
 		if strings.HasSuffix(title, " / Project") {
@@ -36,6 +39,9 @@ func (s uiStyles) panelView(p browsePanel, library, focused bool, width, height 
 		lines = append(lines, s.warning.Render("Checking folder safety"))
 	} else if p.safetyErr != nil {
 		lines = append(lines, s.warning.Render("Blocked folder · ? details"))
+	}
+	if p.safetyChecked && p.duplicateProject {
+		lines = append(lines, s.muted.Render("Disabled · same as global"))
 	}
 	footer := fmt.Sprintf("%d skills", len(p.entries))
 	if len(p.entries) == 1 {
@@ -59,6 +65,9 @@ func (s uiStyles) panelView(p browsePanel, library, focused bool, width, height 
 		if visible > 0 {
 			for _, entry := range p.entries[start : start+visible] {
 				marker, style := "  ", lipgloss.NewStyle()
+				if p.safetyChecked && p.duplicateProject {
+					style = s.muted
+				}
 				label := displayText(entry.name)
 				if entry.blocked {
 					label = "[blocked] " + label
@@ -151,7 +160,7 @@ func (m browseModel) View() tea.View {
 	}
 	status, style := m.browserStatus(s)
 	controls := s.shortcuts("↑↓", "select", "Tab", "panel", "0", "library", "1-9", "project", "g", "global", "?", "help", "q", "quit")
-	if m.focused > 0 {
+	if m.focused > 0 && (!p.safetyChecked || !p.duplicateProject) {
 		controls = s.shortcuts("↑↓", "select", "Tab", "panel", "0", "library") + "  " + s.danger.Render("x remove permanently") + "  " + s.shortcuts("?", "help", "q", "quit")
 	}
 	if m.active != nil {
@@ -177,6 +186,9 @@ func (m browseModel) operationHint() string {
 	}
 	if m.focused == 0 {
 		return "Copy using panel keys · Replaces existing folders; no undo"
+	}
+	if p := m.panels[m.focused]; p.safetyChecked && p.duplicateProject {
+		return duplicateProjectReason
 	}
 	return "Removal is permanent · No confirmation or undo"
 }
@@ -215,6 +227,11 @@ func (m browseModel) browserStatus(s uiStyles) (string, lipgloss.Style) {
 			return "Checking folders...", s.muted
 		}
 	}
+	for _, p := range m.panels {
+		if p.duplicateProject {
+			return "Duplicate project panels disabled; use global panels", s.muted
+		}
+	}
 	return "Ready", s.muted
 }
 
@@ -239,7 +256,7 @@ func (m browseModel) labeledPanel(id int) browsePanel {
 			add = strings.ToUpper(add)
 		}
 		p.hint = "focus " + shortcut
-		if m.focused == 0 && m.active == nil && !m.pendingQuit {
+		if m.focused == 0 && m.active == nil && !m.pendingQuit && (!p.safetyChecked || !p.duplicateProject) {
 			p.hint += " · copy " + add
 		}
 	}
@@ -314,6 +331,10 @@ func (m browseModel) helpLines() []string {
 	if p.selected >= 0 && p.selected < len(p.entries) && p.entries[p.selected].blocked {
 		text += "\nSelected folder blocked: symlink"
 	}
+	if p.safetyChecked && p.duplicateProject {
+		global := m.panels[m.focused-m.agents]
+		text += "\nProject disabled: " + duplicateProjectReason + "\nGlobal destination: " + displayText(global.label) + " (" + displayText(global.path) + ")"
+	}
 	if p.err != nil {
 		text += "\nError: " + displayText(p.err.Error())
 	}
@@ -327,7 +348,12 @@ func (m browseModel) helpLines() []string {
 	text += "\n\nNAVIGATION\n0 library · 1–9 project · g then 1–9 global · Up/Down select\nTab / Shift+Tab cycles panels forward / backward\nr refresh · ? help · Esc close/cancel · q/Ctrl+C quit\nUnconfigured slots do nothing. g has no timeout; invalid keys cancel it.\n\nCOPY AND REMOVE\nUse these keys from the library to copy a skill:"
 
 	for i := range m.agents {
-		text += fmt.Sprintf("\n%c: %s; %c: %s", addKeys[i], displayText(m.panels[1+m.agents+i].label), strings.ToUpper(string(addKeys[i]))[0], displayText(m.panels[1+i].label))
+		project := m.panels[1+m.agents+i]
+		label := displayText(project.label)
+		if project.safetyChecked && project.duplicateProject {
+			label += " (disabled; use global)"
+		}
+		text += fmt.Sprintf("\n%c: %s; %c: %s", addKeys[i], label, strings.ToUpper(string(addKeys[i]))[0], displayText(m.panels[1+i].label))
 	}
 	text += "\n\nERRORS AND BEHAVIOR\nCopy always replaces the entire destination, including local edits.\nx permanently removes a destination skill. No confirmation or undo.\nNo trash, backup, or rollback. Failures may leave missing or partial output.\nRetry copy or remove the partial skill after inspecting the destination.\nWhile working: navigation stays available; refresh and quit wait.\nAdditional copy/remove keys are ignored during work. Paste is ignored.\n" + ansi.Wrap(sharedDiscovery, max(1, m.width), "")
 

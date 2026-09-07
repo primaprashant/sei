@@ -113,7 +113,7 @@ func TestRootSafety(t *testing.T) {
 				writeTestFile(t, cfg.Agents[0].Local, "x")
 			}
 			s := resolveRoots(cfg)
-			wantGlobal := kind != "safe" && kind != "missing library" && kind != "local escape" && kind != "lexical escape"
+			wantGlobal := kind != "dest equal" && kind != "safe" && kind != "missing library" && kind != "local escape" && kind != "lexical escape"
 			if (s.blocked[1] != nil) != wantGlobal {
 				t.Fatalf("global: %v", s.blocked[1])
 			}

@@ -96,7 +96,12 @@ Setup writes the configuration for you. To edit it manually, use:
 `library` is your source collection. Each agent's `global` folder serves all
 projects; its `local` folder is relative to the current project.
 Library and global paths must be absolute or start with `~/`. Local paths must
-stay inside the project, and all library and destination roots must be separate.
+stay inside the project, and library and destination roots must be separate.
+If an agent’s project and global paths resolve to the same folder (for example,
+when launching from home with the defaults), setup still saves. The browser dims
+that project panel and disables its copy/remove operations; use the global panel.
+Launching from another project or using `--project` gives project paths their
+usual meaning. Nested overlaps and overlaps between different agents remain blocked.
 
 Configure 1–9 agents; their order determines the keyboard slots below.
 Restart sei after editing the file. Use `sei --config /path/to/config.json`

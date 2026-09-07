@@ -23,12 +23,14 @@ var setupPresets = []agentConfig{
 }
 
 type setupResult struct {
-	resolved config
-	err      error
-	saved    bool
+	duplicateProject []bool
+	resolved         config
+	err              error
+	saved            bool
 }
 
 type setupModel struct {
+	duplicateProject                  []bool
 	cfg, resolved                     config
 	project, path                     string
 	field, offset, width, height      int
@@ -76,6 +78,7 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case setupResult:
 		m.busy = false
 		m.err, m.resolved, m.saved = msg.err, msg.resolved, msg.saved
+		m.duplicateProject = msg.duplicateProject
 		if msg.saved || (msg.err != nil && m.preview) {
 			m.fatal = msg.err
 			return m, tea.Quit
@@ -205,7 +208,11 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cfg, project, path := m.cfg, m.project, m.path
 			return m, func() tea.Msg {
 				resolved, err := validateSetupConfig(cfg, project, path)
-				return setupResult{resolved: resolved, err: err}
+				result := setupResult{resolved: resolved, err: err}
+				if err == nil {
+					result.duplicateProject = resolveRoots(resolved).duplicateProject
+				}
+				return result
 			}
 		case "ctrl+u":
 			*m.value() = ""

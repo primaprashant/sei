@@ -215,6 +215,9 @@ func (m setupModel) setupBody(width int, s uiStyles) ([]string, int) {
 		for i, a := range m.resolved.Agents {
 			lines := wrap("Global: " + displayText(a.Global))
 			lines = append(lines, wrap("Project: "+displayText(a.Local))...)
+			if id := 1 + len(m.resolved.Agents) + i; id < len(m.duplicateProject) && m.duplicateProject[id] {
+				lines = append(lines, wrap("Project disabled here: "+duplicateProjectReason)...)
+			}
 			appendFrame(fmt.Sprintf("%d %s", i+1, displayText(a.Name)), fmt.Sprintf("focus %d / g%d · copy %c / %c", i+1, i+1, addKeys[i], strings.ToUpper(string(addKeys[i]))[0]), lines, false)
 		}
 		for _, text := range []string{

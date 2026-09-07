@@ -167,7 +167,7 @@ func TestResize(t *testing.T) {
 func TestViewSnapshots(t *testing.T) {
 	var corpus strings.Builder
 	corpus.WriteString("Rendered frames: right padding removed; Go escapes encode Unicode/backslashes.\nCell bounds are asserted before encoding. Not terminal screenshots.\n")
-	for _, scenario := range []string{"desktop-empty", "minimum-mixed", "busy-help", "busy-quit", "undersized", "nine-agent-focus"} {
+	for _, scenario := range []string{"desktop-empty", "duplicate-project", "minimum-mixed", "busy-help", "busy-quit", "undersized", "nine-agent-focus"} {
 		m := navigationModel(3)
 		m.width, m.height = 143, 35
 		m.config.Home, m.config.Project = "/home/example", "/project"
@@ -189,6 +189,10 @@ func TestViewSnapshots(t *testing.T) {
 		m.panels[0].entries = []skillEntry{{name: ".dot"}, {name: "e\u0301-\u754c-wide"}, {name: strings.Repeat("long-name-", 6)}, {name: "look-safe\x1b[2J\r\nspoof"}, {name: "linked", blocked: true}}
 		m.panels[0].selectedName = ".dot"
 		switch scenario {
+		case "duplicate-project":
+			m.width, m.height, m.focused = 80, 24, 4
+			m.panels[4].duplicateProject = true
+			m.panels[4].path = m.panels[1].path
 		case "minimum-mixed":
 			m.width, m.height = 80, 24
 			m.panels[0].selected, m.panels[0].selectedName = 3, m.panels[0].entries[3].name

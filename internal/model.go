@@ -8,18 +8,19 @@ import (
 )
 
 type browsePanel struct {
-	label, path   string
-	hint          string // Display-only shortcuts, populated on a panel copy.
-	generation    uint64
-	loading       bool
-	entries       []skillEntry
-	selectedName  string
-	selected      int
-	missing       bool
-	err           error
-	safetyChecked bool
-	safetyErr     error
-	root          resolvedRoot
+	duplicateProject bool
+	label, path      string
+	hint             string // Display-only shortcuts, populated on a panel copy.
+	generation       uint64
+	loading          bool
+	entries          []skillEntry
+	selectedName     string
+	selected         int
+	missing          bool
+	err              error
+	safetyChecked    bool
+	safetyErr        error
+	root             resolvedRoot
 }
 
 type browseModel struct {
@@ -146,6 +147,7 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		for i := range m.panels {
 			m.panels[i].safetyChecked = true
 			m.panels[i].safetyErr = msg.safety.blocked[i]
+			m.panels[i].duplicateProject = len(msg.safety.duplicateProject) == len(m.panels) && msg.safety.duplicateProject[i]
 		}
 	case scanResult:
 		if msg.panel < 0 || int(msg.panel) >= len(m.panels) {
@@ -279,6 +281,12 @@ func (m browseModel) startMutation(destination panelID, add bool) (tea.Model, te
 	if m.active != nil || m.pendingQuit || m.showHelp || destination <= 0 || int(destination) >= len(m.panels) || m.width < minimumWidth || m.height < minimumHeight {
 		return m, nil
 	}
+	d := m.panels[destination]
+	if d.safetyChecked && d.duplicateProject {
+		m.statusFailed, m.lastResult = true, nil
+		m.status = duplicateProjectReason
+		return m, nil
+	}
 	p := m.panels[m.focused]
 	if p.loading || p.err != nil || p.missing || p.selectedName == "" || p.selected < 0 || p.selected >= len(p.entries) {
 		return m, nil
@@ -286,7 +294,6 @@ func (m browseModel) startMutation(destination panelID, add bool) (tea.Model, te
 	if p.entries[p.selected].blocked || p.entries[p.selected].name != p.selectedName {
 		return m, nil
 	}
-	d := m.panels[destination]
 	if !p.safetyChecked || p.safetyErr != nil || !d.safetyChecked || d.safetyErr != nil {
 		m.statusFailed = true
 		m.lastResult = nil

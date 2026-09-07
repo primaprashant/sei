@@ -17,6 +17,11 @@ relative `XDG_CONFIG_HOME`; macOS ignores XDG. Refresh does not reload config.
   Component-aware containment and `os.SameFile` ancestor identities detect aliases,
   nesting and actual filesystem case identity without lowercasing paths. Library
   and destinations must be disjoint, as must destinations across agents/scopes.
+  An agent’s exactly identical global/project roots are the sole exception:
+  setup accepts the pair, and the project panel is disabled while the global
+  destination remains usable subject to all other checks. Equality uses physical
+  identity and resolved paths, including provable missing suffixes. Every mutation
+  rechecks this rule; both roots remain protected boundaries.
 - Unknown boundaries block affected mutations, not browsing. A missing/unreadable
   library listing alone need not block safe removal. Scan/safety results are display
   observations, never cached authorization: every mutation revalidates.
