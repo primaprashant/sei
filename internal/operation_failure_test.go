@@ -195,7 +195,7 @@ func TestErrorPersistence(t *testing.T) {
 				t.Fatalf("partial failure: %v", err)
 			}
 			m, _ = press(m, '1') // Completion must use the captured global, not local focus.
-			next, refresh := m.Update(mutationResult{r.id, err})
+			next, refresh := m.Update(mutationResult{id: r.id, err: err})
 			m = next.(browseModel)
 			want := r.target() + ": " + err.Error()
 			if m.status != want || refresh == nil || !m.panels[1].loading {

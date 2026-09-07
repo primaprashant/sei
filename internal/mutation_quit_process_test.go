@@ -55,7 +55,7 @@ func (m mutationQuitProbe) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Input guards, captured scan validation, operations and results stay real.
 		cmd = func() tea.Msg {
 			if err := validateScannedSelection(cfg, r, p.root, d.root, p.entries[p.selected]); err != nil {
-				return mutationResult{r.id, err}
+				return mutationResult{id: r.id, err: err}
 			}
 			gate := func() {
 				m.report("started")
@@ -109,7 +109,7 @@ func (m mutationQuitProbe) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.completed.Store(true)
 			m.report("completed")
-			return mutationResult{r.id, err}
+			return mutationResult{id: r.id, err: err}
 		}
 	}
 	switch msg := msg.(type) {

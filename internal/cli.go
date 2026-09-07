@@ -156,6 +156,9 @@ func Run(version string, args []string, stdin io.Reader, stdout, stderr io.Write
 
 // Called only after lifecycle cleanup, including terminal restoration.
 func browseExit(result browseModel, err error, stderr io.Writer) int {
+	if result.statsWarning != nil {
+		_, _ = fmt.Fprintf(stderr, "sei: stats not saved: %s\n", displayText(result.statsWarning.Error()))
+	}
 	if err != nil {
 		err = fmt.Errorf("terminal: %w", err)
 	}

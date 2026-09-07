@@ -217,6 +217,9 @@ func (m browseModel) browserStatus(s uiStyles) (string, lipgloss.Style) {
 		if m.statusFailed {
 			verb, style = "Failed", s.danger
 		}
+		if m.statsWarning != nil {
+			return verb + " " + displayText(m.lastResult.name) + " · stats not saved; ? details", s.warning
+		}
 		return verb + " " + displayText(m.lastResult.name) + " → " + displayText(m.lastResult.label) + " · ? details", style
 	}
 	if m.status != "" {
@@ -367,6 +370,9 @@ func (m browseModel) helpLines() []string {
 
 	if m.status != "" {
 		text += "\nResult: " + displayText(m.status)
+	}
+	if m.statsWarning != nil {
+		text += "\nStats warning: " + displayText(m.statsWarning.Error())
 	}
 	if m.pendingQuit {
 		text += "\nExit requested; waiting for work"

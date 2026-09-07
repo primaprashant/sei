@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -41,6 +42,7 @@ type browseModel struct {
 	pendingQuit      bool
 	status           string
 	exitError        error
+	statsWarning     error
 }
 
 type mutationRequest struct {
@@ -59,8 +61,9 @@ func (r mutationRequest) target() string {
 }
 
 type mutationResult struct {
-	id  uint64
-	err error
+	id       uint64
+	err      error
+	statsErr error
 }
 
 type startBrowseMsg struct{}
@@ -124,6 +127,7 @@ func (m browseModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.active = nil
 		m.status = r.target() + ": complete"
 		m.statusFailed = msg.err != nil
+		m.statsWarning = msg.statsErr
 		m.lastResult = &r
 		if msg.err != nil {
 			m.status = r.target() + ": " + msg.err.Error()
@@ -312,11 +316,18 @@ func (m browseModel) startMutation(destination panelID, add bool) (tea.Model, te
 	entry := p.entries[p.selected]
 	return m, func() tea.Msg {
 		if err := validateScannedSelection(cfg, r, p.root, d.root, entry); err != nil {
-			return mutationResult{r.id, err}
+			return mutationResult{id: r.id, err: err}
 		}
+		var err error
 		if r.add {
-			return mutationResult{r.id, addSkill(cfg, r.destination, r.name)}
+			err = addSkill(cfg, r.destination, r.name)
+		} else {
+			err = removeSkill(cfg, r.destination, r.name)
 		}
-		return mutationResult{r.id, removeSkill(cfg, r.destination, r.name)}
+		result := mutationResult{id: r.id, err: err}
+		if err == nil {
+			result.statsErr = recordStats(cfg, r.name, r.add, time.Now())
+		}
+		return result
 	}
 }

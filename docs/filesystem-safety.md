@@ -34,7 +34,7 @@ relative `XDG_CONFIG_HOME`; macOS ignores XDG. Refresh does not reload config.
   in-root links, special files or mount crossings; sei supplies the ordinary-file
   and no-skill-symlink checks. Only explicit adds create missing destination parents.
 
-## Two Replacement Behaviors
+## Replacement Behaviors
 
 Listings include immediate ordinary directories, including dotfolders, without
 parsing `SKILL.md`; the exact name `.git` and loose files are ignored. This listing
@@ -63,9 +63,25 @@ Config symlinks/nonregular files cannot be replaced; a safe config symlink can b
 Placement must not overlap current or previous managed roots during reconfiguration. Parent, target,
 temporary-file identities and root relationships are rechecked before commit; no fallible metadata step follows.
 
+**Stats (`stats_store.go`):** a successful browser action updates
+`<config path>.stats.json` through a private exclusive temporary file and rename.
+The existing config parent must still exist. Placement checks keep history, lock,
+and temporary files outside managed roots; rooted handles and fresh parent/file
+identity checks detect observed drift. History and lock symlinks or special files
+are rejected. Writes check write/sync/close before commit. Invalid JSON, unknown
+versions, invalid counts, and duplicate keys preserve the existing history.
+Unusual skill names use reversible Go string escapes inside JSON keys.
+
+A persistent companion `.lock` file coordinates cooperating stats writers across
+the read/update/rename sequence, with bounded acquisition time. Readers need no
+lock and create nothing. The lock does not coordinate skill or config mutations.
+Stats failure does not roll back a successful skill action; a crash after the
+action but before recording may omit its count.
+
 ## Limits
 
 Not a hostile-concurrent-writer guarantee: observation, opening and mutation are not atomic.
-There is no lock, sandbox, crash recovery/durability promise, or protection against adversarial
-mount/namespace manipulation. Keep external writers out of trees being changed.
+Skill and config mutations have no lock. There is no sandbox, crash
+recovery/durability promise, or protection against adversarial mount/namespace
+manipulation. Keep external writers out of trees being changed.
 Terminal/quit behavior is described in [development](development.md#async-and-lifecycle).
