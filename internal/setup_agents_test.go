@@ -31,7 +31,6 @@ func TestSetupPresetPaths(t *testing.T) {
 	for _, preset := range setupPresets {
 		t.Run(preset.Name, func(t *testing.T) {
 			cfg, project, path := saveConfigFixture(t)
-			cfg.Library = "~/skill-library"
 			cfg.Agents = []agentConfig{preset}
 			resolved, err := validateSetupConfig(cfg, project, path)
 			if err != nil {
@@ -56,7 +55,7 @@ func TestSetupPresetPaths(t *testing.T) {
 func TestSetupAgents(t *testing.T) {
 	ctrl := func(code rune) tea.KeyPressMsg { return tea.KeyPressMsg{Code: code, Mod: tea.ModCtrl} }
 	text := func(s string) tea.KeyPressMsg { return tea.KeyPressMsg{Code: rune(s[0]), Text: s} }
-	t.Run("old shortcuts are ignored and plain letters remain editable", func(t *testing.T) {
+	t.Run("Ctrl+A and Ctrl+D are ignored and plain letters remain editable", func(t *testing.T) {
 		m := newSetupModel("", "")
 		m.field = 1
 		before := m
@@ -204,7 +203,7 @@ func TestSetupAgents(t *testing.T) {
 				t.Fatal("remove did not preserve order/clamp focus")
 			}
 		}
-		setupAbsent(t, path, os.Getenv("HOME")+"/library")
+		setupAbsent(t, path, os.Getenv("HOME")+"/skill-library")
 	})
 }
 
@@ -297,7 +296,7 @@ func TestExplicitSetup(t *testing.T) {
 					t.Fatal("cancel/refusal changed existing bytes")
 				}
 			}
-			setupAbsent(t, os.Getenv("HOME")+"/library", os.Getenv("HOME")+"/library-edited", os.Getenv("HOME")+"/global", project+"/.example")
+			setupAbsent(t, os.Getenv("HOME")+"/skill-library", os.Getenv("HOME")+"/skill-library-edited", os.Getenv("HOME")+"/global", project+"/.example")
 		})
 	}
 }

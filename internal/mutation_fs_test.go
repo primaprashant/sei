@@ -321,15 +321,16 @@ func TestRemoveSkillObservedChanges(t *testing.T) {
 				}
 				cfg.Home = alias
 			}
+			changeAt := 1
+			if kind == "during deletion" {
+				changeAt = 2
+			}
 			calls := 0
 			var changed map[string]removeSnapshotEntry
 			var savedRoot map[string]removeSnapshotEntry
 			err := removeSkillObserved(cfg, 1, "skill", func(_ string) {
 				calls++
-				if calls != 1 && (kind != "during deletion" || calls != 2) {
-					return
-				}
-				if kind == "during deletion" && calls == 1 {
+				if calls != changeAt {
 					return
 				}
 				rename := func(from, to string) {

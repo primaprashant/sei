@@ -227,9 +227,9 @@ func (s *preparedSkill) validate(cfg config) error {
 	if err != nil || !os.SameFile(s.held, held) {
 		return errors.Join(err, fmt.Errorf("source root identity changed"))
 	}
-	children := make(map[string]os.FileInfo, len(s.inventory))
+	children := make(map[string]bool, len(s.inventory))
 	for _, entry := range s.inventory {
-		children[entry.path] = entry.info
+		children[entry.path] = true
 	}
 	// Ancestors first, so no observed internal link is traversed.
 	for i := len(s.inventory) - 1; i >= 0; i-- {
@@ -249,7 +249,7 @@ func (s *preparedSkill) validate(cfg config) error {
 			return err
 		}
 		for _, child := range entries {
-			if children[filepath.Join(entry.path, child.Name())] == nil {
+			if !children[filepath.Join(entry.path, child.Name())] {
 				return fmt.Errorf("unexpected source child %q", child.Name())
 			}
 		}

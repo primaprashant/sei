@@ -34,6 +34,8 @@ CGO_ENABLED=1 go test -race -count=1 ./...
 
 Race tests need a C compiler. Ordinary tests use disposable directories/PTYs, without fixture downloads or live agent installs.
 
+Optional archive tests need `SEI_RELEASE_DIST`, `SEI_RELEASE_VERSION`, `SEI_RELEASE_COMMIT`; see [release reproduction](release.md#local-snapshot).
+
 ## Disposable UI
 
 After building, run in a terminal with disposable targets, HOME and native config locations:
@@ -96,16 +98,6 @@ Setup and browsing require terminal stdin/stdout; help/version do not. Exit stat
 is `0` for ordinary quit/cancel, `1` for startup/save/runtime failure, and `2` for
 invalid CLI syntax. Focus and selections are not saved between runs.
 
-## Tests
-
-All test files below live in `internal/`.
-
-- Config/setup: `config*_test.go`, `setup*_test.go`; paths/files: `roots_test.go`, `mutation*_test.go`.
-- UI: `model_test.go`, `navigation_test.go`, `keyboard_contract_test.go`, `view_test.go`, `stale_state_test.go`.
-- Real terminals/errors: `*process_test.go`, `operation_failure_test.go`, `terminal_screen_test.go`.
-- Input robustness: `fuzz_test.go`; packaging/install: `release*_test.go`, `installer*_test.go`.
-- Optional archive tests need `SEI_RELEASE_DIST`, `SEI_RELEASE_VERSION`, `SEI_RELEASE_COMMIT`; see [release reproduction](release.md#local-snapshot).
-
 ## Optional Performance Checks
 
 Microbenchmarks: `go test -run '^$' -bench . -benchmem ./internal`. Optional PTY tests require this exact digest-pinned archive:
@@ -119,9 +111,9 @@ Build with `CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o bin/sei .`, the
 
 ```sh
 SEI_TEST_ARCHIVE=/absolute/path/to/archive.tar.gz SEI_TEST_BINARY="$PWD/bin/sei" \
-  go test -count=1 -v -run '^(TestRepresentativePrototype|TestPerformanceRelease)$' ./internal
+  go test -count=1 -v -run '^(TestRepresentativeUI|TestPerformanceRelease)$' ./internal
 ```
 
 Run without competing builds/race tests. These are harness latencies, not disk-throughput claims;
 warm-fixture budgets apply on Linux amd64. `SEI_TEST_PREPARE` creates a new absolute disposable
-fixture instead of running the prototype. Omit `SEI_TEST_CAPTURES` unless writing captures intentionally.
+fixture instead of running the UI tests. Omit `SEI_TEST_CAPTURES` unless writing captures intentionally.

@@ -66,12 +66,12 @@ func TestRepresentativeReadiness(t *testing.T) {
 }
 
 // Opt-in local DATA and already-built release binary; ordinary tests are offline.
-func TestRepresentativePrototype(t *testing.T) {
-	runRepresentativePrototype(t, false)
+func TestRepresentativeUI(t *testing.T) {
+	runRepresentativeUI(t, false)
 }
 
 func TestPerformanceRelease(t *testing.T) {
-	runRepresentativePrototype(t, true)
+	runRepresentativeUI(t, true)
 }
 
 func checkPerformanceBudget(metric string, p95 float64) error {
@@ -93,7 +93,7 @@ func TestPerformanceBudget(t *testing.T) {
 	}
 }
 
-func runRepresentativePrototype(t *testing.T, measured bool) {
+func runRepresentativeUI(t *testing.T, measured bool) {
 	t.Helper()
 	archive, binary := os.Getenv("SEI_TEST_ARCHIVE"), os.Getenv("SEI_TEST_BINARY")
 	prepare := os.Getenv("SEI_TEST_PREPARE")
@@ -290,7 +290,7 @@ func runRepresentativePrototype(t *testing.T, measured bool) {
 						var screen strings.Builder
 						await := func(wants ...string) {
 							t.Helper()
-							for !performanceScreenMatches(terminal, wants...) {
+							for !ptyScreenMatches(terminal, wants...) {
 								select {
 								case chunk, ok := <-chunks:
 									if !ok {

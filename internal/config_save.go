@@ -146,9 +146,6 @@ func saveConfigWithIO(cfg config, project, path string, replace bool, output con
 		return err
 	}
 	data = append(data, '\n')
-	if _, err := parseConfig(data); err != nil {
-		return err
-	}
 	parent, name, original, err := configSaveLocation(resolved, path)
 	if err != nil {
 		return err

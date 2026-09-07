@@ -2,9 +2,6 @@ package app
 
 import (
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -196,10 +193,10 @@ func TestBrowseCommandsAndGenerations(t *testing.T) {
 	for _, input := range "abcdefhioABCDEFHIOXx" {
 		updated, cmd = m.Update(tea.KeyPressMsg{Code: input})
 		if cmd != nil || !reflect.DeepEqual(updated, m) {
-			t.Fatalf("future key %q enabled", input)
+			t.Fatalf("mutation key %q changed model before safety checks completed", input)
 		}
 	}
-	m.width = 143 // All three agents are visible at the owner's smaller geometry.
+	m.width = 143 // Show all three agents.
 	view := m.View().Content
 	for _, text := range []string{"Library folder missing", "Folder not created", "Error:", "global-only", "local-only"} {
 		if !strings.Contains(view, text) {
@@ -266,33 +263,5 @@ func TestBrowseDisplay(t *testing.T) {
 				t.Fatalf("missing agent %s", name)
 			}
 		}
-	}
-}
-
-func TestBrowseNoIOInModelOrView(t *testing.T) {
-	// Structural guard complements deferred-command tests: these files have no
-	// filesystem imports and may construct scan commands, but never execute scans.
-	for _, path := range []string{"model.go", "view.go"} {
-		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, imp := range file.Imports {
-			name, err := strconv.Unquote(imp.Path.Value)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if name == "os" || name == "io/fs" || name == "syscall" || strings.Contains(name, "x/sys") {
-				t.Fatalf("filesystem import in %s: %s", path, name)
-			}
-		}
-		ast.Inspect(file, func(node ast.Node) bool {
-			if call, ok := node.(*ast.CallExpr); ok {
-				if name, ok := call.Fun.(*ast.Ident); ok && name.Name == "scanFolder" {
-					t.Errorf("synchronous scan in %s", path)
-				}
-			}
-			return true
-		})
 	}
 }

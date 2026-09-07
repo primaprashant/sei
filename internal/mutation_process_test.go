@@ -33,7 +33,7 @@ func TestPTYRemoveRestart(t *testing.T) {
 	for _, scope := range []string{"global", "local"} {
 		t.Run(scope, func(t *testing.T) {
 			root := t.TempDir()
-			cfg := config{Library: filepath.Join(root, "library"), Agents: []agentConfig{{Name: "Agent", Global: filepath.Join(root, "global"), Local: filepath.Join(root, "local")}}}
+			cfg := config{Library: filepath.Join(root, "skill-library"), Agents: []agentConfig{{Name: "Agent", Global: filepath.Join(root, "global"), Local: filepath.Join(root, "local")}}}
 			for _, dir := range []string{cfg.Library, cfg.Agents[0].Global, cfg.Agents[0].Local} {
 				for _, name := range []string{"remove-me", "survivor"} {
 					browseMkdir(t, filepath.Join(dir, name, "nested"))
@@ -127,7 +127,7 @@ func runMutationPTY(t *testing.T, binary, root, path, scope string, restart bool
 	terminal := newPTYScreen(t, 240, 40)
 	await := func(text string) {
 		t.Helper()
-		for !performanceScreenMatches(terminal, text) {
+		for !ptyScreenMatches(terminal, text) {
 			select {
 			case chunk, ok := <-chunks:
 				if !ok {

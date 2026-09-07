@@ -23,7 +23,7 @@ func saveConfigFixture(t *testing.T) (config, string, string) {
 		}
 	}
 	t.Setenv("HOME", home)
-	return config{Library: "~/library", Agents: []agentConfig{
+	return config{Library: "~/skill-library", Agents: []agentConfig{
 		{Name: "Example", Global: "~/global", Local: ".example/skills"},
 	}}, project, home + "/config/sei/config.json"
 }
@@ -35,7 +35,7 @@ func TestSaveConfig(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if resolved.Project != project || resolved.Home != os.Getenv("HOME") || resolved.Library != os.Getenv("HOME")+"/library" || resolved.Agents[0].Local != project+"/.example/skills" {
+		if resolved.Project != project || resolved.Home != os.Getenv("HOME") || resolved.Library != os.Getenv("HOME")+"/skill-library" || resolved.Agents[0].Local != project+"/.example/skills" {
 			t.Fatalf("unexpected resolved config: %+v", resolved)
 		}
 		resolved.Agents[0].Name = "changed"
@@ -92,7 +92,7 @@ func TestSaveConfig(t *testing.T) {
 		if err != nil || len(entries) != 1 || entries[0].Name() != "config.json" {
 			t.Fatalf("temporary output remains: %v, %v", entries, err)
 		}
-		for _, absent := range []string{os.Getenv("HOME") + "/library", os.Getenv("HOME") + "/global", project + "/.example"} {
+		for _, absent := range []string{os.Getenv("HOME") + "/skill-library", os.Getenv("HOME") + "/global", project + "/.example"} {
 			if _, err := os.Lstat(absent); !errors.Is(err, os.ErrNotExist) {
 				t.Fatalf("save created managed directories %q: %v", absent, err)
 			}
@@ -127,11 +127,11 @@ func TestSaveConfig(t *testing.T) {
 			case "invalid utf8":
 				cfg.Library += "\xff"
 			case "overlap":
-				cfg.Agents[0].Global = "~/library/nested"
+				cfg.Agents[0].Global = "~/skill-library/nested"
 			case "local alias escape":
 				link(home, project+"/.example")
 			case "dangling root":
-				link("absent", home+"/library")
+				link("absent", home+"/skill-library")
 			case "missing project":
 				project += "/absent"
 			case "relative config":
@@ -141,7 +141,7 @@ func TestSaveConfig(t *testing.T) {
 			case "missing dotdot":
 				path = home + "/absent/../config.json"
 			case "library placement":
-				path = home + "/library/new/config.json"
+				path = home + "/skill-library/new/config.json"
 			case "global placement":
 				path = home + "/global/new/config.json"
 			case "local placement":
@@ -149,16 +149,16 @@ func TestSaveConfig(t *testing.T) {
 			case "root equality":
 				path = home + "/global"
 			case "parent alias placement":
-				if err := os.Mkdir(home+"/library", 0o700); err != nil {
+				if err := os.Mkdir(home+"/skill-library", 0o700); err != nil {
 					t.Fatal(err)
 				}
-				link(home+"/library", home+"/alias")
+				link(home+"/skill-library", home+"/alias")
 				path = home + "/alias/new/config.json"
 			case "root alias placement":
 				if err := os.Mkdir(home+"/real", 0o700); err != nil {
 					t.Fatal(err)
 				}
-				link(home+"/real", home+"/library")
+				link(home+"/real", home+"/skill-library")
 				path = home + "/real/new/config.json"
 			case "config symlink", "dangling config":
 				path = home + "/config.json"

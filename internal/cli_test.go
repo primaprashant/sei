@@ -38,7 +38,7 @@ func TestCLI(t *testing.T) {
 	}{
 		{"help", []string{"--help"}, 0, "Usage: sei", ""},
 		{"short help", []string{"-h"}, 0, "Usage: sei", ""},
-		{"remove key help", []string{"--help"}, 0, "x permanently removes (destination only); X does nothing.", ""},
+		{"remove key help", []string{"--help"}, 0, "x                Permanently remove selected destination skill", ""},
 		{"version", []string{"--version"}, 0, "sei dev\n", ""},
 		{"unknown flag", []string{"--unknown"}, 2, "", "flag provided but not defined"},
 		{"unknown command", []string{"unknown"}, 2, "", "unexpected argument"},

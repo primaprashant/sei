@@ -283,7 +283,7 @@ jobs:
           {
             printf '### Go Statement Coverage\n\n```text\n'
             cat "$RUNNER_TEMP/coverage-functions.txt"
-            printf '```\n\nNo global percentage gate; reviewed gaps: docs/development.md#tests.\n'
+            printf '```\n'
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Reject tracked-file changes

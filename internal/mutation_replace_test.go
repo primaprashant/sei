@@ -76,11 +76,14 @@ func TestReplacePreflight(t *testing.T) {
 			}
 			before := removeSnapshot(t, target)
 			library := removeSnapshot(t, cfg.Library)
+			changeAt := 1
+			if kind == "source late change" || kind == "target late addition" {
+				changeAt = 2
+			}
 			calls := 0
 			ops.beforeRemove = func(string) {
 				calls++
-				late := kind == "source late change" || kind == "target late addition"
-				if (!late && calls != 1) || (late && calls != 2) {
+				if calls != changeAt {
 					return
 				}
 				switch kind {

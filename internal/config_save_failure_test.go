@@ -219,7 +219,7 @@ func TestConfigSaveSafety(t *testing.T) {
 			cfg, project, path := saveConfigFixture(t)
 			home := os.Getenv("HOME")
 			paths := populateConfigSaveRoots(t, cfg, project)
-			if err := os.Symlink(home+"/library", home+"/root-alias"); err != nil {
+			if err := os.Symlink(home+"/skill-library", home+"/root-alias"); err != nil {
 				t.Fatal(err)
 			}
 			cfg.Library = home + "/root-alias"

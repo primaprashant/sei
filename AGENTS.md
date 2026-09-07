@@ -7,8 +7,7 @@ add speculative abstractions, enterprise process, or implementation journals.
 
 ## Context On Demand
 
-- [docs/product-vision.md](docs/product-vision.md): the owner's original motivation. Preserve
-  its wording unless asked to change it; its deleted PRD reference is historical.
+- [docs/product-vision.md](docs/product-vision.md): the owner's original motivation.
 - [README.md](README.md): current user-facing behavior and configuration.
 - [docs/development.md](docs/development.md): source map, tooling, disposable UI
   setup, snapshot updates, and async/terminal constraints. Read relevant sections

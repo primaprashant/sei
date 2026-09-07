@@ -38,15 +38,9 @@ Snapshots neither test tag publishing nor promise byte-identical rebuilds. No re
    prerelease suffix. No leading numeric zeros or build metadata are accepted.
 2. Create and push that tag, for example `git tag v0.2.0 <commit>` then
    `git push origin refs/tags/v0.2.0`. Do not move released tags.
-3. Inspect the Draft Release workflow and resulting draft in GitHub. Tag pushes
-   call reusable CI with `release: true`; ordinary push/PR CI builds snapshots.
-   The producer checks tag/event/checkout identity and builds once using
-   `GORELEASER_CURRENT_TAG`, `--clean --skip=publish`; GoReleaser publishing is disabled.
-   Four native Linux/macOS amd64/arm64 jobs test the same artifact ID, alongside
-   source, installer, PTY, Linux race and two fuzz jobs.
-4. Only the final upload job has `contents: write`. `scripts/release.sh draft`
-   rechecks tag/commit/version, checksums and installer source bytes, then creates
-   a draft with exactly four tarballs, their manifest, `install.sh` and its checksum.
+3. Check that the Draft Release workflow succeeds and creates a draft in GitHub.
+4. Inspect the draft's assets: four tarballs, their checksum manifest, `install.sh`
+   and its checksum.
    Each tarball contains only `sei`, `README.md`, `LICENSE`, `THIRD_PARTY_NOTICES`.
 5. Publish manually after checking the draft and notes. For a stable release:
    `gh release edit v0.2.0 --draft=false --prerelease=false --latest`.

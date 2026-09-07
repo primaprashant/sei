@@ -218,8 +218,8 @@ func testPTYMutationExit(t *testing.T, fail bool) {
 					name += "\tunsafe"
 					local += "\tpath"
 				}
-				cfg := config{Library: filepath.Join(root, "library"), Agents: []agentConfig{{Name: "Agent", Global: filepath.Join(root, "global"), Local: local}}}
-				for _, dir := range []string{"library", "global", local} {
+				cfg := config{Library: filepath.Join(root, "skill-library"), Agents: []agentConfig{{Name: "Agent", Global: filepath.Join(root, "global"), Local: local}}}
+				for _, dir := range []string{"skill-library", "global", local} {
 					for _, name := range []string{name, "survivor"} {
 						browseMkdir(t, filepath.Join(root, dir, name, "nested"))
 						writeTestFile(t, filepath.Join(root, dir, name, "nested", "file"), "original bytes\x00\xff")

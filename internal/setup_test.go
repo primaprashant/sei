@@ -23,7 +23,8 @@ func setupQuit(t *testing.T, cmd tea.Cmd) {
 	if cmd == nil {
 		t.Fatal("missing quit command")
 	}
-	if msg := cmd(); reflect.TypeOf(msg) != reflect.TypeOf(tea.QuitMsg{}) {
+	msg := cmd()
+	if _, ok := msg.(tea.QuitMsg); !ok {
 		t.Fatalf("expected quit, got %T", msg)
 	}
 }
@@ -102,7 +103,7 @@ func TestSetupAsyncValidationAndSave(t *testing.T) {
 	}
 	setupAbsent(t, filepath.Dir(filepath.Dir(path)))
 	result := cmd().(setupResult)
-	if result.err != nil || result.saved || result.resolved.Library != os.Getenv("HOME")+"/library" {
+	if result.err != nil || result.saved || result.resolved.Library != os.Getenv("HOME")+"/skill-library" {
 		t.Fatalf("validation result: %+v", result)
 	}
 	setupAbsent(t, filepath.Dir(filepath.Dir(path)), result.resolved.Library)
@@ -191,7 +192,7 @@ func TestSetupCancelNoWrites(t *testing.T) {
 				if m.saved || m.fatal != nil {
 					t.Fatalf("cancel state: %+v", m)
 				}
-				setupAbsent(t, filepath.Dir(filepath.Dir(path)), os.Getenv("HOME")+"/library", os.Getenv("HOME")+"/global", project+"/.example")
+				setupAbsent(t, filepath.Dir(filepath.Dir(path)), os.Getenv("HOME")+"/skill-library", os.Getenv("HOME")+"/global", project+"/.example")
 			})
 		}
 	}
@@ -207,7 +208,7 @@ func TestSetupFailuresAndPendingQuit(t *testing.T) {
 		if cmd != nil || m.err == nil || m.fatal != nil || m.preview || m.busy || m.offset != 0 || !strings.Contains(m.View().Content, "Error:") {
 			t.Fatalf("recoverable validation failure: %+v", m)
 		}
-		m, _ = setupUpdate(t, m, tea.KeyPressMsg{Code: '~', Text: "~/library"})
+		m, _ = setupUpdate(t, m, tea.KeyPressMsg{Code: '~', Text: "~/skill-library"})
 		m, cmd = setupUpdate(t, m, tea.KeyPressMsg{Code: tea.KeyEnter})
 		m, cmd = setupUpdate(t, m, cmd())
 		if cmd != nil || m.err != nil || !m.preview {

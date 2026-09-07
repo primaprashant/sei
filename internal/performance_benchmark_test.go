@@ -13,16 +13,13 @@ func benchmarkConfig(b *testing.B, count int) config {
 	base := b.TempDir()
 	cfg := config{Home: filepath.Join(base, "home"), Project: filepath.Join(base, "project")}
 	cfg.Library = filepath.Join(cfg.Home, "skill-library")
-	agents := []struct{ name, folder string }{
-		{"Claude Code", ".claude"}, {"Codex", ".codex"}, {"OpenCode", ".opencode"},
-		{"Gemini CLI", ".gemini"}, {"GitHub Copilot", ".copilot"}, {"Cursor", ".cursor"},
-		{"Windsurf", ".windsurf"}, {"Cline", ".cline"}, {"Roo Code", ".roo"},
-	}
 	paths := []string{cfg.Home, cfg.Project, cfg.Library}
-	for _, agent := range agents[:count] {
-		global := filepath.Join(cfg.Home, agent.folder, "skills")
-		local := filepath.Join(cfg.Project, agent.folder, "skills")
-		cfg.Agents = append(cfg.Agents, agentConfig{Name: agent.name, Global: global, Local: local})
+	for i := range count {
+		name := fmt.Sprintf("Agent%d", i+1)
+		folder := fmt.Sprintf("agent%d", i+1)
+		global := filepath.Join(cfg.Home, folder, "skills")
+		local := filepath.Join(cfg.Project, folder, "skills")
+		cfg.Agents = append(cfg.Agents, agentConfig{Name: name, Global: global, Local: local})
 		paths = append(paths, global, local)
 	}
 	for _, path := range paths {
@@ -85,7 +82,7 @@ func BenchmarkSkill(b *testing.B) {
 			b.StopTimer()
 			cfg := benchmarkConfig(b, 1)
 			const name = "synthetic-skill"
-			const destination panelID = 2 // Claude Code / Project.
+			const destination panelID = 2 // Agent1 / Project.
 			for _, file := range []struct {
 				path string
 				size int

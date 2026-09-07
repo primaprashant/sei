@@ -12,10 +12,9 @@ import (
 
 const usage = `Usage: sei [options] [setup]
 
-sei is a terminal skill-folder manager, currently in development.
-Load strict JSON configuration and manage configured folders.
-Setup, skill copies/replacement, and permanent removal are available.
-Global options must precede the optional setup subcommand.
+Copy skills from a personal library into agents' project or global folders,
+and remove them when done. Run sei setup to change configuration.
+Options must precede setup.
 
 Options:
   --help       Show this help without configuration or a terminal
@@ -27,20 +26,28 @@ Examples:
   sei --config /tmp/sei.json --project ./example
   sei --config /tmp/sei.json setup
 
-Other agents may also load skills from these folders. sei shows configured folder contents, not everything an agent discovers or has loaded.
+Browser controls:
+  Up/Down          Move selection
+  Tab/Shift+Tab    Focus next/previous panel
+  0                Focus library
+  1-9              Focus agent's project folder
+  g, then 1-9      Focus agent's global folder
+  x                Permanently remove selected destination skill
+  r                Refresh folder listings
+  ?                Show help, full paths, and errors
+  Esc              Close help or cancel pending g
+  q / Ctrl+C       Quit after active work finishes
 
-Terminal keys: Up/Down (clamped), 0 library, 1-9 local, g then 1-9 global.
-r refreshes listings (not config); ? full sanitized targets/help, Up/Down scroll.
-g stays pending until a key: invalid continuations are consumed; Esc cancels/closes.
-q or Ctrl+C always quit; recognized paste is ignored. Selections are per panel;
-refresh preserves raw names, otherwise clamps the old index.
-Add mappings by slot: a b c d e f h i o local, A B C D E F H I O global
-(library only). x permanently removes (destination only); X does nothing.
-Add deletes an existing same-named target before copying: local edits are lost.
-No action confirmation, trash, backup, or undo. Failure may leave partial output.
-Quit waits for active work.
-Library left, local destinations above global; agent windows follow focus.
-Minimum terminal size: 80x24. Smaller windows block new mutations; quit still works.
+Copy from the library by agent slot (configuration order):
+  Project: a b c d e f h i o
+  Global:  A B C D E F H I O
+
+Adding replaces the entire same-named destination, including local edits.
+Replacement and removal have no confirmation or undo. Failed operations can
+leave missing or partial output. The source library stays unchanged.
+
+sei shows configured folders, not everything an agent discovers or has loaded.
+Minimum terminal size: 80x24.
 `
 
 // Run executes the CLI and returns its exit status.

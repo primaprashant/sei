@@ -3,25 +3,13 @@
 A small terminal UI for copying skills from your personal library into coding
 agents' project or global folders, and removing them when you're done.
 
-## Purpose
+## Is this for you?
 
-Skills are useful, but you may not want every skill available for every task.
-An agent reading an unwanted skill can introduce irrelevant instructions and
-steer its work in an unexpected direction.
+- Have a personal skill collection.
+- Want only relevant skills installed for each task.
+- Tired of copying and removing skills across projects or agents.
 
-Keeping a separate collection lets you choose which skills to make available.
-sei makes the repeated copying and removing easier, especially when you use
-several coding agents.
-
-### Is this for you?
-
-sei is useful when all three sound familiar:
-
-- You maintain your own collection of skills you've found useful.
-- You prefer to make only task-relevant skills available to your agents.
-- You find copying and removing skills across projects or agents tedious.
-
-If you're happy leaving your skills installed, you may not need sei.
+Happy leaving everything installed? Probably no need for sei.
 It manages configured folders; it cannot tell you everything an agent discovers
 or control what it has already loaded.
 

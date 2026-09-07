@@ -37,7 +37,7 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 			if err := os.Symlink(physicalRoot, root); err != nil {
 				t.Fatal(err)
 			}
-			cfg := config{Library: filepath.Join(root, "library")}
+			cfg := config{Library: filepath.Join(root, "skill-library")}
 			source := filepath.Join(cfg.Library, "replace-me")
 			browseMkdir(t, filepath.Join(source, "nested", "empty"))
 			const original = "original\n\x00\xff\r\n"
@@ -144,7 +144,7 @@ func TestPTYReplaceWorkflow(t *testing.T) {
 					terminal := newPTYScreen(t, 240, 40)
 					await := func(texts ...string) {
 						t.Helper()
-						for !performanceScreenMatches(terminal, texts...) {
+						for !ptyScreenMatches(terminal, texts...) {
 							select {
 							case chunk, ok := <-chunks:
 								if !ok {

@@ -28,7 +28,7 @@ func TestPTYAddRestart(t *testing.T) {
 	for _, scope := range []string{"local", "global"} {
 		t.Run(scope, func(t *testing.T) {
 			root := t.TempDir()
-			cfg := config{Library: filepath.Join(root, "library"), Agents: []agentConfig{{Name: "Agent", Global: filepath.Join(root, "global"), Local: "local"}}}
+			cfg := config{Library: filepath.Join(root, "skill-library"), Agents: []agentConfig{{Name: "Agent", Global: filepath.Join(root, "global"), Local: "local"}}}
 			browseMkdir(t, filepath.Join(cfg.Library, "add-me", "nested", "empty"))
 			writeTestFile(t, filepath.Join(cfg.Library, "add-me", "nested", "SKILL.md"), "original\n\x00\xff")
 			for _, dir := range []string{"local", "global"} {
@@ -109,7 +109,7 @@ func runAddPTY(t *testing.T, binary, root, path, scope string, restart bool) {
 	terminal := newPTYScreen(t, 240, 40)
 	await := func(text string) {
 		t.Helper()
-		for !performanceScreenMatches(terminal, text) {
+		for !ptyScreenMatches(terminal, text) {
 			select {
 			case chunk, ok := <-chunks:
 				if !ok {

@@ -106,39 +106,7 @@ func (m browseModel) View() tea.View {
 		return v
 	}
 	if m.showHelp {
-		s := m.theme.styles()
-		lines := m.helpLines()
-		offset := max(0, min(m.helpOffset, len(lines)-m.helpHeight()))
-		visible := append([]string(nil), lines[offset:min(len(lines), offset+m.helpHeight())]...)
-		for i, line := range visible {
-			switch {
-			case line == "SELECTION AND PATHS" || line == "NAVIGATION" || line == "COPY AND REMOVE" || line == "ERRORS AND BEHAVIOR":
-				visible[i] = s.section.Render(line)
-			case strings.HasPrefix(line, "Error:") || strings.HasPrefix(line, "Root safety blocked:"):
-				visible[i] = s.danger.Render(line)
-			case strings.HasPrefix(line, "Selected folder blocked:"):
-				visible[i] = s.warning.Render(line)
-			case strings.HasPrefix(line, "Result:"):
-				style := s.success
-				if m.statusFailed {
-					style = s.danger
-				}
-				visible[i] = style.Render(line)
-			case strings.HasPrefix(line, "Root path:"):
-				visible[i] = s.muted.Render(line)
-			}
-		}
-		for len(visible) < m.helpHeight() {
-			visible = append(visible, "")
-		}
-		quit := "q quit"
-		if m.pendingQuit {
-			quit = "Exit requested; waiting for work"
-		} else if m.active != nil {
-			quit = "Working; q waits for completion"
-		}
-		return boundedView(s.accent.Render("sei | Help")+"\n"+strings.Join(visible, "\n")+
-			"\n"+s.muted.Render(fmt.Sprintf("Help %d/%d | up/down scroll | ?/Esc close |", offset+1, len(lines)))+"\n"+s.warning.Render(quit+m.sequenceHint()), m.width, m.height)
+		return m.helpView()
 	}
 
 	s := m.theme.styles()
@@ -286,6 +254,42 @@ func (m browseModel) labeledPanel(id int) browsePanel {
 		}
 	}
 	return p
+}
+
+func (m browseModel) helpView() tea.View {
+	s := m.theme.styles()
+	lines := m.helpLines()
+	offset := max(0, min(m.helpOffset, len(lines)-m.helpHeight()))
+	visible := append([]string(nil), lines[offset:min(len(lines), offset+m.helpHeight())]...)
+	for i, line := range visible {
+		switch {
+		case line == "SELECTION AND PATHS" || line == "NAVIGATION" || line == "COPY AND REMOVE" || line == "ERRORS AND BEHAVIOR":
+			visible[i] = s.section.Render(line)
+		case strings.HasPrefix(line, "Error:") || strings.HasPrefix(line, "Root safety blocked:"):
+			visible[i] = s.danger.Render(line)
+		case strings.HasPrefix(line, "Selected folder blocked:"):
+			visible[i] = s.warning.Render(line)
+		case strings.HasPrefix(line, "Result:"):
+			style := s.success
+			if m.statusFailed {
+				style = s.danger
+			}
+			visible[i] = style.Render(line)
+		case strings.HasPrefix(line, "Root path:"):
+			visible[i] = s.muted.Render(line)
+		}
+	}
+	for len(visible) < m.helpHeight() {
+		visible = append(visible, "")
+	}
+	quit := "q quit"
+	if m.pendingQuit {
+		quit = "Exit requested; waiting for work"
+	} else if m.active != nil {
+		quit = "Working; q waits for completion"
+	}
+	return boundedView(s.accent.Render("sei | Help")+"\n"+strings.Join(visible, "\n")+
+		"\n"+s.muted.Render(fmt.Sprintf("Help %d/%d | up/down scroll | ?/Esc close |", offset+1, len(lines)))+"\n"+s.warning.Render(quit+m.sequenceHint()), m.width, m.height)
 }
 
 func (m browseModel) helpHeight() int { return max(1, m.height-3) }

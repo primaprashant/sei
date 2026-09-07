@@ -32,15 +32,8 @@ func TestLayout(t *testing.T) {
 			for id := range m.panels {
 				m.focused = id
 				view := ansi.Strip(m.View().Content)
+				assertViewBounds(t, view, m.width, m.height)
 				lines := strings.Split(view, "\n")
-				if len(lines) > m.height {
-					t.Fatalf("%d agents %v: height %d", count, size, len(lines))
-				}
-				for _, line := range lines {
-					if ansi.StringWidth(line) > m.width {
-						t.Fatalf("%d agents %v: overflow %q", count, size, line)
-					}
-				}
 				for _, want := range []string{"* " + strings.TrimSuffix(strings.TrimSuffix(m.panels[id].label, " / Project"), " / Global"), m.labeledPanel(id).hint, "> a", "Agents ", "Ready"} {
 					if !strings.Contains(view, want) {
 						t.Fatalf("%d agents %v focus %d missing %q:\n%s", count, size, id, want, view)
@@ -91,10 +84,7 @@ func TestLayoutBounds(t *testing.T) {
 				m.width, m.height = width, height
 				for _, id := range []int{0, count, 2 * count} {
 					m.focused = id
-					lines := strings.Split(m.View().Content, "\n")
-					if len(lines) > height {
-						t.Fatalf("count=%d %dx%d focus=%d: got %d lines\n%s", count, width, height, id, len(lines), m.View().Content)
-					}
+					assertViewBounds(t, m.View().Content, width, height)
 				}
 			}
 		}
@@ -112,14 +102,9 @@ func TestLayoutHelp(t *testing.T) {
 		for _, offset := range []int{0, 20, 1000} {
 			m.helpOffset = offset
 			view := m.View().Content
-			lines := strings.Split(view, "\n")
-			if len(lines) > m.height || !strings.Contains(view, "g pending") || !strings.Contains(view, "Esc cancel") {
+			assertViewBounds(t, view, m.width, m.height)
+			if !strings.Contains(view, "g pending") || !strings.Contains(view, "Esc cancel") {
 				t.Fatalf("help footer hidden: %s", view)
-			}
-			for _, line := range lines {
-				if ansi.StringWidth(line) > m.width {
-					t.Fatalf("help overflow: %q", line)
-				}
 			}
 		}
 	}
@@ -230,15 +215,10 @@ func TestViewSnapshots(t *testing.T) {
 			}
 		}
 		view := ansi.Strip(m.View().Content)
+		assertViewBounds(t, view, m.width, m.height)
 		lines := strings.Split(view, "\n")
-		if len(lines) > m.height {
-			t.Fatalf("%s height overflow", scenario)
-		}
 		fmt.Fprintf(&corpus, "\n=== %s (%dx%d) ===\n", scenario, m.width, m.height)
 		for _, line := range lines {
-			if ansi.StringWidth(line) > m.width {
-				t.Fatalf("%s width overflow: %q", scenario, line)
-			}
 			quoted := strconv.QuoteToASCII(strings.TrimRight(line, " "))
 			corpus.WriteString(quoted[1:len(quoted)-1] + "\n")
 		}

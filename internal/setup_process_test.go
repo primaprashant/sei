@@ -42,7 +42,7 @@ func TestPTYFirstRunSetup(t *testing.T) {
 			}
 			path := filepath.Join(root, "config", "sei.json")
 			explicit := strings.HasPrefix(scenario, "explicit-")
-			want := config{Library: "~/library", Agents: append([]agentConfig(nil), setupPresets[:3]...)}
+			want := config{Library: "~/skill-library", Agents: append([]agentConfig(nil), setupPresets[:3]...)}
 			if explicit && scenario != "explicit-new" {
 				want.Agents = nil
 				count := 1
@@ -94,11 +94,11 @@ func TestPTYFirstRunSetup(t *testing.T) {
 						t.Fatal("PTY refusal changed config")
 					}
 				}
-				setupAbsent(t, filepath.Join(root, "library-edited"))
+				setupAbsent(t, filepath.Join(root, "skill-library-edited"))
 				for i := 1; i <= 9; i++ {
 					setupAbsent(t, filepath.Join(root, fmt.Sprintf("global%d", i)), filepath.Join(root, "project", fmt.Sprintf(".local%d", i)))
 				}
-				for _, dir := range []string{"library", ".claude", ".agents", ".opencode", ".config/opencode", "Library", "project/.claude", "project/.agents", "project/.opencode"} {
+				for _, dir := range []string{"skill-library", ".claude", ".agents", ".opencode", ".config/opencode", "Library", "project/.claude", "project/.agents", "project/.opencode"} {
 					setupAbsent(t, filepath.Join(root, dir))
 				}
 			}
@@ -117,7 +117,7 @@ func TestConfigSaveFailurePTY(t *testing.T) {
 		t.Fatalf("build: %v\n%s", err, output)
 	}
 	root := t.TempDir()
-	paths := []string{"library", ".claude/skills", ".agents/skills", ".config/opencode/skills", "project/.claude/skills", "project/.agents/skills", "project/.opencode/skills"}
+	paths := []string{"skill-library", ".claude/skills", ".agents/skills", ".config/opencode/skills", "project/.claude/skills", "project/.agents/skills", "project/.opencode/skills"}
 	for _, path := range paths {
 		dir := filepath.Join(root, path, "existing")
 		if err := os.MkdirAll(dir, 0o700); err != nil {
@@ -237,7 +237,7 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 	terminal := newPTYScreen(t, 200, 40)
 	await := func(text ...string) {
 		t.Helper()
-		for !performanceScreenMatches(terminal, text...) {
+		for !ptyScreenMatches(terminal, text...) {
 			select {
 			case chunk, ok := <-chunks:
 				if !ok {
@@ -289,17 +289,13 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 			t.Fatalf("setup did not enter raw mode: %v", err)
 		}
 		if explicit && scenario != "explicit-new" {
-			await("Library: ~/library")
+			await("Library: ~/skill-library")
 			await("Name:", "Existing1")
 			send("-edited")
 			await("-edited")
 		} else {
-			library := "~/library"
-			if scenario == "complete-flow" {
-				library = "~/skill-library"
-			}
-			send(library)
-			await(library)
+			send("~/skill-library")
+			await("~/skill-library")
 		}
 		if scenario == "cancel-edit" || scenario == "explicit-cancel-edit" {
 			send("\x1b")
@@ -318,7 +314,7 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 			}
 			await(fmt.Sprintf("focus %d / g%d", slot, slot))
 			if scenario != "save-failure" && scenario != "complete-flow" {
-				setupAbsent(t, filepath.Join(root, "library"))
+				setupAbsent(t, filepath.Join(root, "skill-library"))
 			}
 			if !explicit || scenario == "explicit-new" {
 				setupAbsent(t, filepath.Dir(path))

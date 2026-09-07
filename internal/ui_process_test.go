@@ -83,7 +83,7 @@ func TestPTYThemeAndNavigation(t *testing.T) {
 			}
 			await := func(wants ...string) {
 				t.Helper()
-				for !performanceScreenMatches(terminal, wants...) {
+				for !ptyScreenMatches(terminal, wants...) {
 					read()
 				}
 			}

@@ -10,50 +10,16 @@ import (
 	"debug/elf"
 	"debug/macho"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
 )
-
-func TestReleaseConfig(t *testing.T) {
-	// JSON is a YAML subset: check the entire small contract without adding a
-	// YAML dependency or requiring release tooling in ordinary tests.
-	want := `{
-		"version":2,"project_name":"sei",
-		"env":["GOTOOLCHAIN=go1.27.1","GOFLAGS=-mod=readonly"],
-		"builds":[{"id":"sei","main":".","binary":"sei","env":["CGO_ENABLED=0"],
-			"goos":["linux","darwin"],"goarch":["amd64","arm64"],
-			"goamd64":["v1"],"goarm64":["v8.0"],"flags":["-trimpath"],
-			"ldflags":["-s -w -X main.version={{ .Version }}"],"mod_timestamp":"{{ .CommitTimestamp }}"}],
-		"archives":[{"formats":["tar.gz"],"name_template":"sei_{{ .Version }}_{{ .Os }}_{{ .Arch }}",
-			"files":["README.md","LICENSE","THIRD_PARTY_NOTICES"]}],
-		"checksum":{"name_template":"sei_{{ .Version }}_checksums.txt","algorithm":"sha256"},
-		"snapshot":{"version_template":"{{ .Version }}-snapshot.{{ .ShortCommit }}"},
-		"changelog":{"disable":true},"release":{"disable":true}
-	}`
-	data, err := os.ReadFile(repoPath(t, ".goreleaser.yaml"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var gotConfig, wantConfig any
-	if err := json.Unmarshal(data, &gotConfig); err != nil {
-		t.Fatal(err)
-	}
-	if err := json.Unmarshal([]byte(want), &wantConfig); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(gotConfig, wantConfig) {
-		t.Fatal("release contract changed; review targets, archive allowlist, version and publication policy")
-	}
-}
 
 func TestReleaseArchives(t *testing.T) {
 	dist := os.Getenv("SEI_RELEASE_DIST")

@@ -44,5 +44,3 @@ Make startup fast, navigation immediate, and repeated actions responsive, withou
 ## What Success Looks Like
 
 In a real project, add three skills to one local destination, remove two, and quit without typing paths or repeatedly switching panels. This should beat the current shell workflow. Check that real folder names are easy to navigate without filtering, panels and hints fit the usual terminal size, and destructive actions have unmistakable targets.
-
-The product scope and interaction direction are settled. Exact add keys, agent ordering, setup, and smaller interaction details such as incomplete key sequences, cancellation, selection after deletion, and failure feedback are defined in [prd.md](prd.md). The PRD also contains the technical decisions and remaining implementation and distribution questions. These are refinements, not reasons to expand the product.

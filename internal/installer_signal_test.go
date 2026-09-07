@@ -15,12 +15,12 @@ import (
 )
 
 // Pipes acknowledge the exact commit boundary; no timing assumption or polling.
-func testInstallerInterruption(t *testing.T) {
+func testInstallerInterruption(t *testing.T, shell string) {
 	for _, upgrade := range []bool{false, true} {
 		for _, point := range []string{"before-receipt", "after-receipt", "after-binary"} {
 			for _, signal := range []syscall.Signal{syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM} {
 				t.Run(fmt.Sprintf("upgrade=%t/%s/%s", upgrade, point, signal), func(t *testing.T) {
-					f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+					f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 					if err := os.MkdirAll(f.dest, 0700); err != nil {
 						t.Fatal(err)
 					}

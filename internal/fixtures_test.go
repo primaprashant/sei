@@ -2,6 +2,7 @@ package app
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -100,12 +101,8 @@ func TestRepresentativeFixture(t *testing.T) {
 	// Supplemental test-only data. None of these names or bytes claim upstream provenance.
 	for _, bad := range []string{"", "skills/../escape", "skills/link"} {
 		t.Run(fmt.Sprintf("supplement-%q", bad), func(t *testing.T) {
-			archive := filepath.Join(t.TempDir(), "fixture.gz")
-			f, err := os.Create(archive)
-			if err != nil {
-				t.Fatal(err)
-			}
-			z := gzip.NewWriter(f)
+			var archive bytes.Buffer
+			z := gzip.NewWriter(&archive)
 			tw := tar.NewWriter(z)
 			files := map[string]string{"LICENSE": "Supplemental test-only license marker", "skills/.dot/nested/.data": "hidden", "skills/\u754c-e\u0301/SKILL.md": "unicode", "skills/" + strings.Repeat("long-", 20) + "/script.sh": "not executed"}
 			if bad != "" {
@@ -130,20 +127,8 @@ func TestRepresentativeFixture(t *testing.T) {
 			if err := z.Close(); err != nil {
 				t.Fatal(err)
 			}
-			if err := f.Close(); err != nil {
-				t.Fatal(err)
-			}
-			f, err = os.Open(archive)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer func() {
-				if err := f.Close(); err != nil {
-					t.Error(err)
-				}
-			}()
 			root := t.TempDir()
-			err = unpackRepresentative(f, root)
+			err := unpackRepresentative(&archive, root)
 			if (err != nil) != (bad != "") {
 				t.Fatalf("unpack: %v", err)
 			}

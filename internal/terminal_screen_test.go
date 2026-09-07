@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/x/vt"
 )
 
-func performanceScreenMatches(screen *vt.Emulator, wants ...string) bool {
+func ptyScreenMatches(screen *vt.Emulator, wants ...string) bool {
 	text := strings.ReplaceAll(screen.String(), "\n", "")
 	for _, want := range wants {
 		// String trims blank cells at row ends, including a real space that
@@ -46,7 +46,7 @@ func newPTYScreen(t *testing.T, width, height int) *vt.Emulator {
 	return screen
 }
 
-func TestPerformanceScreen(t *testing.T) {
+func TestPTYScreen(t *testing.T) {
 	screen := newPTYScreen(t, 80, 24)
 	write := func(text string) {
 		t.Helper()
@@ -76,7 +76,7 @@ func TestPerformanceScreen(t *testing.T) {
 	}
 	result := "Result: " + strings.Repeat("x", 70) + ": complete\nHelp 1/2"
 	write("\x1b[H\x1b[2J" + strings.ReplaceAll(ansi.Hardwrap(result, 80, true), "\n", "\r\n"))
-	if !performanceScreenMatches(screen, result) || performanceScreenMatches(screen, strings.Replace(result, "complete", "working", 1)) {
+	if !ptyScreenMatches(screen, result) || ptyScreenMatches(screen, strings.Replace(result, "complete", "working", 1)) {
 		t.Fatal("space at wrap boundary confused current-screen result")
 	}
 	write("\x1b[?1049l")

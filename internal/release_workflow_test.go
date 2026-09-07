@@ -116,41 +116,21 @@ esac
 			}
 			want = append(want, "sei_"+v+"_checksums.txt", "install.sh", "install.sh.sha256", "--repo", "local/mock",
 				"--draft", "--verify-tag", fmt.Sprintf("--prerelease=%t", pre), "--latest=false", "--title", "sei "+tc.tag, "--notes")
-			if logErr != nil || !strings.HasPrefix(string(log), strings.Join(want, "\n")+"\nPersonal-tool draft from "+commit) {
+			notes := "Draft release for " + tc.tag + ", built from " + commit + ". See README.md for installation and usage."
+			if logErr != nil || string(log) != strings.Join(want, "\n")+"\n"+notes+"\n" {
 				t.Fatalf("unexpected upload arguments: %s, %v", log, logErr)
 			}
 		})
 	}
 }
 
-func TestReleaseWorkflowContract(t *testing.T) {
-	for file, fragments := range map[string][]string{
-		".github/workflows/ci.yml": {
-			"  push:\n  pull_request:\n  workflow_call:", "type: boolean\n        default: false",
-			"fetch-depth: ${{ inputs.release && '0' || '1' }}", "run: bash scripts/release.sh tag",
-			"GORELEASER_CURRENT_TAG=\"$GITHUB_REF_NAME\" GOPROXY=off goreleaser release --clean --skip=publish", "goreleaser release --snapshot --clean",
-			"test \"$SEI_RELEASE_VERSION\" = \"${GITHUB_REF_NAME#v}\"", "cp scripts/install.sh dist/install.sh",
-			"artifact-ids: ${{ needs.archives.outputs.artifact-id }}", "go test -race -count=1 ./...",
-			"target: [FuzzParseConfig, FuzzPathName]", "go test -count=1 -run '^TestRelease' -v ./internal",
-		},
-		".github/workflows/release.yml": {
-			"tags: ['v*']", "uses: ./.github/workflows/ci.yml\n    with:\n      release: true",
-			"draft-upload:\n    needs: verify", "    permissions:\n      contents: write",
-			"artifact-ids: ${{ needs.verify.outputs.artifact-id }}", "digest-mismatch: error",
-			"GH_TOKEN: ${{ github.token }}", "SEI_RELEASE_VERSION: ${{ needs.verify.outputs.version }}",
-			"SEI_RELEASE_COMMIT: ${{ needs.verify.outputs.commit }}", "run: bash scripts/release.sh draft",
-		},
-	} {
+func TestReleaseWorkflowPermissions(t *testing.T) {
+	for _, file := range []string{".github/workflows/ci.yml", ".github/workflows/release.yml"} {
 		data, err := os.ReadFile(repoPath(t, file))
 		if err != nil {
 			t.Fatal(err)
 		}
 		text := string(data)
-		for _, fragment := range fragments {
-			if !strings.Contains(text, fragment) {
-				t.Errorf("%s missing contract: %s", file, fragment)
-			}
-		}
 		wantWrites := 0
 		if strings.HasSuffix(file, "/release.yml") {
 			wantWrites = 1

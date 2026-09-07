@@ -31,23 +31,23 @@ func TestInstaller(t *testing.T) {
 			if _, err := exec.LookPath(shell); err != nil {
 				t.Skipf("shell unavailable: %v", err)
 			}
-			for name, test := range map[string]func(*testing.T){
+			for name, test := range map[string]func(*testing.T, string){
 				"Fresh": testInstallerFresh, "PATH": testInstallerPATH,
 				"Invalid": testInstallerInvalid, "Safety": testInstallerSafety,
 				"Upgrade": testInstallerUpgrade, "BrokenInputs": testInstallerBrokenInputs,
 				"Utilities": testInstallerUtilities, "ArchiveSafety": testInstallerArchiveSafety,
 				"Interruption": testInstallerInterruption, "Directory": testInstallerDirectory,
 			} {
-				t.Run(name, test)
+				t.Run(name, func(t *testing.T) { test(t, shell) })
 			}
 		})
 	}
 }
 
-func newInstallerFixture(t *testing.T, host, target string, headers ...*tar.Header) *installerFixture {
+func newInstallerFixture(t *testing.T, shell, host, target string, headers ...*tar.Header) *installerFixture {
 	t.Helper()
 	f := &installerFixture{root: t.TempDir(), asset: "sei_0.1.0_" + target + ".tar.gz"}
-	f.shell = strings.Split(t.Name(), "/")[1]
+	f.shell = shell
 	root, err := filepath.EvalSymlinks(f.root)
 	if err != nil {
 		t.Fatal(err)
@@ -146,9 +146,6 @@ func (f *installerFixture) run(t *testing.T, args ...string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	shell := f.shell
-	if shell == "" {
-		shell = "sh"
-	}
 	argv := []string{script}
 	if shell == "bash" {
 		argv = append([]string{"--posix"}, argv...)
@@ -185,7 +182,7 @@ func (f *installerFixture) run(t *testing.T, args ...string) (string, error) {
 	return string(out), err
 }
 
-func testInstallerFresh(t *testing.T) {
+func testInstallerFresh(t *testing.T, shell string) {
 	for _, format := range []tar.Format{tar.FormatPAX, tar.FormatGNU} {
 		t.Run("metadata/"+format.String(), func(t *testing.T) {
 			var headers []*tar.Header
@@ -196,7 +193,7 @@ func testInstallerFresh(t *testing.T) {
 				}
 				headers = append(headers, h)
 			}
-			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64", headers...)
+			f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64", headers...)
 			f.env = append(f.env, "TAR_OPTIONS=--invalid-option", "GZIP=--invalid-option")
 			// Only the exact selected asset matters; other release assets cannot
 			// substitute for it, and documentation metadata is never extracted.
@@ -213,7 +210,7 @@ func testInstallerFresh(t *testing.T) {
 	for host, target := range map[string]string{"Linux/x86_64": "linux_amd64", "Linux/amd64": "linux_amd64", "Linux/aarch64": "linux_arm64", "Linux/arm64": "linux_arm64", "Darwin/x86_64": "darwin_amd64", "Darwin/amd64": "darwin_amd64", "Darwin/arm64": "darwin_arm64", "Darwin/aarch64": "darwin_arm64"} {
 		for _, version := range []string{"latest", "v0.1.0"} {
 			t.Run(host+"/"+version, func(t *testing.T) {
-				f := newInstallerFixture(t, host, target)
+				f := newInstallerFixture(t, shell, host, target)
 				out, err := f.run(t, "--version", version, "--install-dir", f.dest)
 				if err != nil {
 					t.Fatalf("%v: %s", err, out)
@@ -255,14 +252,14 @@ func testInstallerFresh(t *testing.T) {
 		}
 	}
 	t.Run("default", func(t *testing.T) {
-		f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+		f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 		f.dest = filepath.Join(f.root, ".local", "bin")
 		if out, err := f.run(t); err != nil {
 			t.Fatalf("%v: %s", err, out)
 		}
 	})
 	t.Run("relative", func(t *testing.T) {
-		f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+		f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 		out, err := f.run(t, "--install-dir", "user's bin/nested")
 		if err != nil || !strings.Contains(out, f.dest+"/sei") {
 			t.Fatalf("relative directory: %v: %s", err, out)
@@ -270,10 +267,10 @@ func testInstallerFresh(t *testing.T) {
 	})
 }
 
-func testInstallerPATH(t *testing.T) {
+func testInstallerPATH(t *testing.T, shell string) {
 	for _, fragments := range []bool{false, true} {
 		t.Run(fmt.Sprintf("colon/fragments=%t", fragments), func(t *testing.T) {
-			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+			f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 			f.dest = filepath.Join(f.root, "user's bin:quoted \"directory\"")
 			if fragments {
 				// These are two PATH components, never the colon-containing directory.
@@ -305,7 +302,7 @@ func testInstallerPATH(t *testing.T) {
 	}
 	for _, position := range []string{"absent", "near-match", "first", "middle", "last"} {
 		t.Run(position, func(t *testing.T) {
-			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+			f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 			path := strings.TrimPrefix(f.env[0], "PATH=")
 			present := true
 			switch position {
@@ -359,10 +356,10 @@ func testInstallerPATH(t *testing.T) {
 	}
 }
 
-func testInstallerInvalid(t *testing.T) {
+func testInstallerInvalid(t *testing.T, shell string) {
 	for _, args := range [][]string{{"--bad"}, {"--force"}, {"--no-verify"}, {"--url", "https://evil.invalid"}, {"--version"}, {"--install-dir"}, {"--install-dir", ""}, {"--install-dir", "trailing\n"}, {"--install-dir", "one", "--install-dir", "two"}, {"--version", "v0.1.0", "--version", "v0.1.0"}, {"--version", ""}, {"--version", "0.1.0"}, {"--version", "v01.1.0"}, {"--version", "v0.1.0/../../evil"}, {"--version", "v0.1.0?x=y"}, {"--version", "v0.1.0\nv1.0.0"}, {"--version", "v0.1.0\n"}, {"--version", "v0.1.0\r"}, {"--version", "v0.1.0-01"}, {"--version", "v0.1.0+metadata"}} {
 		t.Run(fmt.Sprint(args), func(t *testing.T) {
-			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+			f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 			if out, err := f.run(t, args...); err == nil {
 				t.Fatalf("accepted invalid input: %s", out)
 			}
@@ -373,7 +370,7 @@ func testInstallerInvalid(t *testing.T) {
 	}
 	for _, host := range []string{"FreeBSD/x86_64", "Linux/armv7l", "Windows/amd64", "Darwin/i386", "Linux/i686"} {
 		t.Run(host, func(t *testing.T) {
-			f := newInstallerFixture(t, host, "linux_amd64")
+			f := newInstallerFixture(t, shell, host, "linux_amd64")
 			if out, err := f.run(t, "--install-dir", f.dest); err == nil || !strings.Contains(out, "unsupported host") {
 				t.Fatalf("%v: %s", err, out)
 			}
@@ -381,11 +378,11 @@ func testInstallerInvalid(t *testing.T) {
 	}
 }
 
-func testInstallerSafety(t *testing.T) {
+func testInstallerSafety(t *testing.T, shell string) {
 	for _, name := range []string{"sei", ".sei-install-receipt"} {
 		for _, kind := range []string{"file", "directory", "symlink", "dangling"} {
 			t.Run(name+"/"+kind, func(t *testing.T) {
-				f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+				f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 				if err := os.MkdirAll(f.dest, 0700); err != nil {
 					t.Fatal(err)
 				}
@@ -436,12 +433,12 @@ func testInstallerSafety(t *testing.T) {
 	}
 }
 
-func testInstallerUpgrade(t *testing.T) {
+func testInstallerUpgrade(t *testing.T, shell string) {
 	for _, point := range []string{"before-receipt", "before-binary"} {
 		for _, changed := range []string{"sei", ".sei-install-receipt"} {
 			for _, mutationKind := range []string{"symlink", "bytes"} {
 				t.Run("recheck/"+point+"/"+changed+"/"+mutationKind, func(t *testing.T) {
-					f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+					f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 					if out, err := f.run(t, "--version", "v0.1.0", "--install-dir", f.dest); err != nil {
 						t.Fatalf("setup: %v: %s", err, out)
 					}
@@ -506,7 +503,7 @@ func testInstallerUpgrade(t *testing.T) {
 	}
 	for _, problem := range []string{"success", "download", "partial", "stage-write", "permissions", "candidate-write", "candidate-version", "candidate-exit", "candidate-empty", "candidate-newlines", "candidate-no-newline", "candidate-stderr", "checksum", "receipt-write", "receipt", "binary", "guidance", "postcommit"} {
 		t.Run(problem, func(t *testing.T) {
-			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+			f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 			if err := os.MkdirAll(f.dest, 0700); err != nil {
 				t.Fatal(err)
 			}
@@ -639,7 +636,7 @@ func testInstallerUpgrade(t *testing.T) {
 	}
 	for _, problem := range []string{"missing", "mismatch", "header", "version", "prerelease", "nul", "digest", "extra-field", "tab", "blank", "duplicate", "ambiguous", "duplicate-version", "no-newline", "receipt-symlink", "binary-symlink", "receipt-directory", "binary-directory", "receipt-fifo", "binary-fifo"} {
 		t.Run("refuse/"+problem, func(t *testing.T) {
-			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+			f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 			if err := os.MkdirAll(f.dest, 0700); err != nil {
 				t.Fatal(err)
 			}
@@ -727,10 +724,10 @@ func testInstallerUpgrade(t *testing.T) {
 	}
 }
 
-func testInstallerBrokenInputs(t *testing.T) {
+func testInstallerBrokenInputs(t *testing.T, shell string) {
 	for _, problem := range []string{"missing-sum", "duplicate-sum", "bad-sum", "extra-field", "short-sum", "uppercase-sum", "prefix-sum", "mismatch", "download", "partial", "receipt", "binary", "latest-url", "latest-tag", "latest-newline", "latest-unavailable", "unavailable", "manifest-download", "partial-manifest", "candidate-version", "corrupt-gzip", "corrupt-tar", "truncated-gzip", "appended-archive"} {
 		t.Run(problem, func(t *testing.T) {
-			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+			f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 			sum := fmt.Sprintf("%x  %s\n", sha256.Sum256(f.archive), f.asset)
 			switch problem {
 			case "extra-field":
@@ -820,10 +817,10 @@ func testInstallerBrokenInputs(t *testing.T) {
 	}
 }
 
-func testInstallerUtilities(t *testing.T) {
+func testInstallerUtilities(t *testing.T, shell string) {
 	for _, missing := range []string{"", "awk", "chmod", "cmp", "curl", "gzip", "mkdir", "mktemp", "mv", "rm", "sed", "tar", "uname", "shasum"} {
 		t.Run("missing-"+missing, func(t *testing.T) {
-			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+			f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 			tools := filepath.Join(f.root, "tools")
 			// Deliberately omit sha256sum to exercise the native macOS fallback
 			// even on Linux. Keep only explicit installer/mock utility dependencies.
@@ -857,7 +854,7 @@ func testInstallerUtilities(t *testing.T) {
 	}
 }
 
-func testInstallerArchiveSafety(t *testing.T) {
+func testInstallerArchiveSafety(t *testing.T, shell string) {
 	for _, problem := range []string{"extra", "missing", "duplicate", "duplicate-doc", "traversal", "absolute", "dot", "newline", "tab", "backslash", "nested", "directory", "symlink", "hardlink", "fifo", "device", "block", "pax-path", "gnu-long-path", "pax-link", "gnu-long-link"} {
 		t.Run(problem, func(t *testing.T) {
 			headers := []*tar.Header{}
@@ -905,7 +902,7 @@ func testInstallerArchiveSafety(t *testing.T) {
 				headers[0].Typeflag = map[string]byte{"directory": tar.TypeDir, "symlink": tar.TypeSymlink, "hardlink": tar.TypeLink, "fifo": tar.TypeFifo, "device": tar.TypeChar, "block": tar.TypeBlock}[problem]
 				headers[0].Linkname = "README.md"
 			}
-			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64", headers...)
+			f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64", headers...)
 			if out, err := f.run(t, "--install-dir", f.dest); err == nil {
 				t.Fatalf("accepted unsafe archive: %s", out)
 			}
@@ -917,10 +914,10 @@ func testInstallerArchiveSafety(t *testing.T) {
 	}
 }
 
-func testInstallerDirectory(t *testing.T) {
+func testInstallerDirectory(t *testing.T, shell string) {
 	for _, problem := range []string{"unwritable", "file-parent", "resolved-control", "tab", "escape", "carriage-return"} {
 		t.Run(problem, func(t *testing.T) {
-			f := newInstallerFixture(t, "Linux/x86_64", "linux_amd64")
+			f := newInstallerFixture(t, shell, "Linux/x86_64", "linux_amd64")
 			switch problem {
 			case "unwritable":
 				if os.Geteuid() == 0 {
