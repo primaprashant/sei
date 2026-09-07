@@ -92,9 +92,28 @@ func TestSetupDetails(t *testing.T) {
 	}
 }
 
+func TestSetupDefaultFieldsVisible(t *testing.T) {
+	m := newSetupModel("/work/project", "/home/demo/.config/sei/config.json")
+	m.width, m.height = 80, 24
+	for _, field := range []int{0, 9} {
+		m.field = field
+		view := ansi.Strip(m.View().Content)
+		for _, a := range m.cfg.Agents {
+			for _, value := range []string{a.Name, a.Global, a.Local} {
+				if !strings.Contains(view, value) {
+					t.Fatalf("default field %q is hidden with focus %d", value, field)
+				}
+			}
+		}
+		if strings.Contains(view, "Earlier fields") || strings.Contains(view, "More agents") {
+			t.Fatal("default setup unexpectedly needs scrolling")
+		}
+	}
+}
+
 func TestSetupSnapshots(t *testing.T) {
 	var corpus strings.Builder
-	for _, state := range []string{"edit", "last-agent", "chooser", "review", "replace", "error", "saving", "quit", "details"} {
+	for _, state := range []string{"edit", "last-agent", "chooser", "review", "review-small", "replace", "error", "saving", "quit", "details"} {
 		m := newSetupModel("/work/project", "/home/demo/.config/sei/config.json")
 		m.cfg.Library = "~/skill-library"
 		m.resolved = m.cfg
@@ -113,6 +132,8 @@ func TestSetupSnapshots(t *testing.T) {
 		case "review":
 			m.preview = true
 			m.width, m.height = 100, 35
+		case "review-small":
+			m.preview = true
 		case "replace":
 			m.preview, m.confirm = true, true
 		case "error":

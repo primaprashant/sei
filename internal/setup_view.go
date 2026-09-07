@@ -10,11 +10,17 @@ import (
 
 func (m setupModel) View() tea.View {
 	s := m.theme.styles()
-	width := min(88, max(0, m.width))
+	width := min(76, max(0, m.width))
+	if m.details {
+		width = min(88, max(0, m.width))
+	}
+	if m.confirm || m.adding {
+		width = min(width, 62)
+	}
 	if width < 20 || m.height < 8 {
 		return boundedView(s.warning.Render("Enlarge terminal to edit setup.")+"\nEsc / Ctrl+C cancel\n"+m.setupStatus(), m.width, m.height)
 	}
-	stage := "Edit → Review"
+	stage := "Your skill workspace"
 	if m.preview {
 		stage = "Review configuration"
 	}
@@ -36,7 +42,7 @@ func (m setupModel) View() tea.View {
 	if m.pendingQuit {
 		stage = "Finishing before exit"
 	}
-	title := s.accent.Render("sei setup") + "  " + s.section.Render(stage)
+	title := s.brand.Render(" sei ") + " " + s.title.Render("setup") + "  " + s.section.Render(stage)
 	body, anchor := m.setupBody(width, s)
 	available := m.height - 6
 	offset := m.offset
@@ -53,53 +59,43 @@ func (m setupModel) View() tea.View {
 			visible[0] = s.muted.Render("↑ Earlier fields")
 		}
 		if offset+available < len(body) {
-			for i := len(visible) - 1; i >= 0; i-- {
-				if strings.HasPrefix(ansi.Strip(visible[i]), "╰") {
-					if i+1 < len(visible) {
-						visible[i+1] = s.muted.Render("↓ More agents · Tab continues")
-					}
-					for j := i + 2; j < len(visible); j++ {
-						visible[j] = ""
-					}
-					break
-				}
-			}
+			visible[len(visible)-1] = s.muted.Render("↓ More agents · Tab continues")
 		}
 	}
 	helper := m.fieldHint()
-	keys := "Tab/↑↓ field  Ctrl+U clear  Enter review  F1 details  Esc cancel"
-	extra := "Ctrl+N add agent  Ctrl+X remove agent  Ctrl+K/J reorder"
+	keys := s.shortcuts("Tab/↑↓", "field", "Ctrl+U", "clear", "Enter", "review", "F1", "details", "Esc", "cancel")
+	extra := s.shortcuts("Ctrl+N", "add agent", "Ctrl+X", "remove agent", "Ctrl+K/J", "reorder")
 	if m.preview || m.details {
 		helper = fmt.Sprintf("Rows %d–%d / %d", offset+1, min(len(body), offset+available), len(body))
-		keys = "Enter save  e edit  ↑↓ scroll  F1 details  Esc cancel"
+		keys = s.shortcuts("Enter", "save", "e", "edit", "↑↓", "scroll", "F1", "details", "Esc", "cancel")
 		extra = "Copy replaces destination edits; removal is permanent. No undo."
 		if m.details {
-			keys = "↑↓ scroll  F1 back  Esc cancel setup"
+			keys = s.shortcuts("↑↓", "scroll", "F1", "back", "Esc", "cancel setup")
 			extra = ""
 		}
 	}
 	if m.adding {
 		helper = "Choose a preset or start with blank fields."
-		keys = "1–9 preset  0 custom  Other keys back  Esc cancel setup"
+		keys = s.shortcuts("1–9", "preset", "0", "custom", "Other keys", "back", "Esc", "cancel setup")
 		extra = ""
 	}
 	if m.confirm {
-		helper = "Replace only the configuration shown above."
-		keys = "y confirm  n back  Esc cancel"
+		helper = ""
+		keys = s.shortcuts("y", "confirm", "n", "back", "Esc", "cancel")
 		extra = ""
 	}
 	if width < 65 {
 		switch {
 		case m.details:
-			keys, extra = "↑↓ scroll  F1 back", "Esc cancel setup"
+			keys, extra = s.shortcuts("↑↓", "scroll", "F1", "back"), s.shortcuts("Esc", "cancel setup")
 		case m.confirm:
-			keys, extra = "y confirm  n back", "Esc cancel"
+			keys, extra = s.shortcuts("y", "confirm", "n", "back"), s.shortcuts("Esc", "cancel")
 		case m.adding:
-			keys, extra = "1–9 preset · 0 custom", "Esc cancel · Other keys back"
+			keys, extra = s.shortcuts("1–9", "preset", "0", "custom"), s.shortcuts("Esc", "cancel", "Other keys", "back")
 		case m.preview:
-			keys, extra = "Enter save  e edit", "Esc cancel  ↑↓ scroll"
+			keys, extra = s.shortcuts("Enter", "save", "e", "edit"), s.shortcuts("Esc", "cancel", "↑↓", "scroll")
 		default:
-			keys, extra = "Tab field  Enter review", "Esc cancel  F1 details"
+			keys, extra = s.shortcuts("Tab", "field", "Enter", "review"), s.shortcuts("Esc", "cancel", "F1", "details")
 		}
 	}
 	if m.busy {
@@ -121,9 +117,30 @@ func (m setupModel) View() tea.View {
 	if m.details && !m.busy {
 		status = ""
 	}
-	lines := []string{title, ""}
+	steps := []string{"1 Edit", "2 Review", "3 Save"}
+	current := 0
+	if m.preview {
+		current = 1
+	}
+	if m.confirm || m.preview && m.busy {
+		current = 2
+	}
+	for i, step := range steps {
+		style := s.muted
+		if i == current {
+			style = s.accent
+		}
+		steps[i] = style.Render(step)
+	}
+	progress := strings.Join(steps, s.muted.Render("  →  "))
+	if m.confirm || m.adding {
+		// Small dialogs sit inside the same content area as the form.
+		padding := max(0, (available-len(body))/3)
+		visible = append(make([]string, padding), visible[:available-padding]...)
+	}
+	lines := []string{title, progress}
 	lines = append(lines, visible...)
-	lines = append(lines, status, s.muted.Render(helper), s.accent.Render(keys), s.muted.Render(extra))
+	lines = append(lines, status, s.muted.Render(helper), keys, s.muted.Render(extra))
 	margin := strings.Repeat(" ", max(0, (m.width-width)/2))
 	for i := range lines {
 		lines[i] = margin + ansi.Truncate(lines[i], width, "~")
@@ -165,6 +182,10 @@ func (m setupModel) setupBody(width int, s uiStyles) ([]string, int) {
 	wrap := func(text string) []string { return strings.Split(ansi.Hardwrap(text, width-4, true), "\n") }
 	if m.confirm {
 		lines := append([]string{s.warning.Render("Replace existing configuration?"), ""}, wrap(displayText(m.path))...)
+		lines = append(lines, "")
+		for _, line := range strings.Split(ansi.Wrap("Saves your library and agent paths. Skill folders stay unchanged.", width-4, ""), "\n") {
+			lines = append(lines, s.muted.Render(line))
+		}
 		return strings.Split(s.frame("Configuration", "y confirm · n back", lines, width, len(lines)+2, false), "\n"), 0
 	}
 	if m.adding {
@@ -202,8 +223,12 @@ func (m setupModel) setupBody(width int, s uiStyles) ([]string, int) {
 
 	var body []string
 	anchor := 0
-	appendFrame := func(title, footer string, lines []string, active bool) {
-		body = append(body, strings.Split(s.frame(title, footer, lines, width, len(lines)+2, active), "\n")...)
+	appendGroup := func(title, footer string, lines []string, active bool) {
+		if active {
+			title = "* " + title
+		}
+		body = append(body, s.sectionLine(title, footer, width))
+		body = append(body, lines...)
 		body = append(body, "")
 	}
 	if m.preview {
@@ -211,15 +236,16 @@ func (m setupModel) setupBody(width int, s uiStyles) ([]string, int) {
 			body = append(body, s.muted.Render(line))
 		}
 		body = append(body, "")
-		appendFrame("Library", "source stays unchanged", wrap("Library: "+displayText(m.resolved.Library)), false)
+		appendGroup("Library", "source stays unchanged", wrap("Library: "+displayText(m.resolved.Library)), false)
 		for i, a := range m.resolved.Agents {
 			lines := wrap("Global: " + displayText(a.Global))
 			lines = append(lines, wrap("Project: "+displayText(a.Local))...)
 			if id := 1 + len(m.resolved.Agents) + i; id < len(m.duplicateProject) && m.duplicateProject[id] {
 				lines = append(lines, wrap("Project disabled here: "+duplicateProjectReason)...)
 			}
-			appendFrame(fmt.Sprintf("%d %s", i+1, displayText(a.Name)), fmt.Sprintf("focus %d / g%d · copy %c / %c", i+1, i+1, addKeys[i], strings.ToUpper(string(addKeys[i]))[0]), lines, false)
+			appendGroup(fmt.Sprintf("%d %s", i+1, displayText(a.Name)), fmt.Sprintf("focus %d / g%d · copy %c / %c", i+1, i+1, addKeys[i], strings.ToUpper(string(addKeys[i]))[0]), lines, false)
 		}
+		body = append(body, "")
 		for _, text := range []string{
 			"Replacement loses local edits and destination-only files: delete first, then copy.",
 			"Deletion is permanent. No confirmation, trash, backup, or rollback; failures may leave partial output.",
@@ -252,17 +278,17 @@ func (m setupModel) setupBody(width int, s uiStyles) ([]string, int) {
 		}
 		return style.Render(fit(prefix+value, width-4))
 	}
-	appendFrame("Library", "source collection", []string{field(0, "Library", m.cfg.Library)}, m.field == 0)
+	appendGroup("Library", "source collection", []string{field(0, "Library", m.cfg.Library)}, m.field == 0)
 	anchor = 1
 	for i, a := range m.cfg.Agents {
 		selected := m.field > 0 && (m.field-1)/3 == i
 		if selected {
 			anchor = len(body) + 1 + (m.field-1)%3
 			if m.height-6 >= 6 {
-				anchor = len(body) + 4
+				anchor = len(body) + 3
 			}
 		}
-		appendFrame(fmt.Sprintf("%d · %s", i+1, displayText(a.Name)), fmt.Sprintf("Agent %d / %d", i+1, len(m.cfg.Agents)), []string{
+		appendGroup(fmt.Sprintf("%d · %s", i+1, displayText(a.Name)), fmt.Sprintf("Agent %d / %d", i+1, len(m.cfg.Agents)), []string{
 			field(1+3*i, "Name", a.Name), field(2+3*i, "Global", a.Global), field(3+3*i, "Project", a.Local),
 		}, selected)
 	}

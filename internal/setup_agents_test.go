@@ -185,11 +185,13 @@ func TestSetupAgents(t *testing.T) {
 			if !strings.Contains(view, displayText(a.Name)) || !strings.Contains(view, mapping) {
 				t.Fatalf("missing mapping/name: %s", mapping)
 			}
+			var content strings.Builder
+			for _, line := range strings.Split(ansi.Strip(view), "\n") {
+				content.WriteString(strings.TrimSpace(line))
+			}
 			for _, path := range []string{"Global: " + displayText(m.resolved.Agents[i].Global), "Project: " + displayText(m.resolved.Agents[i].Local)} {
-				for _, line := range strings.Split(ansi.Hardwrap(path, m.width-4, true), "\n") {
-					if !strings.Contains(view, line) {
-						t.Fatalf("missing resolved path segment: %q", line)
-					}
+				if !strings.Contains(content.String(), path) {
+					t.Fatalf("missing resolved path: %q", path)
 				}
 			}
 			setupAbsent(t, m.resolved.Agents[i].Global, m.resolved.Agents[i].Local)
