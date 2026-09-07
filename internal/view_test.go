@@ -91,6 +91,22 @@ func TestLayoutBounds(t *testing.T) {
 	}
 }
 
+func TestPanelEdgesAlign(t *testing.T) {
+	for _, size := range [][2]int{{80, 24}, {100, 30}, {143, 35}, {148, 39}} {
+		m := navigationModel(3)
+		m.width, m.height = size[0], size[1]
+		_, columns, _, _, _ := m.layout()
+		lines := strings.Split(ansi.Strip(m.View().Content), "\n")
+		top, bottom := lines[2], lines[m.height-5]
+		if strings.Count(top, "╭") != columns+1 || strings.Count(bottom, "╯") != columns+1 {
+			t.Fatalf("panel edges do not align at %v:\n%s\n%s", size, top, bottom)
+		}
+		if ansi.StringWidth(strings.TrimRight(bottom, " ")) != m.width {
+			t.Fatalf("unused column beside panels at %v: %q", size, bottom)
+		}
+	}
+}
+
 func TestLayoutHelp(t *testing.T) {
 	m := navigationModel(9)
 	m.width, m.height, m.showHelp, m.pendingGlobal = 80, 24, true, true

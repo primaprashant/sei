@@ -39,6 +39,7 @@ func (t *uiTheme) update(msg tea.Msg) (bool, tea.Cmd) {
 
 type uiStyles struct {
 	title, muted, accent, section, selected, success, warning, danger lipgloss.Style
+	border, brand, key                                                lipgloss.Style
 }
 
 func (t uiTheme) styles() uiStyles {
@@ -47,15 +48,19 @@ func (t uiTheme) styles() uiStyles {
 	}
 	violet, cyan, gray := "#B4A4F4", "#7DCBD4", "#9A9AA8"
 	green, amber, red, ink := "#91C99C", "#E5BE7A", "#F08D98", "#191923"
+	border, surface := "#505064", "#2B2938"
 	if t.light {
 		violet, cyan, gray = "#6545AA", "#176B7B", "#626273"
 		green, amber, red, ink = "#28723D", "#8A5A0A", "#B02D43", "#FFFFFF"
+		border, surface = "#B8B5C5", "#ECE8F4"
 	}
 	fg := func(c string) lipgloss.Style { return lipgloss.NewStyle().Foreground(lipgloss.Color(c)) }
 	return uiStyles{
 		title: lipgloss.NewStyle().Bold(true), muted: fg(gray), accent: fg(violet).Bold(true),
 		section: fg(cyan).Bold(true), success: fg(green), warning: fg(amber), danger: fg(red),
 		selected: fg(ink).Background(lipgloss.Color(violet)).Bold(true),
+		border:   fg(border), brand: fg(ink).Background(lipgloss.Color(violet)).Bold(true),
+		key: fg(violet).Background(lipgloss.Color(surface)).Bold(true),
 	}
 }
 
@@ -78,16 +83,16 @@ func (s uiStyles) frame(title, footer string, lines []string, width, height int,
 		}
 		return strings.Join(out, "\n")
 	}
-	border, heading := s.muted, s.title
+	border, heading := s.border, s.title
 	if focused {
 		border, heading = s.accent, s.accent
 		title = "* " + title
 	}
-	edge := func(left, label, right string) string {
+	edge := func(left, label, right string, textStyle lipgloss.Style) string {
 		label = ansi.Truncate(" "+label+" ", width-2, "~")
-		return border.Render(left) + heading.Render(label) + border.Render(strings.Repeat("─", width-2-ansi.StringWidth(label))+right)
+		return border.Render(left) + textStyle.Render(label) + border.Render(strings.Repeat("─", width-2-ansi.StringWidth(label))+right)
 	}
-	out := []string{edge("╭", title, "╮")}
+	out := []string{edge("╭", title, "╮", heading)}
 	for i := range height - 2 {
 		line := ""
 		if i < len(lines) {
@@ -95,7 +100,7 @@ func (s uiStyles) frame(title, footer string, lines []string, width, height int,
 		}
 		out = append(out, border.Render("│")+" "+fit(line, width-4)+" "+border.Render("│"))
 	}
-	out = append(out, edge("╰", footer, "╯"))
+	out = append(out, edge("╰", footer, "╯", s.muted))
 	return strings.Join(out, "\n")
 }
 
@@ -113,7 +118,12 @@ func boundedView(text string, width, height int) tea.View {
 func (s uiStyles) shortcuts(pairs ...string) string {
 	var hints []string
 	for i := 0; i+1 < len(pairs); i += 2 {
-		hints = append(hints, s.accent.Render(pairs[i])+" "+s.muted.Render(pairs[i+1]))
+		hints = append(hints, s.key.Render(pairs[i])+" "+s.muted.Render(pairs[i+1]))
 	}
 	return strings.Join(hints, "  ")
+}
+
+func (s uiStyles) sectionLine(label, detail string, width int) string {
+	text := s.section.Render(label) + "  " + s.muted.Render(detail) + " "
+	return text + s.border.Render(strings.Repeat("─", max(0, width-ansi.StringWidth(text))))
 }

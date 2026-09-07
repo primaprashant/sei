@@ -33,7 +33,7 @@ func (s uiStyles) panelView(p browsePanel, library, focused bool, width, height 
 	if library {
 		lines = append(lines, s.muted.Render(displayText(p.path)))
 	} else if p.hint != "" {
-		lines = append(lines, s.accent.Render(p.hint))
+		lines = append(lines, s.muted.Render(p.hint))
 	}
 	if !p.safetyChecked {
 		lines = append(lines, s.warning.Render("Checking folder safety"))
@@ -126,12 +126,16 @@ func (m browseModel) View() tea.View {
 	panelHeight := (workspaceHeight - 2) / (2 * visibleRows)
 	var rightRows []string
 	for _, scope := range []int{1, 0} {
-		label := "GLOBAL"
+		label, detail := "GLOBAL", "all projects"
 		if scope == 1 {
-			label = "PROJECT"
+			label, detail = "PROJECT", "this project"
 		}
-		rightRows = append(rightRows, s.section.Render(label))
+		rightRows = append(rightRows, s.sectionLine(label, detail, rightWidth))
 		for row := firstRow; row < min(rows, firstRow+visibleRows); row++ {
+			height := panelHeight
+			if (1-scope)*visibleRows+row-firstRow < (workspaceHeight-2)%(2*visibleRows) {
+				height++
+			}
 			var cells []string
 			for col := range columns {
 				i := row*columns + col
@@ -140,18 +144,22 @@ func (m browseModel) View() tea.View {
 						cells = append(cells, " ")
 					}
 					id := 1 + scope*m.agents + i
-					cells = append(cells, s.panelView(m.labeledPanel(id), false, id == m.focused, panelWidth, panelHeight))
+					width := panelWidth
+					if col < (rightWidth-columns+1)%columns {
+						width++
+					}
+					cells = append(cells, s.panelView(m.labeledPanel(id), false, id == m.focused, width, height))
 				}
 			}
 			rightRows = append(rightRows, lipgloss.JoinHorizontal(lipgloss.Top, cells...))
 		}
 	}
 	right := strings.Join(rightRows, "\n")
-	left := s.panelView(m.labeledPanel(0), true, m.focused == 0, leftWidth, workspaceHeight)
+	left := s.sectionLine("LIBRARY", "source", leftWidth) + "\n" + s.panelView(m.labeledPanel(0), true, m.focused == 0, leftWidth, workspaceHeight-1)
 	workspace := lipgloss.JoinHorizontal(lipgloss.Top, left, " ", right)
 	// Keep header context and the status/controls anchored as lists change.
 	agentRange := fmt.Sprintf("Agents %d-%d / %d", firstRow*columns+1, min(m.agents, (firstRow+visibleRows)*columns), m.agents)
-	header := s.accent.Render("sei") + "  " + s.muted.Render(ansi.Truncate(displayText(m.config.Project), max(0, m.width-len(agentRange)-8), "~"))
+	header := s.brand.Render(" sei ") + "  " + s.muted.Render(ansi.Truncate(displayText(m.config.Project), max(0, m.width-len(agentRange)-8), "~"))
 	header = fit(header, m.width-len(agentRange)-1) + " " + s.muted.Render(agentRange)
 	p := m.labeledPanel(m.focused)
 	detail := displayText(p.label) + " · " + displayText(p.path)
@@ -174,7 +182,7 @@ func (m browseModel) View() tea.View {
 	}
 
 	return boundedView(header+"\n"+workspace+"\n"+s.muted.Render(ansi.Truncate(detail, m.width, "~"))+"\n"+
-		style.Render(ansi.Truncate(status, m.width, "~"))+"\n"+controls+"\n"+s.warning.Render(m.operationHint()), m.width, m.height)
+		style.Render(ansi.Truncate("● "+status, m.width, "~"))+"\n"+controls+"\n"+s.muted.Render(m.operationHint()), m.width, m.height)
 }
 
 func (m browseModel) operationHint() string {
@@ -232,7 +240,7 @@ func (m browseModel) browserStatus(s uiStyles) (string, lipgloss.Style) {
 			return "Duplicate project panels disabled; use global panels", s.muted
 		}
 	}
-	return "Ready", s.muted
+	return "Ready", s.success
 }
 
 const addKeys = "abcdefhio"

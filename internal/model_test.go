@@ -258,8 +258,8 @@ func TestBrowseDisplay(t *testing.T) {
 		m := newBrowseModel(cfg)
 		m.width, m.height = 180, 60
 		view := m.View().Content
-		projectAt, globalAt := strings.Index(view, "PROJECT"), strings.Index(view, "GLOBAL")
-		if projectAt < 0 || globalAt < projectAt || strings.Index(view, "Library") > projectAt {
+		libraryAt, projectAt, globalAt := strings.Index(view, "LIBRARY"), strings.Index(view, "PROJECT"), strings.Index(view, "GLOBAL")
+		if libraryAt < 0 || projectAt < libraryAt || globalAt < projectAt {
 			t.Fatal("scope order lost")
 		}
 		for i := range count {
