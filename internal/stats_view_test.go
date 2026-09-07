@@ -102,6 +102,15 @@ func TestStatsViewThemesAndKeys(t *testing.T) {
 		case "light":
 			light = view
 		}
+		if dir := os.Getenv("SEI_TEST_CAPTURES"); dir != "" {
+			for _, size := range [][2]int{{80, 24}, {110, 30}} {
+				m.width, m.height = size[0], size[1]
+				name := fmt.Sprintf("stats-%s-%dx%d.ansi", profile, m.width, m.height)
+				if err := os.WriteFile(filepath.Join(dir, name), []byte(m.View().Content), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
 		m.summary.allTime = []skillCount{{"\x1b[2J\r\n\u202e\xff", 1}}
 		for _, size := range [][2]int{{80, 24}, {100, 30}, {79, 23}, {0, 0}} {
 			next, _ := m.Update(tea.WindowSizeMsg{Width: size[0], Height: size[1]})

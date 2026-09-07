@@ -14,7 +14,7 @@ See [README](../README.md) for usage/configuration. A root entry point calls pac
 | `internal/model.go`, `internal/view.go`, `internal/styles.go` | Browser state/commands, keyboard handling, layout/display |
 | `internal/stats.go`, `internal/stats_store.go`, `internal/stats_view.go` | Daily activity, local history saves, stats command UI |
 | `scripts/`, `.github/workflows/`, `.goreleaser.yaml` | Installer and release automation |
-| `internal/testdata/*.golden` | Browser and setup view snapshots |
+| `internal/testdata/*.golden` | Browser, setup, and stats view snapshots |
 
 ## Checks
 
@@ -82,6 +82,8 @@ and panel cycling. Set `SEI_TEST_CAPTURES` to an existing disposable directory
 to capture its styled terminal frames as `.ansi` files.
 `TestPTYStats` covers copy, replacement, removal, and reopening stats with disposable
 configuration and skill folders. It also supports `SEI_TEST_CAPTURES`.
+`TestStatsViewThemesAndKeys` uses the same capture directory for populated stats
+frames in all three themes at 80x24 and 110x30.
 
 Color-profile messages choose shared light/dark styles; `NO_COLOR` retains plain
 text focus cues. Terminal background replies take precedence over `COLORFGBG`.
