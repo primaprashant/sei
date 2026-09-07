@@ -96,6 +96,10 @@ func scanResolvedFolder(r resolvedRoot) ([]skillEntry, bool, error) {
 	}
 	var skills []skillEntry
 	for _, entry := range entries {
+		// Repository metadata is never a top-level skill.
+		if entry.Name() == ".git" {
+			continue
+		}
 		info, err := folder.Lstat(entry.Name())
 		if err != nil {
 			return nil, false, err

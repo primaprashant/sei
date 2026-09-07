@@ -36,8 +36,9 @@ relative `XDG_CONFIG_HOME`; macOS ignores XDG. Refresh does not reload config.
 
 ## Two Replacement Behaviors
 
-Listings include immediate ordinary directories, including dotfolders such as
-`.git`, without parsing `SKILL.md`; loose files are ignored. Missing and
+Listings include immediate ordinary directories, including dotfolders, without
+parsing `SKILL.md`; the exact name `.git` and loose files are ignored. This listing
+filter does not exclude files or folders inside a skill during copying. Missing and
 inaccessible roots are shown differently. Copies include nested/hidden files and
 executable bits, but not ownership, timestamps, ACLs, or xattrs. Skill symlinks and
 internal links/special files block mutation; configured-root symlinks are subject

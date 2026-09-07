@@ -24,10 +24,12 @@ func browseMkdir(t *testing.T, path string) {
 
 func TestBrowseTree(t *testing.T) {
 	root := t.TempDir()
-	names := []string{"z", "A", ".hidden", "without-manifest", "nested", "\x1b[31mred", "line\nbreak", "tab\tname", "\x7f\u009b", "界", "combining-e\u0301", "accent-é", "\u202ename", `literal\n`}
+	names := []string{"z", "A", ".hidden", ".github", ".git-extra", "without-manifest", "nested", "\x1b[31mred", "line\nbreak", "tab\tname", "\x7f\u009b", "界", "combining-e\u0301", "accent-é", "\u202ename", `literal\n`}
 	for _, name := range names {
 		browseMkdir(t, filepath.Join(root, name))
 	}
+	browseMkdir(t, filepath.Join(root, ".git"))
+	writeTestFile(t, filepath.Join(root, ".git", "config"), "repository metadata")
 	browseMkdir(t, filepath.Join(root, "nested", "not-a-top-level-skill"))
 	writeTestFile(t, filepath.Join(root, "SKILL.md"), "ignored loose file")
 	writeTestFile(t, filepath.Join(root, "nested", "script.sh"), "must not execute")
@@ -60,6 +62,9 @@ func TestBrowseTree(t *testing.T) {
 		if _, err := os.Lstat(filepath.Join(root, entry.name)); err != nil {
 			t.Fatalf("raw name no longer addresses source: %q: %v", entry.name, err)
 		}
+	}
+	if data, err := os.ReadFile(filepath.Join(root, ".git", "config")); err != nil || string(data) != "repository metadata" {
+		t.Fatalf("repository metadata changed: %q, %v", data, err)
 	}
 	if data, err := os.ReadFile(filepath.Join(root, "nested", "script.sh")); err != nil || string(data) != "must not execute" {
 		t.Fatalf("source content changed: %q, %v", data, err)
