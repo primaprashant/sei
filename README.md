@@ -1,30 +1,31 @@
-# sei
+# sei - give your coding agents only the skills you deem relevant
 
-A small terminal UI for copying skills from your personal library into coding
-agents' project or global folders, and removing them when you're done.
+sei is a CLI tool for people (like myself) who:
+- have a personal collection of agent skills, and
+- like to manually choose the skills available to their coding agents for each session.
 
-## Is this for you?
+If you're happy dumping 50 skills in your `.claude/skills/` and letting the agents figure out which ones to use and when, then this is **NOT for you**.
 
-- Have a personal skill collection.
-- Want only relevant skills installed for each task.
-- Tired of copying and removing skills across projects or agents.
-
-Happy leaving everything installed? Probably no need for sei.
-It manages configured folders; it cannot tell you everything an agent discovers
-or control what it has already loaded.
+I built this TUI to replace the repeated `ls`, `cp`, and `rm` commands. I use it to inspect available skills in agents’ project and global skill folders, add skills from my collection, and remove them after I'm done.
 
 ## Install
 
 Available for **Linux and macOS**, on **amd64 and arm64**.
 
-### Install script
+### Install script (recommended)
 
 ```sh
 curl -fsSL https://github.com/primaprashant/sei/releases/latest/download/install.sh | bash
 ```
 
-The script verifies the archive checksum and installs to `~/.local/bin`, without
-sudo or Go. Follow its printed PATH instructions if `sei` is not found.
+The script pulls the pre-built binary and saves it to `~/.local/bin`. You don't need Go installed on your system.
+
+### Release archive
+
+Download a matching `.tar.gz` from the [releases](https://github.com/primaprashant/sei/releases) page, extract it, and put the `sei` binary in a directory on your PATH. In this case as well, you don't need Go installed on your system.
+
+Choose `darwin` for macOS or `linux` for Linux, and `arm64` for Apple Silicon/ARM64
+or `amd64` for Intel/AMD 64-bit processors.
 
 ### Go
 
@@ -37,48 +38,39 @@ go install github.com/primaprashant/sei@latest
 Make sure your Go binary directory (`GOBIN`, or `GOPATH/bin`, usually `~/go/bin`)
 is on your PATH.
 
-### Release archive
-
-Download a matching `.tar.gz` from [GitHub Releases](https://github.com/primaprashant/sei/releases),
-extract it, and put the `sei` binary in a directory on your PATH.
-Choose `darwin` for macOS or `linux` for Linux, and `arm64` for Apple Silicon/ARM64
-or `amd64` for Intel/AMD 64-bit processors. No Go installation is needed.
-
 ### Upgrade and uninstall
 
-To upgrade, repeat your installation method: rerun the script or `go install`,
-or replace the binary with one from a newer release archive.
-The script only replaces installations it recognizes; keep its adjacent
-`.sei-install-receipt` file and use the same install directory.
+To upgrade, repeat your installation method: rerun the script or `go install`, or replace the binary with one from a newer release archive.
+
+The install script only replaces installations it recognizes; keep its adjacent `.sei-install-receipt` file and use the same install directory. 
 
 To uninstall, quit sei and remove its binary from your install directory, along
-with `.sei-install-receipt` if you used the script. Your configuration, stats history,
-library, and copied skills remain.
+with `.sei-install-receipt` if you used the script.
+
+Your configuration, stats history, library, and copied skills will remain on your system.
 
 ## Setup
 
-1. Keep your skill folders in a separate library, such as `~/skill-library`.
+1. Keep your skill folders in a separate library, such as `~/skill-library`. I like to keep all the skills I've written and adapted over time in a git repo named `personal-agent-skills`.
 2. Run `sei` from your project directory.
-3. First-run setup asks for your library and agent destinations. Choose your paths
-   and save to start browsing. Use **F1** in setup for full paths, field guidance,
-   and validation details.
+3. First-run setup will ask for your skill library. Add/remove the coding agents you use. Choose your paths and save to start managing your skills.
 
-Setup offers Claude Code, Codex, OpenCode, Pi, Cursor, Antigravity CLI, Crush,
-GitHub Copilot CLI, and Cline CLI presets, plus custom agents. All names and
+Setup includes presets for Claude Code, Codex, OpenCode, Pi, Cursor, Antigravity CLI, Crush, GitHub Copilot CLI, and Cline CLI. You can also add any custom agents. All names and
 paths are editable.
 
+The order of the agents during the setup determines their order in the TUI and their keyboard shortcuts.
+
+To change the order of the agents, run the setup again:
+
 ```sh
-sei setup                         # Change your configuration
-sei --project ~/work/my-project    # Use a different project directory
+sei setup # Change your configuration
 ```
 
-The launch directory is the default project directory; sei does not search for
-a Git root. Setup saves configuration but does not create your library or
-agent destinations.
+The launch directory is the default project directory; sei does not search for a Git root. Setup saves configuration but does not create your library or agent destinations.
 
 ## Configuration
 
-Setup writes the configuration for you. To edit it manually, use:
+Setup writes the configuration file to disk. To edit it manually, use:
 
 - **Linux:** `$XDG_CONFIG_HOME/sei/config.json`, or `~/.config/sei/config.json`.
 - **macOS:** `~/Library/Application Support/sei/config.json`.
@@ -93,44 +85,31 @@ Setup writes the configuration for you. To edit it manually, use:
 }
 ```
 
-`library` is your source collection. Each agent's `global` folder serves all
-projects; its `local` folder is relative to the current project.
-Library and global paths must be absolute or start with `~/`. Local paths must
-stay inside the project, and library and destination roots must be separate.
-If an agent’s project and global paths resolve to the same folder (for example,
-when launching from home with the defaults), setup still saves. The browser dims
-that project panel and disables its copy/remove operations; use the global panel.
-Launching from another project or using `--project` gives project paths their
-usual meaning. Nested overlaps and overlaps between different agents remain blocked.
+Restart sei after editing the config file for the changes to take effect.
 
-Configure 1–9 agents; their order determines the keyboard slots below.
-Restart sei after editing the file. Use `sei --config /path/to/config.json`
-to choose a different config, or `sei --help` for all options.
+`library` is your source collection. Each agent's `global` folder serves all
+projects; its `local` folder is relative to the current project. Library and global paths must be absolute or start with `~/`. Local paths must stay inside the project, and library and destination roots must be separate.
+
+If an agent’s project and global paths resolve to the same folder (for example, when launching from home with the defaults), setup still saves. The browser dims that project panel and disables its copy/remove operations; use the global panel.
+
+Launching from another project or using `--project` gives project paths their
+usual meaning. Nested overlaps and overlaps between different agents are blocked.
 
 ## Stats
 
 ```sh
 sei stats
-sei --config /path/to/config.json stats
 ```
 
-See your total **skill actions**, copies, removals, active days, actions this
-calendar month, and your five most-copied skills both **all time** and over the
-**last 30 days**. The recent window includes today and the previous 29 local
-calendar dates. Use `q` or Ctrl+C to quit; reopen the screen to update it.
+You can see your total skill actions, copies, removals, active days, actions this calendar month, and your five most-copied skills both all time and over the last 30 days.
 
 ## Controls
 
-The library is on the left, project folders at the top right, and global folders
-below them. Use a terminal of at least **80×24**.
+The library is on the left, project folders at the top right, and global folders below them. Use a terminal of at least **80×24**.
 
-The active panel has a violet border and highlighted selection. Project and global
-folders are grouped separately; the footer shows the focused path and current
-operation. Colors adapt to light/dark terminal backgrounds. Set `NO_COLOR=1` for
-monochrome output; focus and selection remain marked with `*` and `>`.
+The active panel has a violet border and highlighted selection. Project and global folders are grouped separately; the footer shows the focused path and current operation. Colors adapt to light/dark terminal backgrounds. Set `NO_COLOR=1` for monochrome output; focus and selection remain marked with `*` and `>`.
 
-A **slot** is an agent's position in your configuration: the first agent is slot 1,
-the second is slot 2, and so on.
+A **slot** is an agent's position in your configuration: the first agent is slot 1, the second is slot 2, and so on.
 
 | Key | Action |
 | --- | --- |
@@ -152,13 +131,11 @@ With a skill selected in the library, use these keys to copy it:
 | Project | `a` | `b` | `c` | `d` | `e` | `f` | `h` | `i` | `o` |
 | Global | `A` | `B` | `C` | `D` | `E` | `F` | `H` | `I` | `O` |
 
-For example, `a` copies to the first agent's project folder; `A` copies to its
-global folder. Selection stays in the library so you can keep adding skills.
+For example, `a` copies to the first agent's project folder; `A` copies to its global folder. Selection stays in the library so you can keep adding skills.
 
 ## How changes work
 
 - Your source library stays unchanged.
 - Adding replaces the entire same-named destination, including local edits.
 - **Replacement and removal are immediate, with no confirmation or undo.**
-- Changes persist after quitting. Failed operations can leave missing or partial
-  output; inspect the reported destination before retrying.
+- Changes persist after quitting. Failed operations can leave missing or partial output; inspect the reported destination before retrying.
