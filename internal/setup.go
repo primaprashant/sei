@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	tea "charm.land/bubbletea/v2"
 )
@@ -34,6 +35,7 @@ type setupModel struct {
 	cfg, resolved                     config
 	project, path                     string
 	field, offset, width, height      int
+	cursor                            int // Rune position; -1 places it at the end of a newly focused field.
 	theme                             uiTheme
 	details                           bool
 	preview, busy, pendingQuit, saved bool
@@ -42,7 +44,7 @@ type setupModel struct {
 }
 
 func newSetupModel(project, path string) setupModel {
-	return setupModel{cfg: config{Agents: append([]agentConfig(nil), setupPresets[:2]...)}, project: project, path: path, width: 80, height: 24}
+	return setupModel{cfg: config{Agents: append([]agentConfig(nil), setupPresets[:2]...)}, project: project, path: path, width: 80, height: 24, cursor: -1}
 }
 
 func (setupModel) Init() tea.Cmd { return nil }
@@ -60,6 +62,26 @@ func (m *setupModel) value() *string {
 	default:
 		return &a.Local
 	}
+}
+
+func (m setupModel) cursorPosition(value string) int {
+	length := utf8.RuneCountInString(value)
+	if m.cursor < 0 {
+		return length
+	}
+	return min(m.cursor, length)
+}
+
+// Insert text literally, never as shortcuts. Reject a whole paste containing
+// controls rather than silently changing a path or accepting multiple lines.
+func (m *setupModel) insertText(text string) {
+	if text == "" || !utf8.ValidString(text) || strings.IndexFunc(text, unicode.IsControl) != -1 {
+		return
+	}
+	runes := []rune(*m.value())
+	position := m.cursorPosition(*m.value())
+	*m.value() = string(runes[:position]) + text + string(runes[position:])
+	m.cursor = position + utf8.RuneCountInString(text)
 }
 
 func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -88,7 +110,13 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.preview = msg.err == nil
 		m.offset = 0
-	case tea.PasteMsg, tea.PasteStartMsg, tea.PasteEndMsg:
+	case tea.PasteMsg:
+		if !m.busy && !m.pendingQuit && !m.preview && !m.details && !m.confirm && !m.adding {
+			m.cfg.Agents = append([]agentConfig(nil), m.cfg.Agents...)
+			m.insertText(msg.Content)
+		}
+		return m, nil
+	case tea.PasteStartMsg, tea.PasteEndMsg:
 		return m, nil
 	case tea.KeyPressMsg:
 		key := msg.String()
@@ -147,6 +175,7 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.cfg.Agents = append(append([]agentConfig(nil), m.cfg.Agents...), a)
 			m.field = 1 + 3*(len(m.cfg.Agents)-1)
+			m.cursor = -1
 			return m, nil
 		}
 		if m.preview {
@@ -186,6 +215,7 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				i := (m.field - 1) / 3
 				m.cfg.Agents = append(m.cfg.Agents[:i], m.cfg.Agents[i+1:]...)
 				m.field = min(m.field, 3*len(m.cfg.Agents))
+				m.cursor = -1
 			}
 		case "ctrl+k", "ctrl+j":
 			if m.field > 0 {
@@ -201,8 +231,18 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "tab", "down":
 			m.field = (m.field + 1) % (1 + 3*len(m.cfg.Agents))
+			m.cursor = -1
 		case "shift+tab", "up":
 			m.field = (m.field + 3*len(m.cfg.Agents)) % (1 + 3*len(m.cfg.Agents))
+			m.cursor = -1
+		case "left":
+			m.cursor = max(0, m.cursorPosition(*m.value())-1)
+		case "right":
+			m.cursor = min(utf8.RuneCountInString(*m.value()), m.cursorPosition(*m.value())+1)
+		case "home":
+			m.cursor = 0
+		case "end":
+			m.cursor = -1
 		case "enter":
 			m.busy = true
 			cfg, project, path := m.cfg, m.project, m.path
@@ -216,16 +256,23 @@ func (m setupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "ctrl+u":
 			*m.value() = ""
+			m.cursor = 0
 		case "backspace":
 			runes := []rune(*m.value())
-			if len(runes) > 0 {
-				*m.value() = string(runes[:len(runes)-1])
+			position := m.cursorPosition(*m.value())
+			if position > 0 {
+				*m.value() = string(runes[:position-1]) + string(runes[position:])
+				m.cursor = position - 1
+			}
+		case "delete":
+			runes := []rune(*m.value())
+			position := m.cursorPosition(*m.value())
+			if position < len(runes) {
+				*m.value() = string(runes[:position]) + string(runes[position+1:])
 			}
 		default:
 			if msg.Mod == 0 || msg.Mod == tea.ModShift {
-				if msg.Text != "" && strings.IndexFunc(msg.Text, unicode.IsControl) == -1 {
-					*m.value() += msg.Text
-				}
+				m.insertText(msg.Text)
 			}
 		}
 	}

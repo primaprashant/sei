@@ -294,8 +294,15 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 			send("-edited")
 			await("-edited")
 		} else {
-			send("~/skill-library")
-			await("~/skill-library")
+			// Exercise bracketed paste and cursor editing through the terminal.
+			send("\x1b[200~~/skill-librXary\x1b[201~")
+			await("~/skill-librXary▏")
+			send(strings.Repeat("\x1b[D", 4) + "\x1b[3~")
+			await("~/skill-libr▏ary")
+			send("\x1b[H")
+			await("▏~/skill-library")
+			send("\x1b[F")
+			await("~/skill-library▏")
 		}
 		if scenario == "cancel-edit" || scenario == "explicit-cancel-edit" {
 			send("\x1b")

@@ -86,6 +86,93 @@ func TestSetupDefaultsAndEditing(t *testing.T) {
 	}
 }
 
+func TestSetupCursorEditing(t *testing.T) {
+	m := newSetupModel("", "")
+	key := func(code rune) tea.Msg { return tea.KeyPressMsg{Code: code} }
+	steps := []struct {
+		msg  tea.Msg
+		want string // Cursor marker makes the expected insertion position explicit.
+	}{
+		{tea.PasteMsg{Content: "~/技能 space"}, "~/技能 space▏"},
+		{key(tea.KeyHome), "▏~/技能 space"},
+		{key(tea.KeyLeft), "▏~/技能 space"},
+		{key(tea.KeyBackspace), "▏~/技能 space"},
+		{key(tea.KeyRight), "~▏/技能 space"},
+		{key(tea.KeyRight), "~/▏技能 space"},
+		{key(tea.KeyDelete), "~/▏能 space"},
+		{tea.PasteMsg{Content: "界"}, "~/界▏能 space"},
+		{key(tea.KeyRight), "~/界能▏ space"},
+		{key(tea.KeyBackspace), "~/界▏ space"},
+		{tea.KeyPressMsg{Code: 'x', Text: "e\u0301"}, "~/界e\u0301▏ space"},
+		{key(tea.KeyEnd), "~/界e\u0301 space▏"},
+		{key(tea.KeyRight), "~/界e\u0301 space▏"},
+		{key(tea.KeyDelete), "~/界e\u0301 space▏"},
+		{tea.KeyPressMsg{Code: 'u', Mod: tea.ModCtrl}, "▏"},
+		{key(tea.KeyDelete), "▏"},
+		{tea.PasteMsg{Content: "nxyq?123"}, "nxyq?123▏"},
+	}
+	for i, step := range steps {
+		var cmd tea.Cmd
+		m, cmd = setupUpdate(t, m, step.msg)
+		runes := []rune(m.cfg.Library)
+		position := m.cursorPosition(m.cfg.Library)
+		got := string(runes[:position]) + "▏" + string(runes[position:])
+		if cmd != nil || got != step.want || m.field != 0 || m.busy || m.adding || m.preview || m.confirm {
+			t.Fatalf("step %d: got %q, want %q; model=%+v", i, got, step.want, m)
+		}
+	}
+
+	// A new field starts at its end; edits must not mutate the prior model.
+	m, _ = setupUpdate(t, m, key(tea.KeyHome))
+	m, _ = setupUpdate(t, m, key(tea.KeyTab))
+	before := m
+	m, _ = setupUpdate(t, m, tea.PasteMsg{Content: " Custom"})
+	if m.cfg.Agents[0].Name != "Claude Code Custom" || before.cfg.Agents[0].Name != "Claude Code" {
+		t.Fatal("paste lost field position or changed previous model")
+	}
+	m, _ = setupUpdate(t, m, key(tea.KeyHome))
+	m, _ = setupUpdate(t, m, key(tea.KeyDelete))
+	if m.cfg.Agents[0].Name != "laude Code Custom" || before.cfg.Agents[0].Name != "Claude Code" {
+		t.Fatal("delete changed previous model")
+	}
+	m, _ = setupUpdate(t, m, tea.KeyPressMsg{Code: 'j', Mod: tea.ModCtrl})
+	m, _ = setupUpdate(t, m, tea.PasteMsg{Content: "C"})
+	if m.field != 4 || m.cfg.Agents[1].Name != "Claude Code Custom" {
+		t.Fatal("reordering lost the cursor or edited the wrong agent")
+	}
+	m, _ = setupUpdate(t, m, tea.KeyPressMsg{Code: 'x', Mod: tea.ModCtrl})
+	m, _ = setupUpdate(t, m, tea.PasteMsg{Content: "/extra"})
+	if m.field != 3 || m.cfg.Agents[0].Local != ".agents/skills/extra" {
+		t.Fatal("removing agent did not reset the cursor in the next field")
+	}
+}
+
+func TestSetupPasteGuards(t *testing.T) {
+	for _, content := range []string{"", "path\n", "path\rnext", "path\tmore", "\x1b[31m", "\x00", "\x03", "\x7f", "\u0085", "\xff"} {
+		m := newSetupModel("", "")
+		m.cfg.Library = "~/original"
+		next, cmd := setupUpdate(t, m, tea.PasteMsg{Content: content})
+		if cmd != nil || !reflect.DeepEqual(next, m) {
+			t.Fatalf("invalid paste %q changed setup", content)
+		}
+	}
+	for _, state := range []string{"preview", "confirm", "adding", "details", "busy", "quit"} {
+		m := newSetupModel("", "")
+		m.preview = state == "preview"
+		m.confirm = state == "confirm"
+		m.adding = state == "adding"
+		m.details = state == "details"
+		m.busy = state == "busy"
+		m.pendingQuit = state == "quit"
+		for _, msg := range []tea.Msg{tea.PasteStartMsg{}, tea.PasteMsg{Content: "y0eq"}, tea.PasteEndMsg{}} {
+			next, cmd := setupUpdate(t, m, msg)
+			if cmd != nil || !reflect.DeepEqual(next, m) {
+				t.Fatalf("paste changed %s setup", state)
+			}
+		}
+	}
+}
+
 func TestSetupAsyncValidationAndSave(t *testing.T) {
 	cfg, project, path := saveConfigFixture(t)
 	m := newSetupModel(project, path)

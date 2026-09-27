@@ -166,7 +166,7 @@ func (m setupModel) setupStatus() string {
 
 func (m setupModel) fieldHint() string {
 	if m.field == 0 {
-		return "Source stays unchanged. Type appends; Backspace erases."
+		return "Type or paste a path. ←/→ move; Home/End jump; Ctrl+U clears."
 	}
 	switch (m.field - 1) % 3 {
 	case 0:
@@ -212,7 +212,7 @@ func (m setupModel) setupBody(width int, s uiStyles) ([]string, int) {
 			lines = append(lines, "")
 		}
 		lines = append(lines, s.section.Render("EDITING"))
-		text := "Tab/Up/Down selects fields; typing appends; Backspace erases; Ctrl+U clears.\nCtrl+N adds an agent, Ctrl+X removes it, Ctrl+K/J changes its slot.\nEnter reviews resolved paths before saving. Recognized paste is ignored."
+		text := "Tab/Up/Down selects fields; type or paste to insert at the cursor.\nLeft/Right moves the cursor; Home/End jumps to the start/end.\nBackspace/Delete erases before/after the cursor; Ctrl+U clears.\nPaste containing line breaks or control characters is ignored.\nCtrl+N adds an agent, Ctrl+X removes it, Ctrl+K/J changes its slot.\nEnter reviews resolved paths before saving."
 		lines = append(lines, strings.Split(ansi.Wrap(text, width, ""), "\n")...)
 		lines = append(lines, "")
 		for _, line := range strings.Split(ansi.Wrap(sharedDiscovery, width, ""), "\n") {
@@ -268,13 +268,19 @@ func (m setupModel) setupBody(width int, s uiStyles) ([]string, int) {
 			prefix = "> " + fmt.Sprintf("%-9s", label+":")
 			style = s.selected
 		}
-		value = displayText(value)
 		if m.field == id {
+			runes := []rune(value)
+			position := m.cursorPosition(value)
+			before, after := displayText(string(runes[:position])), displayText(string(runes[position:]))
 			available := max(0, width-4-ansi.StringWidth(prefix)-1)
-			if ansi.StringWidth(value) > available {
-				value = ansi.TruncateLeft(value, ansi.StringWidth(value)-available+1, "~")
+			// Keep context on both sides while editing a path wider than the field.
+			beforeWidth := available - min(available/2, ansi.StringWidth(after))
+			if ansi.StringWidth(before) > beforeWidth {
+				before = ansi.TruncateLeft(before, ansi.StringWidth(before)-beforeWidth+1, "~")
 			}
-			value += "▏"
+			value = before + "▏" + ansi.Truncate(after, max(0, available-ansi.StringWidth(before)), "~")
+		} else {
+			value = displayText(value)
 		}
 		return style.Render(fit(prefix+value, width-4))
 	}

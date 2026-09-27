@@ -111,6 +111,32 @@ func TestSetupDefaultFieldsVisible(t *testing.T) {
 	}
 }
 
+func TestSetupCursorView(t *testing.T) {
+	m := newSetupModel("", "")
+	m.cfg.Library = "~/" + strings.Repeat("long-界/", 30) + "END"
+	original := m.cfg.Library
+	for _, size := range [][2]int{{80, 24}, {40, 13}, {20, 8}} {
+		m.width, m.height = size[0], size[1]
+		for _, cursor := range []int{0, 2, 40, -1} {
+			m.cursor = cursor
+			view := m.View().Content
+			assertViewBounds(t, view, m.width, m.height)
+			if !strings.Contains(view, "▏") || m.cfg.Library != original {
+				t.Fatalf("cursor hidden or value changed at %v, cursor %d", size, cursor)
+			}
+		}
+	}
+	m.width, m.height, m.cursor = 80, 24, 72
+	if !strings.Contains(m.View().Content, "▏long-界/") {
+		t.Fatal("long path hides text immediately after the cursor")
+	}
+	m.width, m.height, m.cursor = 80, 24, 3
+	m.cfg.Library = "~/界folder"
+	if !strings.Contains(m.View().Content, "~/界▏folder") {
+		t.Fatal("cursor not displayed at the Unicode insertion position")
+	}
+}
+
 func TestSetupSnapshots(t *testing.T) {
 	var corpus strings.Builder
 	for _, state := range []string{"edit", "last-agent", "chooser", "review", "review-small", "replace", "error", "saving", "quit", "details"} {

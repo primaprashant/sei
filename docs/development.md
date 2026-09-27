@@ -55,13 +55,16 @@ Try add/replace/remove, Tab/Shift+Tab, help, resize and quit; rerun to inspect p
 
 ## UI Invariants
 
-Setup starts with Claude Code and Codex.
-
-In setup, Tab/Up/Down selects fields; Ctrl+U clears. Ctrl+N adds a preset/custom
-agent (1–9 preset, 0 custom), Ctrl+X removes it, and Ctrl+K/J reorders it.
+Setup starts with Claude Code and Codex. Tab/Up/Down selects fields and places
+the cursor at the end; Left/Right and Home/End move it within a field. Typing and
+single-line paste insert at the cursor; Backspace/Delete removes before/after it;
+Ctrl+U clears. Paste containing control characters (including line breaks) or
+invalid UTF-8 is rejected whole. Paste is ignored outside editable setup fields.
+Ctrl+N adds a preset/custom agent (1–9 preset, 0 custom), Ctrl+X removes it, and
+Ctrl+K/J reorders it.
 Enter previews and saves; F1 opens/closes scrollable field/path/error details; `e` returns to editing and
 `y` confirms replacing config. Esc/Ctrl+C cancels.
-Recognized paste is ignored. Explicit `sei setup` edits valid config and exits
+The browser ignores recognized paste. Explicit `sei setup` edits valid config and exits
 after saving; malformed config fails rather than being replaced. Global CLI
 options must precede `setup` or `stats`.
 
