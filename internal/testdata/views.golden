@@ -5,7 +5,7 @@ Cell bounds are asserted before encoding. Not terminal screenshots.
  sei   /project                                                                                                                  Agents 1-3 / 3
 LIBRARY  source \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 PROJECT  this project \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 \u256d * Library \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e \u256d Claude Code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e \u256d Codex \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e \u256d OpenCode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e
-\u2502 ~/library                          \u2502 \u2502 focus 1 \u00b7 copy a               \u2502 \u2502 focus 2 \u00b7 copy b               \u2502 \u2502 focus 3 \u00b7 copy c               \u2502
+\u2502 ~/library                          \u2502 \u2502 focus 1 \u00b7 add a                \u2502 \u2502 focus 2 \u00b7 add b                \u2502 \u2502 focus 3 \u00b7 add c                \u2502
 \u2502 > .dot                             \u2502 \u2502 Folder not created             \u2502 \u2502 Folder not created             \u2502 \u2502 Folder not created             \u2502
 \u2502   e\u0301-\u754c-wide                        \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
 \u2502   long-name-long-name-long-name-l~ \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
@@ -20,7 +20,7 @@ LIBRARY  source \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25
 \u2502                                    \u2502 \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f
 \u2502                                    \u2502 GLOBAL  all projects \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 \u2502                                    \u2502 \u256d Claude Code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e \u256d Codex \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e \u256d OpenCode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e
-\u2502                                    \u2502 \u2502 focus g 1 \u00b7 copy A             \u2502 \u2502 focus g 2 \u00b7 copy B             \u2502 \u2502 focus g 3 \u00b7 copy C             \u2502
+\u2502                                    \u2502 \u2502 focus g 1 \u00b7 add A              \u2502 \u2502 focus g 2 \u00b7 add B              \u2502 \u2502 focus g 3 \u00b7 add C              \u2502
 \u2502                                    \u2502 \u2502 Folder not created             \u2502 \u2502 Folder not created             \u2502 \u2502 Folder not created             \u2502
 \u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
 \u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
@@ -35,6 +35,43 @@ LIBRARY  source \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25
 \u2570 focus 0 \u00b7 5 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f
 Library \u00b7 ~/library \u00b7 .dot
 \u25cf Ready
+\u2191\u2193 select  Tab panel  0 library  1-9 project  g global  ? help  q quit
+Copy using panel keys \u00b7 Replaces existing folders; no undo
+
+=== destination-hints (143x35) ===
+ sei   /project                                                                                                                  Agents 1-3 / 3
+LIBRARY  source \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 PROJECT  this project \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+\u256d * Library \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e \u256d Claude Code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e \u256d Codex \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e \u256d OpenCode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e
+\u2502 ~/library                          \u2502 \u2502 focus 1 \u00b7 replace a            \u2502 \u2502 focus 2 \u00b7 add b                \u2502 \u2502 focus 3 \u00b7 unknown              \u2502
+\u2502 > .dot                             \u2502 \u2502   .dot                         \u2502 \u2502 Folder not created             \u2502 \u2502 Loading...                     \u2502
+\u2502   e\u0301-\u754c-wide                        \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502   long-name-long-name-long-name-l~ \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502   look-safe\\x1b[2J\\r\\nspoof        \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502   [blocked] linked                 \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2570 1 skill \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f
+\u2502                                    \u2502 GLOBAL  all projects \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+\u2502                                    \u2502 \u256d Claude Code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e \u256d Codex \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e \u256d OpenCode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e
+\u2502                                    \u2502 \u2502 focus g 1 \u00b7 blocked            \u2502 \u2502 focus g 2 \u00b7 add B              \u2502 \u2502 focus g 3 \u00b7 add C              \u2502
+\u2502                                    \u2502 \u2502   [blocked] .dot               \u2502 \u2502 Folder not created             \u2502 \u2502 Folder not created             \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2502                                    \u2502 \u2502                                \u2502 \u2502                                \u2502 \u2502                                \u2502
+\u2570 focus 0 \u00b7 5 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 1 skill \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f
+Library \u00b7 ~/library \u00b7 .dot
+\u25cf Checking folders...
 \u2191\u2193 select  Tab panel  0 library  1-9 project  g global  ? help  q quit
 Copy using panel keys \u00b7 Replaces existing folders; no undo
 
@@ -68,7 +105,7 @@ Same folder as global; use global panel
  sei   /project                                                   Agents 1-1 / 3
 LIBRARY  source \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 PROJECT  this project \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 \u256d * Library \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e \u256d Claude Code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e
-\u2502 ~/library              \u2502 \u2502 focus 1 \u00b7 copy a                                  \u2502
+\u2502 ~/library              \u2502 \u2502 focus 1 \u00b7 add a                                   \u2502
 \u2502   .dot                 \u2502 \u2502 No skills yet                                     \u2502
 \u2502   e\u0301-\u754c-wide            \u2502 \u2502                                                   \u2502
 \u2502   long-name-long-name~ \u2502 \u2502                                                   \u2502
@@ -78,7 +115,7 @@ LIBRARY  source \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 PRO
 \u2502                        \u2502 \u2570 0 skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256f
 \u2502                        \u2502 GLOBAL  all projects \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 \u2502                        \u2502 \u256d Claude Code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e
-\u2502                        \u2502 \u2502 focus g 1 \u00b7 copy A                                \u2502
+\u2502                        \u2502 \u2502 focus g 1 \u00b7 unknown                               \u2502
 \u2502                        \u2502 \u2502 Blocked folder \u00b7 ? details                        \u2502
 \u2502                        \u2502 \u2502 Error: denied\\x1b]52;c;payload\\a                  \u2502
 \u2502                        \u2502 \u2502                                                   \u2502
@@ -92,16 +129,16 @@ Copy using panel keys \u00b7 Replaces existing folders; no undo
 
 === busy-help (80x24) ===
 sei | Help
-r refresh \u00b7 ? help \u00b7 Esc close/cancel \u00b7 q/Ctrl+C quit
-Unconfigured slots do nothing. g has no timeout; invalid keys cancel it.
-
-COPY AND REMOVE
 Use these keys from the library to copy a skill:
 a: Claude Code / Project; A: Claude Code / Global
 b: Codex / Project; B: Codex / Global
 c: OpenCode / Project; C: OpenCode / Global
 
 ERRORS AND BEHAVIOR
+Panel hints describe the selected library skill:
+add: no same-named folder listed; replace: same-named folder present.
+Contents are not compared. Hints use the last refresh; r refreshes.
+unknown: folders are loading or unavailable; blocked: copying is unsafe.
 Copy always replaces the entire destination, including local edits.
 x permanently removes a destination skill. No confirmation or undo.
 No trash, backup, or rollback. Failures may leave missing or partial output.
@@ -113,7 +150,7 @@ folder contents, not everything an agent discovers or has loaded.
 Result: Add \\\"look-safe\\\\x1b[2J\\\\r\\\\nspoof\\\" to Claude Code / Project (/project/
 long-path/long-path/long-path/long-path/long-path/long-path/long-path/long-path/
 ): working
-Help 11/31 | up/down scroll | ?/Esc close |
+Help 15/35 | up/down scroll | ?/Esc close |
 Working; q waits for completion | g pending: 1-9 global, Esc cancel
 
 === busy-quit (80x24) ===

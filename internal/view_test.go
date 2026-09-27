@@ -76,6 +76,89 @@ func TestLayoutPaths(t *testing.T) {
 	}
 }
 
+func TestDestinationCopyHints(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		change func(*browseModel)
+		want   string
+	}{
+		{"present", func(m *browseModel) {}, "replace A"},
+		{"absent", func(m *browseModel) { m.panels[1].entries = nil }, "add A"},
+		{"missing root", func(m *browseModel) { m.panels[1].entries = nil; m.panels[1].missing = true }, "add A"},
+		{"loading with stale entries", func(m *browseModel) { m.panels[1].loading = true }, "unknown"},
+		{"failed listing", func(m *browseModel) { m.panels[1].err = os.ErrPermission }, "unknown"},
+		{"unchecked root", func(m *browseModel) { m.panels[1].safetyChecked = false }, "unknown"},
+		{"unsafe root", func(m *browseModel) { m.panels[1].safetyErr = errors.New("overlap") }, "blocked"},
+		{"destination symlink", func(m *browseModel) { m.panels[1].entries[0].blocked = true }, "blocked"},
+		{"source symlink", func(m *browseModel) { m.panels[0].entries[0].blocked = true }, "blocked"},
+		{"source loading", func(m *browseModel) { m.panels[0].loading = true }, "unknown"},
+		{"source failed", func(m *browseModel) { m.panels[0].err = os.ErrPermission }, "unknown"},
+		{"no selection", func(m *browseModel) { m.panels[0].selectedName = "" }, ""},
+		{"busy", func(m *browseModel) { m.active = &mutationRequest{id: 1} }, ""},
+		{"quitting", func(m *browseModel) { m.pendingQuit = true }, ""},
+		{"destination focused", func(m *browseModel) { m.focused = 1 }, ""},
+		{"different case", func(m *browseModel) { m.panels[1].entries[0].name = "A" }, "add A"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m := navigationModel(1)
+			for i := range m.panels {
+				m.panels[i].safetyChecked = true
+			}
+			tc.change(&m)
+			want := "focus g 1"
+			if tc.want != "" {
+				want += " · " + tc.want
+			}
+			if got := m.labeledPanel(1).hint; got != want {
+				t.Fatalf("got %q, want %q", got, want)
+			}
+		})
+	}
+	// Match raw names, not their escaped display strings; recompute for each selection.
+	m := navigationModel(1)
+	for i := range m.panels {
+		m.panels[i].safetyChecked = true
+	}
+	m.panels[1].entries = []skillEntry{{name: `line\nb`}}
+	m.panels[2].entries = []skillEntry{{name: "line\nb"}}
+	m, _ = press(m, tea.KeyDown)
+	if m.labeledPanel(1).hint != "focus g 1 · add A" || m.labeledPanel(2).hint != "focus 1 · replace a" {
+		t.Fatal("hints do not reflect the newly selected raw name in each scope")
+	}
+	m, _ = press(m, tea.KeyDown)
+	if m.labeledPanel(2).hint != "focus 1 · add a" {
+		t.Fatal("selection change retained previous presence")
+	}
+}
+
+func TestDestinationHintsAfterMutations(t *testing.T) {
+	m := mutationModel(t)
+	m, worker := press(m, 'x') // Remove global a; source a remains selected.
+	result := worker().(mutationResult)
+	if result.err != nil {
+		t.Fatal(result.err)
+	}
+	next, refresh := m.Update(result)
+	m, _ = press(next.(browseModel), '0')
+	if m.labeledPanel(1).hint != "focus g 1 · unknown" {
+		t.Fatal("refresh exposed stale presence")
+	}
+	m = finishMutationRefresh(t, m, refresh)
+	if m.labeledPanel(1).hint != "focus g 1 · add A" {
+		t.Fatal("removal did not update presence")
+	}
+	m, worker = press(m, 'A')
+	result = worker().(mutationResult)
+	if result.err != nil {
+		t.Fatal(result.err)
+	}
+	next, refresh = m.Update(result)
+	m = finishMutationRefresh(t, next.(browseModel), refresh)
+	if m.labeledPanel(1).hint != "focus g 1 · replace A" {
+		t.Fatal("copy did not update presence")
+	}
+}
+
 func TestLayoutBounds(t *testing.T) {
 	for count := 1; count <= 9; count++ {
 		m := navigationModel(count)
@@ -183,7 +266,7 @@ func TestResize(t *testing.T) {
 func TestViewSnapshots(t *testing.T) {
 	var corpus strings.Builder
 	corpus.WriteString("Rendered frames: right padding removed; Go escapes encode Unicode/backslashes.\nCell bounds are asserted before encoding. Not terminal screenshots.\n")
-	for _, scenario := range []string{"desktop-empty", "duplicate-project", "minimum-mixed", "busy-help", "busy-quit", "undersized", "nine-agent-focus"} {
+	for _, scenario := range []string{"desktop-empty", "destination-hints", "duplicate-project", "minimum-mixed", "busy-help", "busy-quit", "undersized", "nine-agent-focus"} {
 		m := navigationModel(3)
 		m.width, m.height = 143, 35
 		m.config.Home, m.config.Project = "/home/example", "/project"
@@ -205,6 +288,12 @@ func TestViewSnapshots(t *testing.T) {
 		m.panels[0].entries = []skillEntry{{name: ".dot"}, {name: "e\u0301-\u754c-wide"}, {name: strings.Repeat("long-name-", 6)}, {name: "look-safe\x1b[2J\r\nspoof"}, {name: "linked", blocked: true}}
 		m.panels[0].selectedName = ".dot"
 		switch scenario {
+		case "destination-hints":
+			m.panels[4].missing = false
+			m.panels[4].entries = []skillEntry{{name: ".dot"}}
+			m.panels[6].loading = true
+			m.panels[1].missing = false
+			m.panels[1].entries = []skillEntry{{name: ".dot", blocked: true}}
 		case "duplicate-project":
 			m.width, m.height, m.focused = 80, 24, 4
 			m.panels[4].duplicateProject = true
@@ -309,6 +398,9 @@ func TestDisplaySafety(t *testing.T) {
 func TestViewProfiles(t *testing.T) {
 	m := navigationModel(3)
 	m.width, m.height = 80, 24
+	for i := range m.panels {
+		m.panels[i].safetyChecked = true
+	}
 	var dark, light string
 	for _, profile := range []string{"light", "dark", "no-color"} {
 		t.Run(profile, func(t *testing.T) {
@@ -329,7 +421,7 @@ func TestViewProfiles(t *testing.T) {
 			if strings.ContainsRune(view, '\x1b') != (profile != "no-color") {
 				t.Fatal("wrong color profile")
 			}
-			for _, want := range []string{"* Library", "> a", "focus 1 · copy a", "PROJECT", "GLOBAL", "q quit"} {
+			for _, want := range []string{"* Library", "> a", "focus 1 · replace a", "PROJECT", "GLOBAL", "q quit"} {
 				if !strings.Contains(ansi.Strip(view), want) {
 					t.Fatalf("missing cue %q", want)
 				}

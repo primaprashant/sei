@@ -136,6 +136,13 @@ func TestPTYThemeAndNavigation(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
+			await("focus 1 · add a", "focus g 1 · add A")
+			send("a")
+			await("Copied example", "focus 1 · replace a", "focus g 1 · add A")
+			send("1x")
+			await("Removed example")
+			send("0")
+			await("focus 1 · add a", "focus g 1 · add A")
 			send("\t")
 			await("Demo / Project ·")
 			send("\t")

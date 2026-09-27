@@ -140,7 +140,7 @@ func TestDuplicateProjectBrowserAndRefresh(t *testing.T) {
 			t.Fatal("missing global destination")
 		}
 		m.focused = 0
-		if strings.Contains(m.labeledPanel(2).hint, "copy") || !strings.Contains(m.labeledPanel(1).hint, "copy A") {
+		if m.labeledPanel(2).hint != "focus 1" || m.labeledPanel(1).hint != "focus g 1 · replace A" {
 			t.Fatal("wrong copy hints")
 		}
 	}

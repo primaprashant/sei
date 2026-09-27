@@ -268,7 +268,12 @@ func (m browseModel) labeledPanel(id int) browsePanel {
 		}
 		p.hint = "focus " + shortcut
 		if m.focused == 0 && m.active == nil && !m.pendingQuit && (!p.safetyChecked || !p.duplicateProject) {
-			p.hint += " · copy " + add
+			if action := m.copyAction(p); action != "" {
+				p.hint += " · " + action
+				if action == "add" || action == "replace" {
+					p.hint += " " + add
+				}
+			}
 		}
 	}
 	base, prefix := m.config.Home, "~"
@@ -282,6 +287,33 @@ func (m browseModel) labeledPanel(id int) browsePanel {
 		}
 	}
 	return p
+}
+
+// Hints describe the latest listing, not content equality or permission to copy.
+// The mutation command still checks the filesystem afresh.
+func (m browseModel) copyAction(destination browsePanel) string {
+	library := m.panels[0]
+	if library.selectedName == "" || library.missing {
+		return ""
+	}
+	if library.loading || library.err != nil || destination.loading || destination.err != nil || !library.safetyChecked || !destination.safetyChecked {
+		return "unknown"
+	}
+	if library.selected < 0 || library.selected >= len(library.entries) || library.entries[library.selected].name != library.selectedName {
+		return ""
+	}
+	if library.safetyErr != nil || destination.safetyErr != nil || library.entries[library.selected].blocked {
+		return "blocked"
+	}
+	for _, entry := range destination.entries {
+		if entry.name == library.selectedName {
+			if entry.blocked {
+				return "blocked"
+			}
+			return "replace"
+		}
+	}
+	return "add"
 }
 
 func (m browseModel) helpView() tea.View {
@@ -366,7 +398,7 @@ func (m browseModel) helpLines() []string {
 		}
 		text += fmt.Sprintf("\n%c: %s; %c: %s", addKeys[i], label, strings.ToUpper(string(addKeys[i]))[0], displayText(m.panels[1+i].label))
 	}
-	text += "\n\nERRORS AND BEHAVIOR\nCopy always replaces the entire destination, including local edits.\nx permanently removes a destination skill. No confirmation or undo.\nNo trash, backup, or rollback. Failures may leave missing or partial output.\nRetry copy or remove the partial skill after inspecting the destination.\nWhile working: navigation stays available; refresh and quit wait.\nAdditional copy/remove keys are ignored during work. Paste is ignored.\n" + ansi.Wrap(sharedDiscovery, max(1, m.width), "")
+	text += "\n\nERRORS AND BEHAVIOR\nPanel hints describe the selected library skill:\nadd: no same-named folder listed; replace: same-named folder present.\nContents are not compared. Hints use the last refresh; r refreshes.\nunknown: folders are loading or unavailable; blocked: copying is unsafe.\nCopy always replaces the entire destination, including local edits.\nx permanently removes a destination skill. No confirmation or undo.\nNo trash, backup, or rollback. Failures may leave missing or partial output.\nRetry copy or remove the partial skill after inspecting the destination.\nWhile working: navigation stays available; refresh and quit wait.\nAdditional copy/remove keys are ignored during work. Paste is ignored.\n" + ansi.Wrap(sharedDiscovery, max(1, m.width), "")
 
 	if m.status != "" {
 		text += "\nResult: " + displayText(m.status)
