@@ -24,8 +24,7 @@ The script pulls the pre-built binary and saves it to `~/.local/bin`. You don't 
 
 Download a matching `.tar.gz` from the [releases](https://github.com/primaprashant/sei/releases) page, extract it, and put the `sei` binary in a directory on your PATH. In this case as well, you don't need Go installed on your system.
 
-Choose `darwin` for macOS or `linux` for Linux, and `arm64` for Apple Silicon/ARM64
-or `amd64` for Intel/AMD 64-bit processors.
+Choose `darwin` for macOS or `linux` for Linux, and `arm64` for Apple Silicon/ARM64 or `amd64` for Intel/AMD 64-bit processors.
 
 ### Go
 
@@ -35,17 +34,15 @@ With Go **1.27.1 or later**:
 go install github.com/primaprashant/sei@latest
 ```
 
-Make sure your Go binary directory (`GOBIN`, or `GOPATH/bin`, usually `~/go/bin`)
-is on your PATH.
+Make sure your Go binary directory (`GOBIN`, or `GOPATH/bin`, usually `~/go/bin`) is on your PATH.
 
 ### Upgrade and uninstall
 
 To upgrade, repeat your installation method: rerun the script or `go install`, or replace the binary with one from a newer release archive.
 
-The install script only replaces installations it recognizes; keep its adjacent `.sei-install-receipt` file and use the same install directory. 
+The install script only replaces installations it recognizes; keep its adjacent `.sei-install-receipt` file and use the same install directory.
 
-To uninstall, quit sei and remove its binary from your install directory, along
-with `.sei-install-receipt` if you used the script.
+To uninstall, quit sei and remove its binary from your install directory, along with `.sei-install-receipt` if you used the script.
 
 Your configuration, stats history, library, and copied skills will remain on your system.
 
@@ -55,8 +52,7 @@ Your configuration, stats history, library, and copied skills will remain on you
 2. Run `sei` from your project directory.
 3. First-run setup will ask for your skill library. Add/remove the coding agents you use. Choose your paths and save to start managing your skills.
 
-Setup includes presets for Claude Code, Codex, OpenCode, Pi, Cursor, Antigravity CLI, Crush, GitHub Copilot CLI, and Cline CLI. You can also add any custom agents. All names and
-paths are editable.
+Setup includes presets for Claude Code, Codex, OpenCode, Pi, Cursor, Antigravity CLI, Crush, GitHub Copilot CLI, and Cline CLI. You can also add any custom agents. All names and paths are editable.
 
 The order of the agents during the setup determines their order in the TUI and their keyboard shortcuts.
 
@@ -87,13 +83,11 @@ Setup writes the configuration file to disk. To edit it manually, use:
 
 Restart sei after editing the config file for the changes to take effect.
 
-`library` is your source collection. Each agent's `global` folder serves all
-projects; its `local` folder is relative to the current project. Library and global paths must be absolute or start with `~/`. Local paths must stay inside the project, and library and destination roots must be separate.
+`library` is your source collection. Each agent's `global` folder serves all projects; its `local` folder is relative to the current project. Library and global paths must be absolute or start with `~/`. Local paths must stay inside the project, and library and destination roots must be separate.
 
 If an agent’s project and global paths resolve to the same folder (for example, when launching from home with the defaults), setup still saves. The browser dims that project panel and disables its copy/remove operations; use the global panel.
 
-Launching from another project or using `--project` gives project paths their
-usual meaning. Nested overlaps and overlaps between different agents are blocked.
+Launching from another project or using `--project` gives project paths their usual meaning. Nested overlaps and overlaps between different agents are blocked.
 
 ## Stats
 

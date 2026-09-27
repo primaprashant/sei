@@ -55,67 +55,19 @@ Try add/replace/remove, Tab/Shift+Tab, help, resize and quit; rerun to inspect p
 
 ## UI Invariants
 
-Setup starts with Claude Code and Codex. Tab/Up/Down selects fields and places
-the cursor at the end; Left/Right and Home/End move it within a field. Typing and
-single-line paste insert at the cursor; Backspace/Delete removes before/after it;
-Ctrl+U clears. Paste containing control characters (including line breaks) or
-invalid UTF-8 is rejected whole. Paste is ignored outside editable setup fields.
-Ctrl+N adds a preset/custom agent (1–9 preset, 0 custom), Ctrl+X removes it, and
-Ctrl+K/J reorders it.
-Enter previews and saves; F1 opens/closes scrollable field/path/error details; `e` returns to editing and
-`y` confirms replacing config. Esc/Ctrl+C cancels.
-The browser ignores recognized paste. Explicit `sei setup` edits valid config and exits
-after saving; malformed config fails rather than being replaced. Global CLI
-options must precede `setup` or `stats`.
+Setup starts with Claude Code and Codex. Tab/Up/Down selects fields and places the cursor at the end; Left/Right and Home/End move it within a field. Typing and single-line paste insert at the cursor; Backspace/Delete removes before/after it; Ctrl+U clears. Paste containing control characters (including line breaks) or invalid UTF-8 is rejected whole. Paste is ignored outside editable setup fields. Ctrl+N adds a preset/custom agent (1–9 preset, 0 custom), Ctrl+X removes it, and Ctrl+K/J reorders it. Enter previews and saves; F1 opens/closes scrollable field/path/error details; `e` returns to editing and `y` confirms replacing config. Esc/Ctrl+C cancels. The browser ignores recognized paste. Explicit `sei setup` edits valid config and exits after saving; malformed config fails rather than being replaced. Global CLI options must precede `setup` or `stats`.
 
-Panel IDs are **library, configured globals, corresponding locals**; rendering puts library left,
-**locals above globals**, with up to three agent columns. Never reorder IDs to match rendering:
-slot/key mappings depend on config order. Tab/Shift+Tab cycle library, all project
-panels, then all global panels, in configuration order. Help ignores Tab; pending
-`g` consumes it, busy work permits navigation, and pending quit ignores it.
-Focus windows retain access to all nine agents. Project panels identical to their
-paired globals stay visible and focusable but dimmed, with a textual explanation;
-copy/remove hints are suppressed and operations are blocked in both the model
-and fresh filesystem validation. Refresh recomputes this state.
-Below 80x24, new mutations are blocked; active work continues and quit stays available.
-Preserve raw names through escaping/truncation; full escaped targets remain in help.
+Panel IDs are **library, configured globals, corresponding locals**; rendering puts library left, **locals above globals**, with up to three agent columns. Never reorder IDs to match rendering: slot/key mappings depend on config order. Tab/Shift+Tab cycle library, all project panels, then all global panels, in configuration order. Help ignores Tab; pending `g` consumes it, busy work permits navigation, and pending quit ignores it. Focus windows retain access to all nine agents. Project panels identical to their paired globals stay visible and focusable but dimmed, with a textual explanation; copy/remove hints are suppressed and operations are blocked in both the model and fresh filesystem validation. Refresh recomputes this state. Below 80x24, new mutations are blocked; active work continues and quit stays available. Preserve raw names through escaping/truncation; full escaped targets remain in help.
 
-Intentional snapshot changes: `SEI_TEST_UPDATE_VIEWS=1 go test -run '^(TestViewSnapshots|TestSetupSnapshots|TestStatsViewSnapshots)$' ./internal`,
-then review `git diff -- internal/testdata`. Normal tests only compare snapshots.
-The `TestPTYThemeAndNavigation` check covers real light/dark/monochrome rendering
-and panel cycling. Set `SEI_TEST_CAPTURES` to an existing disposable directory
-to capture its styled terminal frames as `.ansi` files.
-`TestPTYStats` covers copy, replacement, removal, and reopening stats with disposable
-configuration and skill folders. It also supports `SEI_TEST_CAPTURES`.
-`TestStatsViewThemesAndKeys` uses the same capture directory for populated stats
-frames in all three themes at 80x24 and 110x30.
+Intentional snapshot changes: `SEI_TEST_UPDATE_VIEWS=1 go test -run '^(TestViewSnapshots|TestSetupSnapshots|TestStatsViewSnapshots)$' ./internal`, then review `git diff -- internal/testdata`. Normal tests only compare snapshots. The `TestPTYThemeAndNavigation` check covers real light/dark/monochrome rendering and panel cycling. Set `SEI_TEST_CAPTURES` to an existing disposable directory to capture its styled terminal frames as `.ansi` files. `TestPTYStats` covers copy, replacement, removal, and reopening stats with disposable configuration and skill folders. It also supports `SEI_TEST_CAPTURES`. `TestStatsViewThemesAndKeys` uses the same capture directory for populated stats frames in all three themes at 80x24 and 110x30.
 
-Color-profile messages choose shared light/dark styles; `NO_COLOR` retains plain
-text focus cues. Terminal background replies take precedence over `COLORFGBG`.
+Color-profile messages choose shared light/dark styles; `NO_COLOR` retains plain text focus cues. Terminal background replies take precedence over `COLORFGBG`.
 
 ## Async And Lifecycle
 
-`Update`/`View` do no filesystem I/O. Commands capture immutable config, raw names
-and targets; scan/safety generations and operation IDs reject stale results.
-Safety and listing readiness are independent. Only one mutation runs at a time;
-refresh during work coalesces into completion refresh. Navigation stays responsive.
-`q`, Ctrl+C, INT/TERM/HUP request model-owned quit; active writes/saves finish first,
-while idle quit need not join read-only scans. Repeated signals do not force exit.
-`lifecycle.go` owns signal handling and explicitly restores termios after Tea exits,
-without repeating renderer cleanup. Errors reach escaped stderr after restoration;
-pending-quit operation failure exits 1, later idle quit after recoverable failure 0.
-Successful browser mutations attempt to record stats inside the same command before
-returning completion, so quit also waits for recording. Stats failures are separate
-warnings and do not change the operation's success or exit status. Lock acquisition
-waits at most about one second. Stats loading is read-only command work; `sei stats`
-does not load configuration or resolve project/agent paths. Both rankings and totals
-come from daily summaries, using local calendar dates and deterministic name ties.
-SIGKILL cannot clean up; disconnected terminals may reject restoration. See
-[filesystem safety](filesystem-safety.md) for mutation guarantees and limits.
+`Update`/`View` do no filesystem I/O. Commands capture immutable config, raw names and targets; scan/safety generations and operation IDs reject stale results. Safety and listing readiness are independent. Only one mutation runs at a time; refresh during work coalesces into completion refresh. Navigation stays responsive. `q`, Ctrl+C, INT/TERM/HUP request model-owned quit; active writes/saves finish first, while idle quit need not join read-only scans. Repeated signals do not force exit. `lifecycle.go` owns signal handling and explicitly restores termios after Tea exits, without repeating renderer cleanup. Errors reach escaped stderr after restoration; pending-quit operation failure exits 1, later idle quit after recoverable failure 0. Successful browser mutations attempt to record stats inside the same command before returning completion, so quit also waits for recording. Stats failures are separate warnings and do not change the operation's success or exit status. Lock acquisition waits at most about one second. Stats loading is read-only command work; `sei stats` does not load configuration or resolve project/agent paths. Both rankings and totals come from daily summaries, using local calendar dates and deterministic name ties. SIGKILL cannot clean up; disconnected terminals may reject restoration. See [filesystem safety](filesystem-safety.md) for mutation guarantees and limits.
 
-Setup, browsing, and stats require terminal stdin/stdout; help/version do not. Exit status
-is `0` for ordinary quit/cancel, `1` for startup/save/runtime failure, and `2` for
-invalid CLI syntax. Focus and selections are not saved between runs.
+Setup, browsing, and stats require terminal stdin/stdout; help/version do not. Exit status is `0` for ordinary quit/cancel, `1` for startup/save/runtime failure, and `2` for invalid CLI syntax. Focus and selections are not saved between runs.
 
 ## Optional Performance Checks
 
@@ -124,15 +76,11 @@ Microbenchmarks: `go test -run '^$' -bench . -benchmem ./internal`. Optional PTY
 - URL: https://codeload.github.com/addyosmani/agent-skills/tar.gz/469d00f4e67ff4a21eb6e6e467a086c9a1f1deb8
 - SHA-256: `9f134b3c1c308b88a5f3acc37e0e33fcf25cf86a964644df1d2f24866ea0d192`
 
-Download explicitly to a disposable path. The harness checks the digest and extracts only
-`skills/` and MIT `LICENSE`, rejecting unsafe entries. No scripts/configuration execute; keep the license.
-Build with `CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o bin/sei .`, then run:
+Download explicitly to a disposable path. The harness checks the digest and extracts only `skills/` and MIT `LICENSE`, rejecting unsafe entries. No scripts/configuration execute; keep the license. Build with `CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o bin/sei .`, then run:
 
 ```sh
 SEI_TEST_ARCHIVE=/absolute/path/to/archive.tar.gz SEI_TEST_BINARY="$PWD/bin/sei" \
   go test -count=1 -v -run '^(TestRepresentativeUI|TestPerformanceRelease)$' ./internal
 ```
 
-Run without competing builds/race tests. These are harness latencies, not disk-throughput claims;
-warm-fixture budgets apply on Linux amd64. `SEI_TEST_PREPARE` creates a new absolute disposable
-fixture instead of running the UI tests. Omit `SEI_TEST_CAPTURES` unless writing captures intentionally.
+Run without competing builds/race tests. These are harness latencies, not disk-throughput claims; warm-fixture budgets apply on Linux amd64. `SEI_TEST_PREPARE` creates a new absolute disposable fixture instead of running the UI tests. Omit `SEI_TEST_CAPTURES` unless writing captures intentionally.
