@@ -17,7 +17,7 @@ func TestDuplicateProjectSetup(t *testing.T) {
 	m.cfg.Library = "~/skill-library"
 	m, cmd := setupUpdate(t, m, tea.KeyPressMsg{Code: tea.KeyEnter})
 	m, _ = setupUpdate(t, m, cmd())
-	if m.err != nil || !m.preview || !m.duplicateProject[4] || !m.duplicateProject[5] || m.duplicateProject[6] {
+	if m.err != nil || !m.preview || len(m.duplicateProject) != 5 || !m.duplicateProject[3] || !m.duplicateProject[4] {
 		t.Fatalf("default setup at home: %+v", m)
 	}
 	body, _ := m.setupBody(88, m.theme.styles())

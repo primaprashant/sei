@@ -55,6 +55,8 @@ Try add/replace/remove, Tab/Shift+Tab, help, resize and quit; rerun to inspect p
 
 ## UI Invariants
 
+Setup starts with Claude Code and Codex.
+
 In setup, Tab/Up/Down selects fields; Ctrl+U clears. Ctrl+N adds a preset/custom
 agent (1–9 preset, 0 custom), Ctrl+X removes it, and Ctrl+K/J reorders it.
 Enter previews and saves; F1 opens/closes scrollable field/path/error details; `e` returns to editing and

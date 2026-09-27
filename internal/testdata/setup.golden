@@ -5,20 +5,20 @@
   * Library  source collection ───────────────────────────────────────────────
   > Library: ~/skill-library▏
 
-  1 · Claude Code  Agent 1 / 3 ───────────────────────────────────────────────
+  1 · Claude Code  Agent 1 / 2 ───────────────────────────────────────────────
     Name:    Claude Code
     Global:  ~/.claude/skills
     Project: .claude/skills
 
-  2 · Codex  Agent 2 / 3 ─────────────────────────────────────────────────────
+  2 · Codex  Agent 2 / 2 ─────────────────────────────────────────────────────
     Name:    Codex
     Global:  ~/.agents/skills
     Project: .agents/skills
 
-  3 · OpenCode  Agent 3 / 3 ──────────────────────────────────────────────────
-    Name:    OpenCode
-    Global:  ~/.config/opencode/skills
-    Project: .opencode/skills
+
+
+
+
 
 
   Source stays unchanged. Type appends; Backspace erases.
@@ -31,20 +31,20 @@
   Library  source collection ─────────────────────────────────────────────────
     Library: ~/skill-library
 
-  1 · Claude Code  Agent 1 / 3 ───────────────────────────────────────────────
+  1 · Claude Code  Agent 1 / 2 ───────────────────────────────────────────────
     Name:    Claude Code
     Global:  ~/.claude/skills
     Project: .claude/skills
 
-  2 · Codex  Agent 2 / 3 ─────────────────────────────────────────────────────
+  * 2 · Codex  Agent 2 / 2 ───────────────────────────────────────────────────
     Name:    Codex
     Global:  ~/.agents/skills
-    Project: .agents/skills
+  > Project: .agents/skills▏
 
-  * 3 · OpenCode  Agent 3 / 3 ────────────────────────────────────────────────
-    Name:    OpenCode
-    Global:  ~/.config/opencode/skills
-  > Project: .opencode/skills▏
+
+
+
+
 
 
   Project folder: relative path inside the current project.
@@ -93,10 +93,6 @@
             Global: /home/demo/.agents/skills
             Project: /work/project/.agents/skills
 
-            3 OpenCode  focus 3 / g3 · copy c / C ──────────────────────────────────────
-            Global: /home/demo/.config/opencode/skills
-            Project: /work/project/.opencode/skills
-
 
             Replacement loses local edits and destination-only files: delete first,
             then copy.
@@ -110,7 +106,11 @@
 
 
 
-            Rows 1–25 / 25
+
+
+
+
+            Rows 1–21 / 21
             Enter save  e edit  ↑↓ scroll  F1 details  Esc cancel
             Copy replaces destination edits; removal is permanent. No undo.
 
@@ -130,13 +130,13 @@
   Global: /home/demo/.agents/skills
   Project: /work/project/.agents/skills
 
-  3 OpenCode  focus 3 / g3 · copy c / C ──────────────────────────────────────
-  Global: /home/demo/.config/opencode/skills
-  Project: /work/project/.opencode/skills
 
+  Replacement loses local edits and destination-only files: delete first,
+  then copy.
+  Deletion is permanent. No confirmation, trash, backup, or rollback;
+  failures may leave partial output.
 
-
-  Rows 1–18 / 25
+  Rows 1–18 / 21
   Enter save  e edit  ↑↓ scroll  F1 details  Esc cancel
   Copy replaces destination edits; removal is permanent. No undo.
 
@@ -172,20 +172,20 @@
   * Library  source collection ───────────────────────────────────────────────
   > Library: ~/skill-library▏
 
-  1 · Claude Code  Agent 1 / 3 ───────────────────────────────────────────────
+  1 · Claude Code  Agent 1 / 2 ───────────────────────────────────────────────
     Name:    Claude Code
     Global:  ~/.claude/skills
     Project: .claude/skills
 
-  2 · Codex  Agent 2 / 3 ─────────────────────────────────────────────────────
+  2 · Codex  Agent 2 / 2 ─────────────────────────────────────────────────────
     Name:    Codex
     Global:  ~/.agents/skills
     Project: .agents/skills
 
-  3 · OpenCode  Agent 3 / 3 ──────────────────────────────────────────────────
-    Name:    OpenCode
-    Global:  ~/.config/opencode/skills
-    Project: .opencode/skills
+
+
+
+
 
   Error: library must be absolute or start with ~/ · F1 details
   Source stays unchanged. Type appends; Backspace erases.
@@ -208,11 +208,11 @@
   Global: /home/demo/.agents/skills
   Project: /work/project/.agents/skills
 
-  3 OpenCode  focus 3 / g3 · copy c / C ──────────────────────────────────────
-  Global: /home/demo/.config/opencode/skills
-  Project: /work/project/.opencode/skills
 
-
+  Replacement loses local edits and destination-only files: delete first,
+  then copy.
+  Deletion is permanent. No confirmation, trash, backup, or rollback;
+  failures may leave partial output.
   Saving configuration; quit waits for completion.
 
   Esc / Ctrl+C quit after work
@@ -234,11 +234,11 @@
   Global: /home/demo/.agents/skills
   Project: /work/project/.agents/skills
 
-  3 OpenCode  focus 3 / g3 · copy c / C ──────────────────────────────────────
-  Global: /home/demo/.config/opencode/skills
-  Project: /work/project/.opencode/skills
 
-
+  Replacement loses local edits and destination-only files: delete first,
+  then copy.
+  Deletion is permanent. No confirmation, trash, backup, or rollback;
+  failures may leave partial output.
   Exit requested; waiting for work
 
 

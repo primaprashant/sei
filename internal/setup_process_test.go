@@ -42,7 +42,7 @@ func TestPTYFirstRunSetup(t *testing.T) {
 			}
 			path := filepath.Join(root, "config", "sei.json")
 			explicit := strings.HasPrefix(scenario, "explicit-")
-			want := config{Library: "~/skill-library", Agents: append([]agentConfig(nil), setupPresets[:3]...)}
+			want := config{Library: "~/skill-library", Agents: append([]agentConfig(nil), setupPresets[:2]...)}
 			if explicit && scenario != "explicit-new" {
 				want.Agents = nil
 				count := 1
@@ -302,7 +302,7 @@ func runSetupPTY(t *testing.T, binary, root, path, scenario string, restart bool
 		} else {
 			send("\r")
 			await("Enter save")
-			slot := 3
+			slot := 2
 			if explicit && scenario != "explicit-new" {
 				slot = 1
 			}
@@ -440,34 +440,34 @@ func testPTYFreshUser(t *testing.T, binary string) {
 			help("Library", "sample", "ready (1 entries)")
 			closeHelp()
 			if !restart {
-				for _, a := range setupPresets[:3] {
+				for _, a := range setupPresets[:2] {
 					setupAbsent(t, filepath.Join(project, a.Local), filepath.Join(root, strings.TrimPrefix(a.Global, "~/")))
 				}
 				// The trailing help key acknowledges processing beyond the paste.
 				send("\x1b[200~aA1xq\x03\x1b[201~?")
 				await("sei | Help", "Focused: Library", "Selected name: sample")
-				for _, a := range setupPresets[:3] {
+				for _, a := range setupPresets[:2] {
 					setupAbsent(t, filepath.Join(project, a.Local), filepath.Join(root, strings.TrimPrefix(a.Global, "~/")))
 				}
 				closeHelp()
-				for i, key := range "abc" {
+				for i, key := range "ab" {
 					send(string(key) + "?")
 					await("Result: " + displayText(fmt.Sprintf("Add %q to %s / Project (%s): complete", "sample", setupPresets[i].Name, filepath.Join(project, setupPresets[i].Local))))
 					closeHelp()
 				}
 			}
-			for i, a := range setupPresets[:3] {
+			for i, a := range setupPresets[:2] {
 				send(fmt.Sprint(i + 1))
 				selected, listing := "sample", "ready (1 entries)"
-				if restart && i < 2 {
+				if restart {
 					selected, listing = "(none)", "ready (0 entries)"
 					if i == 1 {
-						selected, listing = "external", "ready (1 entries)"
+						selected, listing = "external", "ready (2 entries)"
 					}
 				}
 				help(a.Name+" / Project", selected, listing)
 				closeHelp()
-				if !restart && i < 2 {
+				if !restart && i == 0 {
 					send("x?")
 					await("Result: " + displayText(fmt.Sprintf("Remove %q from %s / Project (%s): complete", "sample", a.Name, filepath.Join(project, a.Local))))
 					closeHelp()
@@ -477,7 +477,7 @@ func testPTYFreshUser(t *testing.T, binary string) {
 				// An external destination change proves r actually rescans.
 				browseMkdir(t, filepath.Join(project, ".agents/skills/external"))
 				send("2r")
-				help("Codex / Project", "external", "ready (1 entries)")
+				help("Codex / Project", "sample", "ready (2 entries)")
 				closeHelp()
 				send("g1")
 				help("Claude Code / Global", "(none)", "not created")
@@ -490,17 +490,17 @@ func testPTYFreshUser(t *testing.T, binary string) {
 		})
 		if !restart {
 			cfg, missing, err := loadConfig(path)
-			if err != nil || missing || cfg.Library != "~/skill-library" || !reflect.DeepEqual(cfg.Agents, setupPresets[:3]) {
+			if err != nil || missing || cfg.Library != "~/skill-library" || !reflect.DeepEqual(cfg.Agents, setupPresets[:2]) {
 				t.Fatalf("native saved config: %+v missing=%v err=%v", cfg, missing, err)
 			}
 			persisted = removeSnapshot(t, path)
 		}
 		assertRemoveSnapshot(t, path, persisted)
 		assertRemoveSnapshot(t, library, before)
-		for i, a := range setupPresets[:3] {
+		for i, a := range setupPresets[:2] {
 			setupAbsent(t, filepath.Join(root, strings.TrimPrefix(a.Global, "~/")))
 			target := filepath.Join(project, a.Local, "sample")
-			if i < 2 {
+			if i == 0 {
 				setupAbsent(t, target)
 				continue
 			}

@@ -42,7 +42,7 @@ type setupModel struct {
 }
 
 func newSetupModel(project, path string) setupModel {
-	return setupModel{cfg: config{Agents: append([]agentConfig(nil), setupPresets[:3]...)}, project: project, path: path, width: 80, height: 24}
+	return setupModel{cfg: config{Agents: append([]agentConfig(nil), setupPresets[:2]...)}, project: project, path: path, width: 80, height: 24}
 }
 
 func (setupModel) Init() tea.Cmd { return nil }

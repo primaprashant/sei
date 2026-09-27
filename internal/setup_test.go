@@ -40,11 +40,11 @@ func setupAbsent(t *testing.T, paths ...string) {
 
 func TestSetupDefaultsAndEditing(t *testing.T) {
 	m := newSetupModel("/project", "/config.json")
-	want := []agentConfig{{"Claude Code", "~/.claude/skills", ".claude/skills"}, {"Codex", "~/.agents/skills", ".agents/skills"}, {"OpenCode", "~/.config/opencode/skills", ".opencode/skills"}}
+	want := []agentConfig{{"Claude Code", "~/.claude/skills", ".claude/skills"}, {"Codex", "~/.agents/skills", ".agents/skills"}}
 	if m.Init() != nil || m.cfg.Library != "" || !reflect.DeepEqual(m.cfg.Agents, want) || m.field != 0 || m.height != 24 || m.project != "/project" || m.path != "/config.json" || m.preview || m.busy {
 		t.Fatalf("unexpected defaults: %+v", m)
 	}
-	for field := 0; field < 10; field++ {
+	for field := 0; field < 7; field++ {
 		before := m
 		m, _ = setupUpdate(t, m, tea.KeyPressMsg{Code: 'u', Mod: tea.ModCtrl})
 		m, _ = setupUpdate(t, m, tea.KeyPressMsg{Code: 'x', Text: "value\u754c"})
@@ -58,13 +58,13 @@ func TestSetupDefaultsAndEditing(t *testing.T) {
 		want = append([]agentConfig(nil), m.cfg.Agents...)
 		m, _ = setupUpdate(t, m, tea.KeyPressMsg{Code: tea.KeyTab})
 	}
-	if m.field != 0 || !reflect.DeepEqual(newSetupModel("", "").cfg.Agents, setupPresets[:3]) || setupPresets[0].Name != "Claude Code" {
+	if m.field != 0 || !reflect.DeepEqual(newSetupModel("", "").cfg.Agents, setupPresets[:2]) || setupPresets[0].Name != "Claude Code" {
 		t.Fatal("navigation did not wrap or presets were mutated")
 	}
 	for _, key := range []tea.KeyPressMsg{{Code: tea.KeyTab, Mod: tea.ModShift}, {Code: tea.KeyDown}, {Code: tea.KeyUp}} {
 		m, _ = setupUpdate(t, m, key)
 	}
-	if m.field != 9 {
+	if m.field != 6 {
 		t.Fatalf("reverse navigation: %d", m.field)
 	}
 	for _, msg := range []tea.Msg{tea.PasteStartMsg{}, tea.PasteMsg{Content: "unsafe\n"}, tea.PasteEndMsg{}, tea.KeyPressMsg{Code: 'x', Text: "bad\n"}, tea.KeyPressMsg{Code: 'x', Text: "x", Mod: tea.ModAlt}} {

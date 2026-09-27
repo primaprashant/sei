@@ -95,7 +95,7 @@ func TestSetupDetails(t *testing.T) {
 func TestSetupDefaultFieldsVisible(t *testing.T) {
 	m := newSetupModel("/work/project", "/home/demo/.config/sei/config.json")
 	m.width, m.height = 80, 24
-	for _, field := range []int{0, 9} {
+	for _, field := range []int{0, 6} {
 		m.field = field
 		view := ansi.Strip(m.View().Content)
 		for _, a := range m.cfg.Agents {
@@ -126,7 +126,7 @@ func TestSetupSnapshots(t *testing.T) {
 		}
 		switch state {
 		case "last-agent":
-			m.field = 9
+			m.field = 6
 		case "chooser":
 			m.adding = true
 		case "review":
